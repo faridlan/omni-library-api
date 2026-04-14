@@ -1,0 +1,7 @@
+DROP TABLE IF EXISTS book_notes;
+DROP TABLE IF EXISTS user_books;
+DROP TABLE IF EXISTS books;
+DROP TABLE IF EXISTS users;
+
+DROP FUNCTION IF EXISTS update_modified_column();
+DROP EXTENSION IF EXISTS "uuid-ossp";
