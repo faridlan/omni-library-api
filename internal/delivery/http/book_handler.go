@@ -32,17 +32,18 @@ func NewBookHandler(router fiber.Router, bu domain.BookUsecase) {
 func (h *BookHandler) FetchAndSave(c *fiber.Ctx) error {
 
 	var req FetchBookRequest
+
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid request body"})
+		return c.Status(fiber.StatusBadRequest).JSON(ErrorResponse{Error: "invalid request body"})
 	}
 
 	if req.ISBN == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "ISBN is required"})
+		return c.Status(fiber.StatusBadRequest).JSON(ErrorResponse{Error: "ISBN is required"})
 	}
 
 	book, err := h.bookUsecase.FetchAndSaveMetadata(c.Context(), req.ISBN)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(ErrorResponse{Error: err.Error()})
 	}
 
 	return c.Status(fiber.StatusOK).JSON(book)
