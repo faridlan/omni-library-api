@@ -39,6 +39,10 @@ func main() {
 	userBookRepo := postgres.NewUserBookRepository(db)
 	userBookUsecase := usecase.NewUserBookUsecase(userBookRepo)
 
+	// Fitur Book Notes (Quotes & Tags)
+	bookNoteRepo := postgres.NewBookNoteRepository(db)
+	bookNoteUsecase := usecase.NewBookNoteUsecase(bookNoteRepo)
+
 	// Setup Fiber & Route
 	app := fiber.New()
 	api := app.Group("/api")
@@ -46,6 +50,7 @@ func main() {
 	// Daftarkan Handler
 	http.NewBookHandler(api, bookUsecase)
 	http.NewUserBookHandler(api, userBookUsecase)
+	http.NewBookNoteHandler(api, bookNoteUsecase)
 
 	// Start Server
 	log.Fatal(app.Listen(":8080"))
