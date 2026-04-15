@@ -1,13 +1,8 @@
 # ==============================================================================
-# Environment Variables (Bisa disesuaikan nanti)
+# Environment Variables Dari File .env
 # ==============================================================================
-DB_USER=root
-DB_PASSWORD=secret
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=omnilibrary
-DB_URL="postgresql://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=disable"
-
+include .env
+export
 # ==============================================================================
 # Database Commands
 # ==============================================================================
@@ -18,11 +13,11 @@ postgres:
 
 # 2. Membuat database baru di dalam container
 createdb:
-	docker exec -it psqldb createdb --username=$(DB_USER) --owner=$(DB_USER) $(DB_NAME)
+	docker exec -it omnilibrary-db createdb --username=$(DB_USER) --owner=$(DB_USER) $(DB_NAME)
 
 # 3. Menghapus database (Hati-hati!)
 dropdb:
-	docker exec -it psqldb dropdb $(DB_NAME)
+	docker exec -it omnilibrary-db dropdb $(DB_NAME)
 
 # ==============================================================================
 # Migration Commands

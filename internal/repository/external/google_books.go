@@ -27,16 +27,18 @@ type googleBooksResponse struct {
 
 type googleBooksFetcher struct {
 	httpClient *http.Client
+	apiKey     string
 }
 
-func NewGoogleBooksFetcher() domain.BookMetadataFetcher {
+func NewGoogleBooksFetcher(apiKey string) domain.BookMetadataFetcher {
 	return &googleBooksFetcher{
 		httpClient: &http.Client{Timeout: 10 * time.Second},
+		apiKey:     apiKey,
 	}
 }
 
 func (f *googleBooksFetcher) FetchByISBN(ctx context.Context, isbn string) (*domain.Book, error) {
-	url := fmt.Sprintf("https://www.googleapis.com/books/v1/volumes?q=isbn:%s", isbn)
+	url := fmt.Sprintf("https://www.googleapis.com/books/v1/volumes?q=isbn:%s&key=%s", isbn, f.apiKey)
 
 	req, _ := http.NewRequestWithContext(ctx, "GET", url, nil)
 	resp, err := f.httpClient.Do(req)
@@ -44,6 +46,13 @@ func (f *googleBooksFetcher) FetchByISBN(ctx context.Context, isbn string) (*dom
 		return nil, err
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		if resp.StatusCode == http.StatusTooManyRequests {
+			return nil, fmt.Errorf("google books api limit exceeded (429 Too Many Requests)")
+		}
+		return nil, fmt.Errorf("google books api error: %s", resp.Status)
+	}
 
 	var apiResp googleBooksResponse
 	if err := json.NewDecoder(resp.Body).Decode(&apiResp); err != nil {
