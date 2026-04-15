@@ -71,6 +71,6 @@ func (u *userBookUsecase) UpdateReadingStatus(ctx context.Context, userID, bookI
 	return track, nil
 }
 
-func (u *userBookUsecase) GetUserLibrary(ctx context.Context, userID string) ([]*domain.UserBookWithMetadata, error) {
-	return u.userBookRepo.GetByUserID(ctx, userID)
+func (u *userBookUsecase) GetUserLibrary(ctx context.Context, userID string, status string) ([]*domain.UserBookWithMetadata, error) {
+	return u.userBookRepo.GetByUserID(ctx, userID, status)
 }

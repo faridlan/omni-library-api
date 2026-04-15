@@ -65,14 +65,19 @@ func (r *userBookRepository) UpdateProgress(ctx context.Context, ub *domain.User
 	return result.Error
 }
 
-func (r *userBookRepository) GetByUserID(ctx context.Context, userID string) ([]*domain.UserBookWithMetadata, error) {
+func (r *userBookRepository) GetByUserID(ctx context.Context, userID string, status string) ([]*domain.UserBookWithMetadata, error) {
 	var dbModels []UserBookModel
 
 	// Kita gunakan Preload("Book") agar GORM otomatis melakukan JOIN ke tabel books
-	result := r.db.WithContext(ctx).Table("user_books").
+	query := r.db.WithContext(ctx).Table("user_books").
 		Preload("Book").
-		Where("user_id = ?", userID).
-		Find(&dbModels)
+		Where("user_id = ?", userID)
+
+	if status != "" {
+		query = query.Where("status = ?", status)
+	}
+
+	result := query.Find(&dbModels)
 
 	if result.Error != nil {
 		return nil, result.Error

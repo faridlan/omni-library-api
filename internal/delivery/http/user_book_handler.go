@@ -64,8 +64,10 @@ func (h *UserBookHandler) UpdateProgress(c *fiber.Ctx) error {
 }
 
 func (h *UserBookHandler) GetMyLibrary(c *fiber.Ctx) error {
+
+	statusFilter := c.Query("status")
 	// Gunakan DummyUserID yang sama seperti sebelumnya
-	books, err := h.usecase.GetUserLibrary(c.Context(), DummyUserID)
+	books, err := h.usecase.GetUserLibrary(c.Context(), DummyUserID, statusFilter)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
