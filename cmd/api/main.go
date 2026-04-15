@@ -30,18 +30,23 @@ func main() {
 
 	db := postgres.InitDB(dbUser, dbPassword, dbHost, dbPort, dbName)
 
-	// 2. Inisialisasi Layers (Dependency Injection)
+	// Fitur Book Metadata
 	bookRepo := postgres.NewBookRepository(db)
 	bookFetcher := external.NewGoogleBooksFetcher(apiKey)
 	bookUsecase := usecase.NewBookUsecase(bookRepo, bookFetcher)
 
-	// 3. Setup Fiber
+	// Fitur Reading Tracker
+	userBookRepo := postgres.NewUserBookRepository(db)
+	userBookUsecase := usecase.NewUserBookUsecase(userBookRepo)
+
+	// Setup Fiber & Route
 	app := fiber.New()
 	api := app.Group("/api")
 
-	// 4. Register Handler
+	// Daftarkan Handler
 	http.NewBookHandler(api, bookUsecase)
+	http.NewUserBookHandler(api, userBookUsecase)
 
-	// 5. Start Server
+	// Start Server
 	log.Fatal(app.Listen(":8080"))
 }
