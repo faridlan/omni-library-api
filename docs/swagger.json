@@ -1,0 +1,153 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Ini adalah dokumentasi API untuk MVP OmniLibrary.",
+        "title": "OmniLibrary API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "host": "localhost:8080",
+    "basePath": "/",
+    "paths": {
+        "/api/books": {
+            "get": {
+                "description": "Mengambil daftar seluruh buku yang tersimpan di database lokal",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Books"
+                ],
+                "summary": "Ambil Katalog Buku",
+                "responses": {
+                    "200": {
+                        "description": "Berhasil mengambil daftar buku",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_domain.Book"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_delivery_http.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/books/fetch": {
+            "post": {
+                "description": "Mencari buku di Google Books via ISBN dan menyimpannya ke database lokal",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Books"
+                ],
+                "summary": "Ambil \u0026 Simpan Metadata Buku",
+                "parameters": [
+                    {
+                        "description": "Payload berisi ISBN",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_delivery_http.FetchBookRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_domain.Book"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_delivery_http.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_delivery_http.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "github_com_faridlan_omni-library-api_internal_domain.Book": {
+            "type": "object",
+            "properties": {
+                "authors": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "cover_url": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "description": "Menggunakan string untuk menampung UUID",
+                    "type": "string"
+                },
+                "isbn": {
+                    "type": "string"
+                },
+                "page_count": {
+                    "type": "integer"
+                },
+                "published_date": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_delivery_http.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "detail": {
+                    "type": "string"
+                },
+                "error": {
+                    "type": "string",
+                    "example": "buku tidak ditemukan"
+                }
+            }
+        },
+        "internal_delivery_http.FetchBookRequest": {
+            "type": "object",
+            "required": [
+                "isbn"
+            ],
+            "properties": {
+                "isbn": {
+                    "type": "string",
+                    "example": "9786020633176"
+                }
+            }
+        }
+    }
+}

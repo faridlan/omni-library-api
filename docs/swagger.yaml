@@ -1,0 +1,102 @@
+basePath: /
+definitions:
+  github_com_faridlan_omni-library-api_internal_domain.Book:
+    properties:
+      authors:
+        items:
+          type: string
+        type: array
+      cover_url:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        description: Menggunakan string untuk menampung UUID
+        type: string
+      isbn:
+        type: string
+      page_count:
+        type: integer
+      published_date:
+        type: string
+      title:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  internal_delivery_http.ErrorResponse:
+    properties:
+      detail:
+        type: string
+      error:
+        example: buku tidak ditemukan
+        type: string
+    type: object
+  internal_delivery_http.FetchBookRequest:
+    properties:
+      isbn:
+        example: "9786020633176"
+        type: string
+    required:
+    - isbn
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: Ini adalah dokumentasi API untuk MVP OmniLibrary.
+  title: OmniLibrary API
+  version: "1.0"
+paths:
+  /api/books:
+    get:
+      description: Mengambil daftar seluruh buku yang tersimpan di database lokal
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Berhasil mengambil daftar buku
+          schema:
+            items:
+              $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_domain.Book'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_delivery_http.ErrorResponse'
+      summary: Ambil Katalog Buku
+      tags:
+      - Books
+  /api/books/fetch:
+    post:
+      consumes:
+      - application/json
+      description: Mencari buku di Google Books via ISBN dan menyimpannya ke database
+        lokal
+      parameters:
+      - description: Payload berisi ISBN
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_delivery_http.FetchBookRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_domain.Book'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_delivery_http.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_delivery_http.ErrorResponse'
+      summary: Ambil & Simpan Metadata Buku
+      tags:
+      - Books
+swagger: "2.0"

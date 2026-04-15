@@ -10,9 +10,17 @@ import (
 	"github.com/faridlan/omni-library-api/internal/usecase"
 	"github.com/joho/godotenv"
 
+	_ "github.com/faridlan/omni-library-api/docs"
+
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/swagger"
 )
 
+// @title OmniLibrary API
+// @version 1.0
+// @description Ini adalah dokumentasi API untuk MVP OmniLibrary.
+// @host localhost:8080
+// @BasePath /
 func main() {
 
 	err := godotenv.Load()
@@ -45,6 +53,7 @@ func main() {
 
 	// Setup Fiber & Route
 	app := fiber.New()
+	app.Get("/swagger/*", swagger.HandlerDefault)
 	api := app.Group("/api")
 
 	// Daftarkan Handler
