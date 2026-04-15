@@ -22,6 +22,10 @@ type BookModel struct {
 	UpdatedAt     time.Time
 }
 
+func (BookModel) TableName() string {
+	return "books"
+}
+
 // ToDomain mengonversi dari Model Database kembali menjadi Model Domain murni
 func (m *BookModel) ToDomain() *domain.Book {
 	return &domain.Book{

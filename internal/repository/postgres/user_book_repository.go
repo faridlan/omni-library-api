@@ -64,3 +64,27 @@ func (r *userBookRepository) UpdateProgress(ctx context.Context, ub *domain.User
 
 	return result.Error
 }
+
+func (r *userBookRepository) GetByUserID(ctx context.Context, userID string) ([]*domain.UserBookWithMetadata, error) {
+	var dbModels []UserBookModel
+
+	// Kita gunakan Preload("Book") agar GORM otomatis melakukan JOIN ke tabel books
+	result := r.db.WithContext(ctx).Table("user_books").
+		Preload("Book").
+		Where("user_id = ?", userID).
+		Find(&dbModels)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	var results []*domain.UserBookWithMetadata
+	for _, m := range dbModels {
+		results = append(results, &domain.UserBookWithMetadata{
+			UserBook: *m.ToDomain(),
+			Book:     *m.Book.ToDomain(), // Konversi BookModel ke Domain Book
+		})
+	}
+
+	return results, nil
+}

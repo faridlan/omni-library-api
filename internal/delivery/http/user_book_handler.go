@@ -16,6 +16,7 @@ func NewUserBookHandler(router fiber.Router, u domain.UserBookUsecase) {
 	libGroup := router.Group("/library")
 	libGroup.Post("/", handler.AddBook)
 	libGroup.Put("/:book_id", handler.UpdateProgress)
+	libGroup.Get("/", handler.GetMyLibrary)
 }
 
 // ⚠️ HARDCODE SEMENTARA (Ganti dengan UUID dari database-mu)
@@ -60,4 +61,14 @@ func (h *UserBookHandler) UpdateProgress(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).JSON(result)
+}
+
+func (h *UserBookHandler) GetMyLibrary(c *fiber.Ctx) error {
+	// Gunakan DummyUserID yang sama seperti sebelumnya
+	books, err := h.usecase.GetUserLibrary(c.Context(), DummyUserID)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(books)
 }

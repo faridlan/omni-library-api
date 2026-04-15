@@ -16,6 +16,11 @@ type UserBookModel struct {
 	Rating      int
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
+	Book        BookModel `gorm:"foreignKey:BookID"`
+}
+
+func (UserBookModel) TableName() string {
+	return "user_books"
 }
 
 func (m *UserBookModel) ToDomain() *domain.UserBook {

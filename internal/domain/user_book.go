@@ -19,6 +19,11 @@ type UserBook struct {
 	UpdatedAt   time.Time `json:"updated_at"`
 }
 
+type UserBookWithMetadata struct {
+	UserBook
+	Book Book `json:"book"` // Informasi detail buku
+}
+
 // ==========================================
 // 2. INTERFACES
 // ==========================================
@@ -31,6 +36,7 @@ type UserBookRepository interface {
 
 	// Mengecek apakah buku sudah ada di rak user
 	GetByUserAndBookID(ctx context.Context, userID, bookID string) (*UserBook, error)
+	GetByUserID(ctx context.Context, userID string) ([]*UserBookWithMetadata, error)
 }
 
 type UserBookUsecase interface {
@@ -39,4 +45,5 @@ type UserBookUsecase interface {
 
 	// Fitur: User ingin mengupdate dia sampai halaman berapa / kasih rating
 	UpdateReadingStatus(ctx context.Context, userID, bookID, status string, page, rating int) (*UserBook, error)
+	GetUserLibrary(ctx context.Context, userID string) ([]*UserBookWithMetadata, error)
 }
