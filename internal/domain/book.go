@@ -33,6 +33,7 @@ type Book struct {
 type BookRepository interface {
 	GetByISBN(ctx context.Context, isbn string) (*Book, error)
 	Create(ctx context.Context, book *Book) error
+	GetAll(ctx context.Context) ([]*Book, error)
 }
 
 // BookUsecase adalah kontrak untuk layer Usecase (otak bisnis kita).
@@ -40,6 +41,7 @@ type BookRepository interface {
 type BookUsecase interface {
 	// Fitur 3: Mengambil data dari API luar dan menyimpannya
 	FetchAndSaveMetadata(ctx context.Context, isbn string) (*Book, error)
+	GetAllBooks(ctx context.Context) ([]*Book, error)
 }
 
 // BookMetadataFetcher adalah kontrak untuk mengambil data dari API eksternal (Google Books)

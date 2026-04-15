@@ -44,3 +44,26 @@ func (r *bookRepository) GetByISBN(ctx context.Context, isbn string) (*domain.Bo
 	// 3. Konversi kembali ke Domain sebelum dikirim ke Usecase
 	return dbModel.ToDomain(), nil
 }
+
+// GetAll mengambil seluruh data buku dari tabel 'books'
+func (r *bookRepository) GetAll(ctx context.Context) ([]*domain.Book, error) {
+	var dbModels []BookModel // Menampung hasil dari GORM/Postgres
+
+	// Gunakan Find() untuk mengambil semua baris data
+	result := r.db.WithContext(ctx).Table("books").Find(&dbModels)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	// Kita buat slice kosong untuk menampung data Domain murni
+	var books []*domain.Book
+
+	// Looping untuk mengonversi setiap dbModel kembali menjadi Domain murni
+	for _, model := range dbModels {
+		// Karena range di Golang menggunakan pass-by-value, kita butuh variable lokal
+		m := model
+		books = append(books, m.ToDomain())
+	}
+
+	return books, nil
+}

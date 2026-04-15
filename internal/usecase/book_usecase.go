@@ -55,3 +55,14 @@ func (u *bookUsecase) FetchAndSaveMetadata(ctx context.Context, isbn string) (*d
 	// Berhasil! Kembalikan buku yang baru saja disimpan
 	return newBook, nil
 }
+
+// GetAllBooks mengambil seluruh katalog buku dari database lokal
+func (u *bookUsecase) GetAllBooks(ctx context.Context) ([]*domain.Book, error) {
+	// Memanggil fungsi GetAll yang baru saja kita buat di Repository
+	books, err := u.bookRepo.GetAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return books, nil
+}
