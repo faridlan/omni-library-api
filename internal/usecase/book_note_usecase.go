@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"context"
-	"errors"
 
 	"github.com/faridlan/omni-library-api/internal/domain"
 )
@@ -18,10 +17,6 @@ func NewBookNoteUsecase(repo domain.BookNoteRepository) domain.BookNoteUsecase {
 }
 
 func (u *bookNoteUsecase) AddNote(ctx context.Context, note *domain.BookNote) error {
-	// ATURAN BISNIS: Quote wajib diisi
-	if note.Quote == "" {
-		return errors.New("kutipan (quote) tidak boleh kosong")
-	}
 
 	// Lanjut simpan ke database
 	return u.noteRepo.Create(ctx, note)

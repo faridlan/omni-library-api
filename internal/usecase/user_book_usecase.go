@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"context"
-	"errors"
 
 	"github.com/faridlan/omni-library-api/internal/domain"
 )
@@ -24,7 +23,7 @@ func (u *userBookUsecase) TrackNewBook(ctx context.Context, userID, bookID strin
 		return nil, err
 	}
 	if existing != nil {
-		return nil, errors.New("buku sudah ada di dalam rak bacaan kamu")
+		return nil, domain.ErrConflict
 	}
 
 	// ATURAN 2: Jika belum ada, masukkan sebagai buku baru dengan status default
@@ -49,7 +48,7 @@ func (u *userBookUsecase) UpdateReadingStatus(ctx context.Context, userID, bookI
 		return nil, err
 	}
 	if track == nil {
-		return nil, errors.New("buku tidak ditemukan di rak kamu")
+		return nil, domain.ErrNotFound
 	}
 
 	// ATURAN 2: Update data yang boleh diubah

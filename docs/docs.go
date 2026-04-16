@@ -38,7 +38,7 @@ const docTemplate = `{
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_delivery_http.ErrorResponse"
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
                         }
                     }
                 }
@@ -78,13 +78,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_delivery_http.ErrorResponse"
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Buku tidak ditemukan di Google Books",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_delivery_http.ErrorResponse"
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
                         }
                     }
                 }
@@ -118,10 +124,16 @@ const docTemplate = `{
                             }
                         }
                     },
+                    "404": {
+                        "description": "Rak buku tidak ditemukan",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_delivery_http.ErrorResponse"
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
                         }
                     }
                 }
@@ -159,13 +171,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Format JSON salah",
                         "schema": {
-                            "$ref": "#/definitions/internal_delivery_http.ErrorResponse"
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
                         }
                     },
                     "409": {
                         "description": "Buku sudah ada di rak (Conflict)",
                         "schema": {
-                            "$ref": "#/definitions/internal_delivery_http.ErrorResponse"
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Gagal menyimpan buku ke rak",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
                         }
                     }
                 }
@@ -212,13 +230,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Format JSON salah",
                         "schema": {
-                            "$ref": "#/definitions/internal_delivery_http.ErrorResponse"
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Buku tidak ditemukan di rak",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_delivery_http.ErrorResponse"
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
                         }
                     }
                 }
@@ -253,10 +277,16 @@ const docTemplate = `{
                             }
                         }
                     },
+                    "404": {
+                        "description": "Buku tidak ditemukan di rak",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_delivery_http.ErrorResponse"
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
                         }
                     }
                 }
@@ -301,7 +331,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Format JSON salah atau Quote kosong",
                         "schema": {
-                            "$ref": "#/definitions/internal_delivery_http.ErrorResponse"
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Buku tidak ditemukan di rak",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Gagal menyimpan catatan",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
                         }
                     }
                 }
@@ -447,6 +489,18 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_faridlan_omni-library-api_internal_utils.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "detail": {
+                    "type": "string"
+                },
+                "error": {
+                    "type": "string",
+                    "example": "pesan error"
+                }
+            }
+        },
         "internal_delivery_http.AddBookRequest": {
             "type": "object",
             "required": [
@@ -482,18 +536,6 @@ const docTemplate = `{
                         "Inspiratif",
                         "Programming"
                     ]
-                }
-            }
-        },
-        "internal_delivery_http.ErrorResponse": {
-            "type": "object",
-            "properties": {
-                "detail": {
-                    "type": "string"
-                },
-                "error": {
-                    "type": "string",
-                    "example": "buku tidak ditemukan"
                 }
             }
         },

@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"context"
-	"errors"
 
 	"github.com/faridlan/omni-library-api/internal/domain"
 )
@@ -43,7 +42,7 @@ func (u *bookUsecase) FetchAndSaveMetadata(ctx context.Context, isbn string) (*d
 
 	// Jika Google Books tidak punya bukunya
 	if newBook == nil {
-		return nil, errors.New("buku tidak ditemukan di database publik")
+		return nil, domain.ErrNotFound
 	}
 
 	// ATURAN BISNIS 3: Buku ditemukan di internet! Simpan ke database lokal kita

@@ -2,6 +2,7 @@ package http
 
 import (
 	"github.com/faridlan/omni-library-api/internal/domain"
+	"github.com/faridlan/omni-library-api/internal/utils"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -26,24 +27,27 @@ func NewBookHandler(router fiber.Router, bu domain.BookUsecase) {
 // @Produce json
 // @Param request body FetchBookRequest true "Payload berisi ISBN"
 // @Success 200 {object} domain.Book
-// @Failure 400 {object} ErrorResponse
-// @Failure 500 {object} ErrorResponse
+// @Failure 400 {object} utils.ErrorResponse
+// @Failure 404 {object} utils.ErrorResponse "Buku tidak ditemukan di Google Books"
+// @Failure 500 {object} utils.ErrorResponse
 // @Router /api/books/fetch [post]
 func (h *BookHandler) FetchAndSave(c *fiber.Ctx) error {
 
 	var req FetchBookRequest
 
+	// 1. Tangkap JSON
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(ErrorResponse{Error: "invalid request body"})
+		return utils.SendError(c, fiber.StatusBadRequest, "Format JSON salah")
 	}
 
-	if req.ISBN == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(ErrorResponse{Error: "ISBN is required"})
+	// 2. VALIDASI OTOMATIS! (Membaca tag validate:"required" di DTO)
+	if err := utils.ValidateStruct(&req); err != nil {
+		return utils.SendError(c, fiber.StatusBadRequest, err.Error())
 	}
 
 	book, err := h.bookUsecase.FetchAndSaveMetadata(c.Context(), req.ISBN)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(ErrorResponse{Error: err.Error()})
+		return utils.HandleDomainError(c, err)
 	}
 
 	return c.Status(fiber.StatusOK).JSON(book)
@@ -55,17 +59,13 @@ func (h *BookHandler) FetchAndSave(c *fiber.Ctx) error {
 // @Tags Books
 // @Produce json
 // @Success 200 {array} domain.Book "Berhasil mengambil daftar buku"
-// @Failure 500 {object} ErrorResponse "Internal Server Error"
+// @Failure 500 {object} utils.ErrorResponse "Internal Server Error"
 // @Router /api/books [get]
 func (h *BookHandler) GetAll(c *fiber.Ctx) error {
-
 	books, err := h.bookUsecase.GetAllBooks(c.Context())
 	if err != nil {
-		// Menggunakan ErrorResponse DTO agar konsisten dengan Swagger
-		return c.Status(fiber.StatusInternalServerError).JSON(ErrorResponse{
-			Error:  "Gagal mengambil data buku",
-			Detail: err.Error(),
-		})
+		// Kita gunakan utils.SendError agar format JSON-nya konsisten 100%
+		return utils.SendError(c, fiber.StatusInternalServerError, "Gagal mengambil data buku", err.Error())
 	}
 
 	if books == nil {

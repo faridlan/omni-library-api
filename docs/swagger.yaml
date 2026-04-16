@@ -91,6 +91,14 @@ definitions:
       user_id:
         type: string
     type: object
+  github_com_faridlan_omni-library-api_internal_utils.ErrorResponse:
+    properties:
+      detail:
+        type: string
+      error:
+        example: pesan error
+        type: string
+    type: object
   internal_delivery_http.AddBookRequest:
     properties:
       book_id:
@@ -116,14 +124,6 @@ definitions:
         type: array
     required:
     - quote
-    type: object
-  internal_delivery_http.ErrorResponse:
-    properties:
-      detail:
-        type: string
-      error:
-        example: buku tidak ditemukan
-        type: string
     type: object
   internal_delivery_http.FetchBookRequest:
     properties:
@@ -167,7 +167,7 @@ paths:
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/internal_delivery_http.ErrorResponse'
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
       summary: Ambil Katalog Buku
       tags:
       - Books
@@ -194,11 +194,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/internal_delivery_http.ErrorResponse'
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+        "404":
+          description: Buku tidak ditemukan di Google Books
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/internal_delivery_http.ErrorResponse'
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
       summary: Ambil & Simpan Metadata Buku
       tags:
       - Books
@@ -220,10 +224,14 @@ paths:
             items:
               $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_domain.UserBookWithMetadata'
             type: array
+        "404":
+          description: Rak buku tidak ditemukan
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/internal_delivery_http.ErrorResponse'
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
       summary: Lihat Isi Rak Buku
       tags:
       - Library
@@ -249,11 +257,15 @@ paths:
         "400":
           description: Format JSON salah
           schema:
-            $ref: '#/definitions/internal_delivery_http.ErrorResponse'
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
         "409":
           description: Buku sudah ada di rak (Conflict)
           schema:
-            $ref: '#/definitions/internal_delivery_http.ErrorResponse'
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+        "500":
+          description: Gagal menyimpan buku ke rak
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
       summary: Tambah Buku ke Rak
       tags:
       - Library
@@ -285,11 +297,15 @@ paths:
         "400":
           description: Format JSON salah
           schema:
-            $ref: '#/definitions/internal_delivery_http.ErrorResponse'
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+        "404":
+          description: Buku tidak ditemukan di rak
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/internal_delivery_http.ErrorResponse'
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
       summary: Update Progres Bacaan
       tags:
       - Library
@@ -312,10 +328,14 @@ paths:
             items:
               $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_domain.BookNote'
             type: array
+        "404":
+          description: Buku tidak ditemukan di rak
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/internal_delivery_http.ErrorResponse'
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
       summary: Ambil Daftar Catatan Buku
       tags:
       - Book Notes
@@ -346,7 +366,15 @@ paths:
         "400":
           description: Format JSON salah atau Quote kosong
           schema:
-            $ref: '#/definitions/internal_delivery_http.ErrorResponse'
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+        "404":
+          description: Buku tidak ditemukan di rak
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+        "500":
+          description: Gagal menyimpan catatan
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
       summary: Tambah Kutipan/Catatan Buku
       tags:
       - Book Notes
