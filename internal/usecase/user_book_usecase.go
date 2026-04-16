@@ -8,15 +8,27 @@ import (
 
 type userBookUsecase struct {
 	userBookRepo domain.UserBookRepository
+	bookRepo     domain.BookRepository
 }
 
-func NewUserBookUsecase(repo domain.UserBookRepository) domain.UserBookUsecase {
+func NewUserBookUsecase(repo domain.UserBookRepository, bRepo domain.BookRepository) domain.UserBookUsecase {
 	return &userBookUsecase{
 		userBookRepo: repo,
+		bookRepo:     bRepo,
 	}
 }
 
 func (u *userBookUsecase) TrackNewBook(ctx context.Context, userID, bookID string) (*domain.UserBook, error) {
+
+	masterBook, err := u.bookRepo.GetByID(ctx, bookID)
+	if err != nil {
+		return nil, err
+	}
+
+	if masterBook == nil {
+		return nil, domain.ErrNotFound
+	}
+
 	// ATURAN 1: Cek apakah buku sudah ada di rak user ini
 	existing, err := u.userBookRepo.GetByUserAndBookID(ctx, userID, bookID)
 	if err != nil {

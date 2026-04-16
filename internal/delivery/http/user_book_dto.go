@@ -6,7 +6,7 @@ package http
 
 // AddBookRequest adalah payload untuk menambahkan buku ke rak
 type AddBookRequest struct {
-	BookID string `json:"book_id" example:"550e8400-e29b-41d4-a716-446655440000" validate:"required"`
+	BookID string `json:"book_id" example:"550e8400-e29b-41d4-a716-446655440000" validate:"required,uuid"`
 }
 
 // UpdateProgressRequest adalah payload untuk mengupdate progres bacaan

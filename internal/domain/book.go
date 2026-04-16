@@ -34,6 +34,7 @@ type BookRepository interface {
 	GetByISBN(ctx context.Context, isbn string) (*Book, error)
 	Create(ctx context.Context, book *Book) error
 	GetAll(ctx context.Context) ([]*Book, error)
+	GetByID(ctx context.Context, id string) (*Book, error)
 }
 
 // BookUsecase adalah kontrak untuk layer Usecase (otak bisnis kita).

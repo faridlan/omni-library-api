@@ -67,3 +67,17 @@ func (r *bookRepository) GetAll(ctx context.Context) ([]*domain.Book, error) {
 
 	return books, nil
 }
+
+func (r *bookRepository) GetByID(ctx context.Context, id string) (*domain.Book, error) {
+	var model BookModel
+	result := r.db.WithContext(ctx).Where("id = ?", id).First(&model)
+
+	if result.Error != nil {
+		if result.Error == gorm.ErrRecordNotFound {
+			return nil, nil // Buku tidak ditemukan, kembalikan nil
+		}
+		return nil, result.Error
+	}
+
+	return model.ToDomain(), nil
+}

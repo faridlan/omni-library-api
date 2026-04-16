@@ -36,6 +36,10 @@ func NewBookNoteHandler(router fiber.Router, u domain.BookNoteUsecase) {
 func (h *BookNoteHandler) AddNote(c *fiber.Ctx) error {
 	userBookID := c.Params("user_book_id")
 
+	if err := utils.ValidateUUID(userBookID, "user_book_id"); err != nil {
+		return utils.SendError(c, fiber.StatusBadRequest, err.Error())
+	}
+
 	// Gunakan DTO yang baru dibuat
 	var req AddNoteRequest
 	if err := c.BodyParser(&req); err != nil {
@@ -73,6 +77,10 @@ func (h *BookNoteHandler) AddNote(c *fiber.Ctx) error {
 // @Router /api/library/{user_book_id}/notes [get]
 func (h *BookNoteHandler) GetNotes(c *fiber.Ctx) error {
 	userBookID := c.Params("user_book_id")
+
+	if err := utils.ValidateUUID(userBookID, "user_book_id"); err != nil {
+		return utils.SendError(c, fiber.StatusBadRequest, err.Error())
+	}
 
 	notes, err := h.usecase.GetNotesForBook(c.Context(), userBookID)
 	if err != nil {

@@ -69,6 +69,10 @@ func (h *UserBookHandler) AddBook(c *fiber.Ctx) error {
 func (h *UserBookHandler) UpdateProgress(c *fiber.Ctx) error {
 	bookID := c.Params("book_id")
 
+	if err := utils.ValidateUUID(bookID, "book_id"); err != nil {
+		return utils.SendError(c, fiber.StatusBadRequest, err.Error())
+	}
+
 	var req UpdateProgressRequest
 	if err := c.BodyParser(&req); err != nil {
 		return utils.SendError(c, fiber.StatusBadRequest, "Format JSON salah")

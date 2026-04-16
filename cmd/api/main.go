@@ -46,11 +46,11 @@ func main() {
 
 	// Fitur Reading Tracker
 	userBookRepo := postgres.NewUserBookRepository(db)
-	userBookUsecase := usecase.NewUserBookUsecase(userBookRepo)
+	userBookUsecase := usecase.NewUserBookUsecase(userBookRepo, bookRepo)
 
 	// Fitur Book Notes (Quotes & Tags)
 	bookNoteRepo := postgres.NewBookNoteRepository(db)
-	bookNoteUsecase := usecase.NewBookNoteUsecase(bookNoteRepo)
+	bookNoteUsecase := usecase.NewBookNoteUsecase(bookNoteRepo, userBookRepo)
 
 	// Setup Fiber & Route
 	app := fiber.New()

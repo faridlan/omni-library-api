@@ -23,3 +23,11 @@ func ValidateStruct(data any) error {
 	}
 	return nil
 }
+
+func ValidateUUID(id string, paramName string) error {
+	err := validate.Var(id, "required,uuid")
+	if err != nil {
+		return fmt.Errorf("kolom '%s' gagal pada validasi 'uuid'", paramName)
+	}
+	return nil
+}

@@ -37,6 +37,7 @@ type UserBookRepository interface {
 	// Mengecek apakah buku sudah ada di rak user
 	GetByUserAndBookID(ctx context.Context, userID, bookID string) (*UserBook, error)
 	GetByUserID(ctx context.Context, userID string, status string) ([]*UserBookWithMetadata, error)
+	GetByID(ctx context.Context, userID string) (*UserBook, error)
 }
 
 type UserBookUsecase interface {

@@ -7,16 +7,27 @@ import (
 )
 
 type bookNoteUsecase struct {
-	noteRepo domain.BookNoteRepository
+	noteRepo     domain.BookNoteRepository
+	userBookRepo domain.UserBookRepository
 }
 
-func NewBookNoteUsecase(repo domain.BookNoteRepository) domain.BookNoteUsecase {
+func NewBookNoteUsecase(repo domain.BookNoteRepository, ubRepo domain.UserBookRepository) domain.BookNoteUsecase {
 	return &bookNoteUsecase{
-		noteRepo: repo,
+		noteRepo:     repo,
+		userBookRepo: ubRepo,
 	}
 }
 
 func (u *bookNoteUsecase) AddNote(ctx context.Context, note *domain.BookNote) error {
+
+	userBook, err := u.userBookRepo.GetByID(ctx, note.UserBookID)
+	if err != nil {
+		return err
+	}
+
+	if userBook == nil {
+		return domain.ErrNotFound
+	}
 
 	// Lanjut simpan ke database
 	return u.noteRepo.Create(ctx, note)

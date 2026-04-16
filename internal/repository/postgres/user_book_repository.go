@@ -93,3 +93,15 @@ func (r *userBookRepository) GetByUserID(ctx context.Context, userID string, sta
 
 	return results, nil
 }
+
+func (r *userBookRepository) GetByID(ctx context.Context, id string) (*domain.UserBook, error) {
+	var model UserBookModel
+	result := r.db.WithContext(ctx).Table("user_books").Where("id = ?", id).First(&model)
+	if result.Error != nil {
+		if result.Error == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
+		return nil, result.Error
+	}
+	return model.ToDomain(), nil
+}
