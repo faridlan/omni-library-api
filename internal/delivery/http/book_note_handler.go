@@ -19,45 +19,61 @@ func NewBookNoteHandler(router fiber.Router, u domain.BookNoteUsecase) {
 	noteGroup.Get("/", handler.GetNotes)
 }
 
+// AddNote godoc
+// @Summary Tambah Kutipan/Catatan Buku
+// @Description Menyimpan kutipan favorit, referensi halaman, dan tag untuk buku tertentu yang ada di rak
+// @Tags Book Notes
+// @Accept json
+// @Produce json
+// @Param user_book_id path string true "ID progres buku di rak (Bukan master Book ID)"
+// @Param request body AddNoteRequest true "Payload isi kutipan dan tag"
+// @Success 201 {object} domain.BookNote "Catatan berhasil disimpan"
+// @Failure 400 {object} ErrorResponse "Format JSON salah atau Quote kosong"
+// @Router /api/library/{user_book_id}/notes [post]
 func (h *BookNoteHandler) AddNote(c *fiber.Ctx) error {
-	// Tangkap user_book_id dari URL
 	userBookID := c.Params("user_book_id")
 
-	type request struct {
-		Quote         string   `json:"quote"`
-		PageReference int      `json:"page_reference"`
-		Tags          []string `json:"tags"`
-	}
-
-	var req request
+	// Gunakan DTO yang baru dibuat
+	var req AddNoteRequest
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Format JSON salah"})
+		return c.Status(fiber.StatusBadRequest).JSON(ErrorResponse{Error: "Format JSON salah"})
 	}
 
-	// Susun data menjadi struct Domain
 	note := &domain.BookNote{
 		UserBookID:    userBookID,
 		Quote:         req.Quote,
 		PageReference: req.PageReference,
-		Tags:          req.Tags, // Array string dari JSON langsung diteruskan
+		Tags:          req.Tags,
 	}
 
-	// Eksekusi lewat Usecase
 	err := h.usecase.AddNote(c.Context(), note)
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+		return c.Status(fiber.StatusBadRequest).JSON(ErrorResponse{Error: err.Error()})
 	}
 
 	return c.Status(fiber.StatusCreated).JSON(note)
 }
 
+// GetNotes godoc
+// @Summary Ambil Daftar Catatan Buku
+// @Description Melihat seluruh kutipan dan catatan yang pernah ditulis untuk satu buku spesifik di rak
+// @Tags Book Notes
+// @Produce json
+// @Param user_book_id path string true "ID progres buku di rak"
+// @Success 200 {array} domain.BookNote "Daftar catatan"
+// @Failure 500 {object} ErrorResponse "Internal Server Error"
+// @Router /api/library/{user_book_id}/notes [get]
 func (h *BookNoteHandler) GetNotes(c *fiber.Ctx) error {
-	// Tangkap user_book_id dari URL
 	userBookID := c.Params("user_book_id")
 
 	notes, err := h.usecase.GetNotesForBook(c.Context(), userBookID)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(ErrorResponse{Error: err.Error()})
+	}
+
+	// Best practice: Cegah error null di Frontend jika belum ada notes sama sekali
+	if notes == nil {
+		notes = make([]*domain.BookNote, 0)
 	}
 
 	return c.Status(fiber.StatusOK).JSON(notes)

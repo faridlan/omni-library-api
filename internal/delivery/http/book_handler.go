@@ -58,22 +58,19 @@ func (h *BookHandler) FetchAndSave(c *fiber.Ctx) error {
 // @Failure 500 {object} ErrorResponse "Internal Server Error"
 // @Router /api/books [get]
 func (h *BookHandler) GetAll(c *fiber.Ctx) error {
-	// Memanggil Usecase
+
 	books, err := h.bookUsecase.GetAllBooks(c.Context())
 	if err != nil {
-		// Kita gunakan ErrorResponse DTO agar konsisten dengan Swagger
+		// Menggunakan ErrorResponse DTO agar konsisten dengan Swagger
 		return c.Status(fiber.StatusInternalServerError).JSON(ErrorResponse{
 			Error:  "Gagal mengambil data buku",
 			Detail: err.Error(),
 		})
 	}
 
-	// Jika data kosong, pastikan kita mengirim array kosong [] bukan null
-	// Ini adalah best practice agar Frontend/Mobile Developer tidak kena error Null Pointer
 	if books == nil {
 		books = make([]*domain.Book, 0)
 	}
 
-	// Fiber secara otomatis akan mengonversi slice []*domain.Book menjadi JSON Array
 	return c.Status(fiber.StatusOK).JSON(books)
 }

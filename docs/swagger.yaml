@@ -26,6 +26,97 @@ definitions:
       updated_at:
         type: string
     type: object
+  github_com_faridlan_omni-library-api_internal_domain.BookNote:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      page_reference:
+        type: integer
+      quote:
+        type: string
+      tags:
+        description: Array murni Golang
+        items:
+          type: string
+        type: array
+      updated_at:
+        type: string
+      user_book_id:
+        description: Relasi ke buku di rak user
+        type: string
+    type: object
+  github_com_faridlan_omni-library-api_internal_domain.UserBook:
+    properties:
+      book_id:
+        type: string
+      created_at:
+        type: string
+      current_page:
+        type: integer
+      id:
+        type: string
+      rating:
+        type: integer
+      status:
+        description: '''TO_READ'', ''READING'', ''FINISHED'''
+        type: string
+      updated_at:
+        type: string
+      user_id:
+        type: string
+    type: object
+  github_com_faridlan_omni-library-api_internal_domain.UserBookWithMetadata:
+    properties:
+      book:
+        allOf:
+        - $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_domain.Book'
+        description: Informasi detail buku
+      book_id:
+        type: string
+      created_at:
+        type: string
+      current_page:
+        type: integer
+      id:
+        type: string
+      rating:
+        type: integer
+      status:
+        description: '''TO_READ'', ''READING'', ''FINISHED'''
+        type: string
+      updated_at:
+        type: string
+      user_id:
+        type: string
+    type: object
+  internal_delivery_http.AddBookRequest:
+    properties:
+      book_id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+    required:
+    - book_id
+    type: object
+  internal_delivery_http.AddNoteRequest:
+    properties:
+      page_reference:
+        example: 42
+        type: integer
+      quote:
+        example: Bekerjalah seperti programmer pemalas...
+        type: string
+      tags:
+        example:
+        - Inspiratif
+        - Programming
+        items:
+          type: string
+        type: array
+    required:
+    - quote
+    type: object
   internal_delivery_http.ErrorResponse:
     properties:
       detail:
@@ -41,6 +132,18 @@ definitions:
         type: string
     required:
     - isbn
+    type: object
+  internal_delivery_http.UpdateProgressRequest:
+    properties:
+      current_page:
+        example: 125
+        type: integer
+      rating:
+        example: 5
+        type: integer
+      status:
+        example: READING
+        type: string
     type: object
 host: localhost:8080
 info:
@@ -99,4 +202,152 @@ paths:
       summary: Ambil & Simpan Metadata Buku
       tags:
       - Books
+  /api/library:
+    get:
+      description: Menampilkan seluruh buku yang ada di rak personal user, lengkap
+        dengan metadata bukunya. Bisa difilter berdasarkan status.
+      parameters:
+      - description: 'Filter status: TO_READ, READING, FINISHED'
+        in: query
+        name: status
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Daftar buku di rak
+          schema:
+            items:
+              $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_domain.UserBookWithMetadata'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_delivery_http.ErrorResponse'
+      summary: Lihat Isi Rak Buku
+      tags:
+      - Library
+    post:
+      consumes:
+      - application/json
+      description: 'Memasukkan buku dari database master ke dalam rak bacaan personal
+        user (Default: TO_READ)'
+      parameters:
+      - description: Payload berisi ID Buku
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_delivery_http.AddBookRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Buku berhasil ditambahkan
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_domain.UserBook'
+        "400":
+          description: Format JSON salah
+          schema:
+            $ref: '#/definitions/internal_delivery_http.ErrorResponse'
+        "409":
+          description: Buku sudah ada di rak (Conflict)
+          schema:
+            $ref: '#/definitions/internal_delivery_http.ErrorResponse'
+      summary: Tambah Buku ke Rak
+      tags:
+      - Library
+  /api/library/{book_id}:
+    put:
+      consumes:
+      - application/json
+      description: Mengubah status, halaman saat ini, dan memberikan rating pada buku
+        yang sedang dibaca
+      parameters:
+      - description: ID Buku di database master
+        in: path
+        name: book_id
+        required: true
+        type: string
+      - description: Payload update progres
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_delivery_http.UpdateProgressRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Berhasil update progres
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_domain.UserBook'
+        "400":
+          description: Format JSON salah
+          schema:
+            $ref: '#/definitions/internal_delivery_http.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_delivery_http.ErrorResponse'
+      summary: Update Progres Bacaan
+      tags:
+      - Library
+  /api/library/{user_book_id}/notes:
+    get:
+      description: Melihat seluruh kutipan dan catatan yang pernah ditulis untuk satu
+        buku spesifik di rak
+      parameters:
+      - description: ID progres buku di rak
+        in: path
+        name: user_book_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Daftar catatan
+          schema:
+            items:
+              $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_domain.BookNote'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_delivery_http.ErrorResponse'
+      summary: Ambil Daftar Catatan Buku
+      tags:
+      - Book Notes
+    post:
+      consumes:
+      - application/json
+      description: Menyimpan kutipan favorit, referensi halaman, dan tag untuk buku
+        tertentu yang ada di rak
+      parameters:
+      - description: ID progres buku di rak (Bukan master Book ID)
+        in: path
+        name: user_book_id
+        required: true
+        type: string
+      - description: Payload isi kutipan dan tag
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_delivery_http.AddNoteRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Catatan berhasil disimpan
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_domain.BookNote'
+        "400":
+          description: Format JSON salah atau Quote kosong
+          schema:
+            $ref: '#/definitions/internal_delivery_http.ErrorResponse'
+      summary: Tambah Kutipan/Catatan Buku
+      tags:
+      - Book Notes
 swagger: "2.0"

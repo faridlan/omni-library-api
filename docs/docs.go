@@ -89,6 +89,223 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/api/library": {
+            "get": {
+                "description": "Menampilkan seluruh buku yang ada di rak personal user, lengkap dengan metadata bukunya. Bisa difilter berdasarkan status.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Library"
+                ],
+                "summary": "Lihat Isi Rak Buku",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter status: TO_READ, READING, FINISHED",
+                        "name": "status",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Daftar buku di rak",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_domain.UserBookWithMetadata"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_delivery_http.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Memasukkan buku dari database master ke dalam rak bacaan personal user (Default: TO_READ)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Library"
+                ],
+                "summary": "Tambah Buku ke Rak",
+                "parameters": [
+                    {
+                        "description": "Payload berisi ID Buku",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_delivery_http.AddBookRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Buku berhasil ditambahkan",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_domain.UserBook"
+                        }
+                    },
+                    "400": {
+                        "description": "Format JSON salah",
+                        "schema": {
+                            "$ref": "#/definitions/internal_delivery_http.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Buku sudah ada di rak (Conflict)",
+                        "schema": {
+                            "$ref": "#/definitions/internal_delivery_http.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/library/{book_id}": {
+            "put": {
+                "description": "Mengubah status, halaman saat ini, dan memberikan rating pada buku yang sedang dibaca",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Library"
+                ],
+                "summary": "Update Progres Bacaan",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID Buku di database master",
+                        "name": "book_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Payload update progres",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_delivery_http.UpdateProgressRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Berhasil update progres",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_domain.UserBook"
+                        }
+                    },
+                    "400": {
+                        "description": "Format JSON salah",
+                        "schema": {
+                            "$ref": "#/definitions/internal_delivery_http.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_delivery_http.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/library/{user_book_id}/notes": {
+            "get": {
+                "description": "Melihat seluruh kutipan dan catatan yang pernah ditulis untuk satu buku spesifik di rak",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Book Notes"
+                ],
+                "summary": "Ambil Daftar Catatan Buku",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID progres buku di rak",
+                        "name": "user_book_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Daftar catatan",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_domain.BookNote"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_delivery_http.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Menyimpan kutipan favorit, referensi halaman, dan tag untuk buku tertentu yang ada di rak",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Book Notes"
+                ],
+                "summary": "Tambah Kutipan/Catatan Buku",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID progres buku di rak (Bukan master Book ID)",
+                        "name": "user_book_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Payload isi kutipan dan tag",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_delivery_http.AddNoteRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Catatan berhasil disimpan",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_domain.BookNote"
+                        }
+                    },
+                    "400": {
+                        "description": "Format JSON salah atau Quote kosong",
+                        "schema": {
+                            "$ref": "#/definitions/internal_delivery_http.ErrorResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -131,6 +348,143 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_faridlan_omni-library-api_internal_domain.BookNote": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "page_reference": {
+                    "type": "integer"
+                },
+                "quote": {
+                    "type": "string"
+                },
+                "tags": {
+                    "description": "Array murni Golang",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user_book_id": {
+                    "description": "Relasi ke buku di rak user",
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_faridlan_omni-library-api_internal_domain.UserBook": {
+            "type": "object",
+            "properties": {
+                "book_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "current_page": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "rating": {
+                    "type": "integer"
+                },
+                "status": {
+                    "description": "'TO_READ', 'READING', 'FINISHED'",
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_faridlan_omni-library-api_internal_domain.UserBookWithMetadata": {
+            "type": "object",
+            "properties": {
+                "book": {
+                    "description": "Informasi detail buku",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_domain.Book"
+                        }
+                    ]
+                },
+                "book_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "current_page": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "rating": {
+                    "type": "integer"
+                },
+                "status": {
+                    "description": "'TO_READ', 'READING', 'FINISHED'",
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_delivery_http.AddBookRequest": {
+            "type": "object",
+            "required": [
+                "book_id"
+            ],
+            "properties": {
+                "book_id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                }
+            }
+        },
+        "internal_delivery_http.AddNoteRequest": {
+            "type": "object",
+            "required": [
+                "quote"
+            ],
+            "properties": {
+                "page_reference": {
+                    "type": "integer",
+                    "example": 42
+                },
+                "quote": {
+                    "type": "string",
+                    "example": "Bekerjalah seperti programmer pemalas..."
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "Inspiratif",
+                        "Programming"
+                    ]
+                }
+            }
+        },
         "internal_delivery_http.ErrorResponse": {
             "type": "object",
             "properties": {
@@ -152,6 +506,23 @@ const docTemplate = `{
                 "isbn": {
                     "type": "string",
                     "example": "9786020633176"
+                }
+            }
+        },
+        "internal_delivery_http.UpdateProgressRequest": {
+            "type": "object",
+            "properties": {
+                "current_page": {
+                    "type": "integer",
+                    "example": 125
+                },
+                "rating": {
+                    "type": "integer",
+                    "example": 5
+                },
+                "status": {
+                    "type": "string",
+                    "example": "READING"
                 }
             }
         }
