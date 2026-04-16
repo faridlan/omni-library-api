@@ -4,7 +4,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/faridlan/omni-library-api/internal/delivery/http"
+	"github.com/faridlan/omni-library-api/internal/config"
+	myHttp "github.com/faridlan/omni-library-api/internal/delivery/http"
 	"github.com/faridlan/omni-library-api/internal/repository/external"
 	"github.com/faridlan/omni-library-api/internal/repository/postgres"
 	"github.com/faridlan/omni-library-api/internal/usecase"
@@ -36,7 +37,7 @@ func main() {
 	dbName := os.Getenv("DB_NAME")
 	apiKey := os.Getenv("GOOGLE_BOOKS_API_KEY")
 
-	db := postgres.InitDB(dbUser, dbPassword, dbHost, dbPort, dbName)
+	db := config.InitDB(dbUser, dbPassword, dbHost, dbPort, dbName)
 
 	// Fitur Book Metadata
 	bookRepo := postgres.NewBookRepository(db)
@@ -54,12 +55,9 @@ func main() {
 	// Setup Fiber & Route
 	app := fiber.New()
 	app.Get("/swagger/*", swagger.HandlerDefault)
-	api := app.Group("/api")
 
 	// Daftarkan Handler
-	http.NewBookHandler(api, bookUsecase)
-	http.NewUserBookHandler(api, userBookUsecase)
-	http.NewBookNoteHandler(api, bookNoteUsecase)
+	myHttp.SetupRoutes(app, bookUsecase, userBookUsecase, bookNoteUsecase)
 
 	// Start Server
 	log.Fatal(app.Listen(":8080"))
