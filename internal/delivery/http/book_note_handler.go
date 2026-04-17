@@ -30,8 +30,10 @@ func NewBookNoteHandler(router fiber.Router, u domain.BookNoteUsecase) {
 // @Param request body AddNoteRequest true "Payload isi kutipan dan tag"
 // @Success 201 {object} domain.BookNote "Catatan berhasil disimpan"
 // @Failure 400 {object} utils.ErrorResponse "Format JSON salah atau Quote kosong"
+// @Failure 401 {object} utils.ErrorResponse "Unauthorized (Token tidak ada/salah)"
 // @Failure 404 {object} utils.ErrorResponse "Buku tidak ditemukan di rak"
 // @Failure 500 {object} utils.ErrorResponse "Gagal menyimpan catatan"
+// @Security BearerAuth
 // @Router /api/library/{user_book_id}/notes [post]
 func (h *BookNoteHandler) AddNote(c *fiber.Ctx) error {
 	userBookID := c.Params("user_book_id")
@@ -72,8 +74,10 @@ func (h *BookNoteHandler) AddNote(c *fiber.Ctx) error {
 // @Produce json
 // @Param user_book_id path string true "ID progres buku di rak"
 // @Success 200 {array} domain.BookNote "Daftar catatan"
+// @Failure 401 {object} utils.ErrorResponse "Unauthorized (Token tidak ada/salah)"
 // @Failure 404 {object} utils.ErrorResponse "Buku tidak ditemukan di rak"
 // @Failure 500 {object} utils.ErrorResponse "Internal Server Error"
+// @Security BearerAuth
 // @Router /api/library/{user_book_id}/notes [get]
 func (h *BookNoteHandler) GetNotes(c *fiber.Ctx) error {
 	userBookID := c.Params("user_book_id")

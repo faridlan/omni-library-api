@@ -22,6 +22,11 @@ import (
 // @description Ini adalah dokumentasi API untuk MVP OmniLibrary.
 // @host localhost:8080
 // @BasePath /
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Masukkan token dengan format: Bearer {token}
 func main() {
 
 	err := godotenv.Load()

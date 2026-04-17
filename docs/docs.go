@@ -208,6 +208,11 @@ const docTemplate = `{
         },
         "/api/library": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Menampilkan seluruh buku yang ada di rak personal user, lengkap dengan metadata bukunya. Bisa difilter berdasarkan status.",
                 "produces": [
                     "application/json"
@@ -234,6 +239,12 @@ const docTemplate = `{
                             }
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized (Token tidak ada/salah)",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
+                        }
+                    },
                     "404": {
                         "description": "Rak buku tidak ditemukan",
                         "schema": {
@@ -249,6 +260,11 @@ const docTemplate = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Memasukkan buku dari database master ke dalam rak bacaan personal user (Default: TO_READ)",
                 "consumes": [
                     "application/json"
@@ -284,6 +300,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized (Token tidak ada/salah)",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
+                        }
+                    },
                     "409": {
                         "description": "Buku sudah ada di rak (Conflict)",
                         "schema": {
@@ -301,6 +323,11 @@ const docTemplate = `{
         },
         "/api/library/{book_id}": {
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Mengubah status, halaman saat ini, dan memberikan rating pada buku yang sedang dibaca",
                 "consumes": [
                     "application/json"
@@ -343,6 +370,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized (Token tidak ada/salah)",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
+                        }
+                    },
                     "404": {
                         "description": "Buku tidak ditemukan di rak",
                         "schema": {
@@ -360,6 +393,11 @@ const docTemplate = `{
         },
         "/api/library/{user_book_id}/notes": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Melihat seluruh kutipan dan catatan yang pernah ditulis untuk satu buku spesifik di rak",
                 "produces": [
                     "application/json"
@@ -387,6 +425,12 @@ const docTemplate = `{
                             }
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized (Token tidak ada/salah)",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
+                        }
+                    },
                     "404": {
                         "description": "Buku tidak ditemukan di rak",
                         "schema": {
@@ -402,6 +446,11 @@ const docTemplate = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Menyimpan kutipan favorit, referensi halaman, dan tag untuk buku tertentu yang ada di rak",
                 "consumes": [
                     "application/json"
@@ -440,6 +489,12 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Format JSON salah atau Quote kosong",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized (Token tidak ada/salah)",
                         "schema": {
                             "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
                         }
@@ -742,6 +797,14 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "description": "Masukkan token dengan format: Bearer {token}",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }`

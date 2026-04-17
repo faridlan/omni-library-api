@@ -1,20 +1,25 @@
 package http
 
 import (
+	"github.com/faridlan/omni-library-api/internal/delivery/http/middleware" // <-- Tambahkan import ini
 	"github.com/faridlan/omni-library-api/internal/domain"
-
 	"github.com/gofiber/fiber/v2"
 )
 
-// SetupRoutes adalah resepsionis utama yang menghubungkan URL ke Handler yang tepat
 func SetupRoutes(app *fiber.App, authUC domain.AuthUsecase, bookUC domain.BookUsecase, userBookUC domain.UserBookUsecase, noteUC domain.BookNoteUsecase) {
-	// Grup utama untuk semua API
 	api := app.Group("/api")
 
-	// Panggil masing-masing constructor handler
-	// Di sinilah fungsi NewBookHandler dkk mendaftarkan dirinya ke grup "/api"
+	// RUTE PUBLIK (Tanpa Satpam)
 	NewAuthHandler(api, authUC)
-	NewBookHandler(api, bookUC)
-	NewUserBookHandler(api, userBookUC)
-	NewBookNoteHandler(api, noteUC)
+	NewBookHandler(api, bookUC) // Asumsi: Lihat katalog buku bebas tanpa login
+
+	// ==========================================
+	// AREA VIP (Dilindungi Satpam JWT)
+	// ==========================================
+	// Kita buat grup baru khusus untuk rute yang butuh login
+	protectedGroup := api.Group("/", middleware.Protected())
+
+	// Daftarkan Handler yang butuh login ke grup VIP ini
+	NewUserBookHandler(protectedGroup, userBookUC)
+	NewBookNoteHandler(protectedGroup, noteUC)
 }

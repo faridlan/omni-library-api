@@ -342,6 +342,10 @@ paths:
             items:
               $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_domain.UserBookWithMetadata'
             type: array
+        "401":
+          description: Unauthorized (Token tidak ada/salah)
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
         "404":
           description: Rak buku tidak ditemukan
           schema:
@@ -350,6 +354,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: Lihat Isi Rak Buku
       tags:
       - Library
@@ -376,6 +382,10 @@ paths:
           description: Format JSON salah
           schema:
             $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+        "401":
+          description: Unauthorized (Token tidak ada/salah)
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
         "409":
           description: Buku sudah ada di rak (Conflict)
           schema:
@@ -384,6 +394,8 @@ paths:
           description: Gagal menyimpan buku ke rak
           schema:
             $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: Tambah Buku ke Rak
       tags:
       - Library
@@ -416,6 +428,10 @@ paths:
           description: Format JSON salah
           schema:
             $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+        "401":
+          description: Unauthorized (Token tidak ada/salah)
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
         "404":
           description: Buku tidak ditemukan di rak
           schema:
@@ -424,6 +440,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: Update Progres Bacaan
       tags:
       - Library
@@ -446,6 +464,10 @@ paths:
             items:
               $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_domain.BookNote'
             type: array
+        "401":
+          description: Unauthorized (Token tidak ada/salah)
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
         "404":
           description: Buku tidak ditemukan di rak
           schema:
@@ -454,6 +476,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: Ambil Daftar Catatan Buku
       tags:
       - Book Notes
@@ -485,6 +509,10 @@ paths:
           description: Format JSON salah atau Quote kosong
           schema:
             $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+        "401":
+          description: Unauthorized (Token tidak ada/salah)
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
         "404":
           description: Buku tidak ditemukan di rak
           schema:
@@ -493,7 +521,15 @@ paths:
           description: Gagal menyimpan catatan
           schema:
             $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: Tambah Kutipan/Catatan Buku
       tags:
       - Book Notes
+securityDefinitions:
+  BearerAuth:
+    description: 'Masukkan token dengan format: Bearer {token}'
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"
