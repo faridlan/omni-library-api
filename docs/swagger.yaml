@@ -133,6 +133,36 @@ definitions:
     required:
     - isbn
     type: object
+  internal_delivery_http.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  internal_delivery_http.RegisterRequest:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      password:
+        description: Minimal 6 karakter agar aman
+        minLength: 6
+        type: string
+    required:
+    - email
+    - name
+    - password
+    type: object
+  internal_delivery_http.TokenResponse:
+    properties:
+      token:
+        type: string
+    type: object
   internal_delivery_http.UpdateProgressRequest:
     properties:
       current_page:
@@ -145,6 +175,20 @@ definitions:
         example: READING
         type: string
     type: object
+  internal_delivery_http.UserResponse:
+    properties:
+      created_at:
+        description: Format string agar mudah dibaca di JSON
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      role:
+        type: string
+    type: object
 host: localhost:8080
 info:
   contact: {}
@@ -152,6 +196,80 @@ info:
   title: OmniLibrary API
   version: "1.0"
 paths:
+  /api/auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Autentikasi email dan password pengguna untuk mendapatkan Token
+        JWT.
+      parameters:
+      - description: Payload kredensial login
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_delivery_http.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Login berhasil (mengembalikan token JWT)
+          schema:
+            $ref: '#/definitions/internal_delivery_http.TokenResponse'
+        "400":
+          description: Format JSON salah atau validasi gagal
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+        "401":
+          description: Email atau Password salah
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+        "404":
+          description: Email tidak ditemukan
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+      summary: Login User (Dapatkan JWT)
+      tags:
+      - Auth
+  /api/auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Mendaftarkan pengguna baru ke dalam sistem dan melakukan hashing
+        pada password.
+      parameters:
+      - description: Payload registrasi pengguna baru
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_delivery_http.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Registrasi berhasil (mengembalikan data user tanpa password)
+          schema:
+            $ref: '#/definitions/internal_delivery_http.UserResponse'
+        "400":
+          description: Format JSON salah atau validasi gagal
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+        "409":
+          description: Email sudah terdaftar (Conflict)
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+      summary: Registrasi User Baru
+      tags:
+      - Auth
   /api/books:
     get:
       description: Mengambil daftar seluruh buku yang tersimpan di database lokal

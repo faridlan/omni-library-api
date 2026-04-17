@@ -15,6 +15,116 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/api/auth/login": {
+            "post": {
+                "description": "Autentikasi email dan password pengguna untuk mendapatkan Token JWT.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Login User (Dapatkan JWT)",
+                "parameters": [
+                    {
+                        "description": "Payload kredensial login",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_delivery_http.LoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Login berhasil (mengembalikan token JWT)",
+                        "schema": {
+                            "$ref": "#/definitions/internal_delivery_http.TokenResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Format JSON salah atau validasi gagal",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Email atau Password salah",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Email tidak ditemukan",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/auth/register": {
+            "post": {
+                "description": "Mendaftarkan pengguna baru ke dalam sistem dan melakukan hashing pada password.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Registrasi User Baru",
+                "parameters": [
+                    {
+                        "description": "Payload registrasi pengguna baru",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_delivery_http.RegisterRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Registrasi berhasil (mengembalikan data user tanpa password)",
+                        "schema": {
+                            "$ref": "#/definitions/internal_delivery_http.UserResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Format JSON salah atau validasi gagal",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Email sudah terdaftar (Conflict)",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/books": {
             "get": {
                 "description": "Mengambil daftar seluruh buku yang tersimpan di database lokal",
@@ -551,6 +661,50 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_delivery_http.LoginRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "password"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_delivery_http.RegisterRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "name",
+                "password"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "password": {
+                    "description": "Minimal 6 karakter agar aman",
+                    "type": "string",
+                    "minLength": 6
+                }
+            }
+        },
+        "internal_delivery_http.TokenResponse": {
+            "type": "object",
+            "properties": {
+                "token": {
+                    "type": "string"
+                }
+            }
+        },
         "internal_delivery_http.UpdateProgressRequest": {
             "type": "object",
             "properties": {
@@ -565,6 +719,27 @@ const docTemplate = `{
                 "status": {
                     "type": "string",
                     "example": "READING"
+                }
+            }
+        },
+        "internal_delivery_http.UserResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "description": "Format string agar mudah dibaca di JSON",
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "role": {
+                    "type": "string"
                 }
             }
         }

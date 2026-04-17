@@ -39,6 +39,10 @@ func main() {
 
 	db := config.InitDB(dbUser, dbPassword, dbHost, dbPort, dbName)
 
+	//Fitur Authentication & Authorization
+	userRepo := postgres.NewUserRepository(db)
+	authUsecase := usecase.NewAuthUsecase(userRepo)
+
 	// Fitur Book Metadata
 	bookRepo := postgres.NewBookRepository(db)
 	bookFetcher := external.NewGoogleBooksFetcher(apiKey)
@@ -57,7 +61,7 @@ func main() {
 	app.Get("/swagger/*", swagger.HandlerDefault)
 
 	// Daftarkan Handler
-	myHttp.SetupRoutes(app, bookUsecase, userBookUsecase, bookNoteUsecase)
+	myHttp.SetupRoutes(app, authUsecase, bookUsecase, userBookUsecase, bookNoteUsecase)
 
 	// Start Server
 	log.Fatal(app.Listen(":8080"))
