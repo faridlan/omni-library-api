@@ -63,3 +63,18 @@ func Protected() fiber.Handler {
 		return c.Next()
 	}
 }
+
+func AdminOnly() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		// Ambil role yang tadi ditempelkan oleh middleware Protected()
+		role := c.Locals("role")
+
+		// Jika bukan admin, usir dengan 403 Forbidden
+		if role != "admin" {
+			return utils.SendError(c, fiber.StatusForbidden, "Akses ditolak: Hanya Admin yang diizinkan melakukan aksi ini")
+		}
+
+		// Jika admin, persilakan lewat
+		return c.Next()
+	}
+}

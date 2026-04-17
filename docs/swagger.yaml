@@ -289,6 +289,67 @@ paths:
       summary: Ambil Katalog Buku
       tags:
       - Books
+  /api/books/{id}:
+    delete:
+      description: Menghapus buku dari database master secara permanen
+      parameters:
+      - description: ID Buku
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Hapus Buku (Admin Only)
+      tags:
+      - Books
+    put:
+      consumes:
+      - application/json
+      description: Mengedit metadata buku master (judul, cover, dll)
+      parameters:
+      - description: ID Buku
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_domain.Book'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update Data Buku (Admin Only)
+      tags:
+      - Books
   /api/books/fetch:
     post:
       consumes:
@@ -322,6 +383,31 @@ paths:
           schema:
             $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
       summary: Ambil & Simpan Metadata Buku
+      tags:
+      - Books
+  /api/books/manual:
+    post:
+      consumes:
+      - application/json
+      description: Menambahkan buku lokal tanpa ISBN ke database master
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_domain.Book'
+        "401":
+          description: Unauthorized (Tidak bawa Token)
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+        "403":
+          description: Forbidden (Bukan Admin)
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Tambah Buku Manual (Admin Only)
       tags:
       - Books
   /api/library:

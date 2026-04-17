@@ -1,6 +1,7 @@
 package http
 
 import (
+	"github.com/faridlan/omni-library-api/internal/delivery/http/middleware"
 	"github.com/faridlan/omni-library-api/internal/domain"
 	"github.com/faridlan/omni-library-api/internal/utils"
 	"github.com/gofiber/fiber/v2"
@@ -15,8 +16,23 @@ func NewBookHandler(router fiber.Router, bu domain.BookUsecase) {
 		bookUsecase: bu,
 	}
 
-	router.Post("/books/fetch", handler.FetchAndSave)
-	router.Get("/books", handler.GetAll)
+	// Buat grup dasar untuk buku (akan menjadi /api/books)
+	bookGroup := router.Group("/books")
+
+	// 🟢 RUTE PUBLIK (Bebas tanpa login)
+	bookGroup.Get("/", handler.GetAll)
+
+	// 🟡 RUTE USER BIASA (Wajib login, tapi tidak harus admin)
+	// Satpam Protected() dipasang langsung spesifik di endpoint ini
+	bookGroup.Post("/fetch", middleware.Protected(), handler.FetchAndSave)
+
+	// 🔴 RUTE ADMIN (Wajib login + Wajib Admin)
+	// Kita buat sub-grup yang dijaga ketat oleh dua lapis Satpam
+	adminGroup := bookGroup.Group("/", middleware.Protected(), middleware.AdminOnly())
+
+	adminGroup.Post("/manual", handler.CreateManual)
+	adminGroup.Put("/:id", handler.UpdateBook)
+	adminGroup.Delete("/:id", handler.DeleteBook)
 }
 
 // FetchAndSave godoc
@@ -73,4 +89,55 @@ func (h *BookHandler) GetAll(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).JSON(books)
+}
+
+// CreateManual godoc
+// @Summary Tambah Buku Manual (Admin Only)
+// @Description Menambahkan buku lokal tanpa ISBN ke database master
+// @Tags Books
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 201 {object} domain.Book
+// @Failure 401 {object} utils.ErrorResponse "Unauthorized (Tidak bawa Token)"
+// @Failure 403 {object} utils.ErrorResponse "Forbidden (Bukan Admin)"
+// @Router /api/books/manual [post]
+func (h *BookHandler) CreateManual(c *fiber.Ctx) error {
+	// Nanti kita panggil h.bookUsecase.CreateManual(...) di sini
+	return c.Status(fiber.StatusNotImplemented).JSON(fiber.Map{"message": "Fitur tambah manual segera hadir"})
+}
+
+// UpdateBook godoc
+// @Summary Update Data Buku (Admin Only)
+// @Description Mengedit metadata buku master (judul, cover, dll)
+// @Tags Books
+// @Accept json
+// @Produce json
+// @Param id path string true "ID Buku"
+// @Security BearerAuth
+// @Success 200 {object} domain.Book
+// @Failure 401 {object} utils.ErrorResponse "Unauthorized"
+// @Failure 403 {object} utils.ErrorResponse "Forbidden"
+// @Router /api/books/{id} [put]
+func (h *BookHandler) UpdateBook(c *fiber.Ctx) error {
+	bookID := c.Params("id")
+	// Nanti kita panggil h.bookUsecase.UpdateBook(...) di sini
+	return c.Status(fiber.StatusNotImplemented).JSON(fiber.Map{"message": "Fitur update untuk buku " + bookID + " segera hadir"})
+}
+
+// DeleteBook godoc
+// @Summary Hapus Buku (Admin Only)
+// @Description Menghapus buku dari database master secara permanen
+// @Tags Books
+// @Produce json
+// @Param id path string true "ID Buku"
+// @Security BearerAuth
+// @Success 200 {object} map[string]string
+// @Failure 401 {object} utils.ErrorResponse "Unauthorized"
+// @Failure 403 {object} utils.ErrorResponse "Forbidden"
+// @Router /api/books/{id} [delete]
+func (h *BookHandler) DeleteBook(c *fiber.Ctx) error {
+	bookID := c.Params("id")
+	// Nanti kita panggil h.bookUsecase.DeleteBook(...) di sini
+	return c.Status(fiber.StatusNotImplemented).JSON(fiber.Map{"message": "Fitur hapus untuk buku " + bookID + " segera hadir"})
 }
