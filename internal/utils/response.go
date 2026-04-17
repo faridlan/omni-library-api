@@ -2,12 +2,12 @@ package utils
 
 import (
 	"errors"
+	"log"
 
 	"github.com/faridlan/omni-library-api/internal/domain"
 	"github.com/gofiber/fiber/v2"
 )
 
-// ErrorResponse adalah standar DTO untuk semua error di aplikasi
 type ErrorResponse struct {
 	Error  string `json:"error" example:"pesan error"`
 	Detail string `json:"detail,omitempty"`
@@ -19,9 +19,24 @@ func SendError(c *fiber.Ctx, statusCode int, message string, detail ...string) e
 		Error: message,
 	}
 
-	// Jika ada detail error tambahan (misal dari GORM), kita masukkan
-	if len(detail) > 0 && detail[0] != "" {
-		resp.Detail = detail[0]
+	// ====================================================================
+	// FILTER KEAMANAN (Mencegah Information Disclosure)
+	// ====================================================================
+	if statusCode >= fiber.StatusInternalServerError {
+		// 1. LOGGING: Cetak error asli ke terminal agar mudah di-debug
+		if len(detail) > 0 && detail[0] != "" {
+			log.Printf("[CRITICAL SERVER ERROR %d] %s: %s\n", statusCode, message, detail[0])
+		} else {
+			log.Printf("[CRITICAL SERVER ERROR %d] %s\n", statusCode, message)
+		}
+
+		// 2. MASKING: Pastikan detail dikosongkan agar tidak menjadi JSON
+		resp.Detail = ""
+	} else {
+		// Untuk error 4xx (Client Error), aman untuk menampilkan detail ke user
+		if len(detail) > 0 && detail[0] != "" {
+			resp.Detail = detail[0]
+		}
 	}
 
 	return c.Status(statusCode).JSON(resp)
@@ -29,7 +44,6 @@ func SendError(c *fiber.Ctx, statusCode int, message string, detail ...string) e
 
 // HandleDomainError menerjemahkan error dari Domain menjadi HTTP Status Code yang tepat
 func HandleDomainError(c *fiber.Ctx, err error) error {
-	// Gunakan errors.Is() untuk mencocokkan tipe error
 	switch {
 	case errors.Is(err, domain.ErrNotFound):
 		return SendError(c, fiber.StatusNotFound, err.Error())
@@ -44,7 +58,9 @@ func HandleDomainError(c *fiber.Ctx, err error) error {
 		return SendError(c, fiber.StatusTooManyRequests, err.Error())
 
 	default:
-		// Jika error tidak dikenali, berarti ada crash/bug di sistem (500)
+		// Kode aslimu TETAP DIPERTAHANKAN!
+		// err.Error() tetap dikirimkan ke SendError.
+		// Namun sekarang SendError akan mencetaknya ke terminal dan mencegahnya masuk ke JSON.
 		return SendError(c, fiber.StatusInternalServerError, domain.ErrInternalServerError.Error(), err.Error())
 	}
 }

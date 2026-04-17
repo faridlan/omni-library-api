@@ -14,6 +14,7 @@ import (
 	_ "github.com/faridlan/omni-library-api/docs"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/swagger"
 )
 
@@ -63,6 +64,13 @@ func main() {
 
 	// Setup Fiber & Route
 	app := fiber.New()
+
+	app.Use(cors.New(cors.Config{
+		AllowOrigins: "*",                                           // Sementara izinkan dari mana saja (Bisa diganti "http://localhost:3000" saat production)
+		AllowHeaders: "Origin, Content-Type, Accept, Authorization", // SANGAT PENTING: Izinkan header Authorization!
+		AllowMethods: "GET, POST, HEAD, PUT, DELETE, PATCH",
+	}))
+
 	app.Get("/swagger/*", swagger.HandlerDefault)
 
 	// Daftarkan Handler

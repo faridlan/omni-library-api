@@ -19,13 +19,20 @@ func Protected() fiber.Handler {
 			return utils.SendError(c, fiber.StatusUnauthorized, "Akses ditolak: Token tidak ditemukan")
 		}
 
-		// 2. Pastikan formatnya "Bearer <token>"
+		// 2. LOGIKA SATPAM YANG AMAN DARI PANIC (Index Out Of Range)
+		var tokenString string
 		parts := strings.Split(authHeader, " ")
-		if len(parts) != 2 || parts[0] != "Bearer" {
-			return utils.SendError(c, fiber.StatusUnauthorized, "Akses ditolak: Format token salah (Gunakan 'Bearer <token>')")
+
+		if len(parts) == 2 && parts[0] == "Bearer" {
+			// Jika formatnya "Bearer eyJhb..."
+			tokenString = parts[1]
+		} else if len(parts) == 1 {
+			// Jika formatnya langsung "eyJhb..." (Tanpa Bearer)
+			tokenString = parts[0]
+		} else {
+			return utils.SendError(c, fiber.StatusUnauthorized, "Akses ditolak: Format token salah")
 		}
 
-		tokenString := parts[1]
 		secret := os.Getenv("JWT_SECRET")
 		if secret == "" {
 			secret = "omnilibrary-super-secret-key"
@@ -33,33 +40,26 @@ func Protected() fiber.Handler {
 
 		// 3. Verifikasi Keaslian Gelang VIP
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-			// Pastikan algoritma enkripsinya benar (HMAC)
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, fmt.Errorf("metode enkripsi tidak valid: %v", token.Header["alg"])
 			}
 			return []byte(secret), nil
 		})
 
-		// 4. Jika token palsu, kadaluarsa, atau rusak -> USIR!
+		// 4. Usir jika token palsu/kadaluarsa
 		if err != nil || !token.Valid {
 			return utils.SendError(c, fiber.StatusUnauthorized, "Akses ditolak: Token tidak valid atau kadaluarsa")
 		}
 
-		// 5. Jika ASLI, ambil informasi (Claims) dari dalam gelang tersebut
+		// 5. Tempelkan ID ke Context
 		claims, ok := token.Claims.(jwt.MapClaims)
 		if !ok {
 			return utils.SendError(c, fiber.StatusUnauthorized, "Gagal membaca data token")
 		}
 
-		// 6. TEMPELKAN ID Warga ke Context (c.Locals)
-		// Ini seperti menempelkan name-tag agar Resepsionis (Handler) tahu siapa yang datang
-		userID := claims["user_id"].(string)
-		c.Locals("user_id", userID)
-
-		// Opsional: Simpan role juga kalau nanti butuh fitur khusus Admin
+		c.Locals("user_id", claims["user_id"].(string))
 		c.Locals("role", claims["role"].(string))
 
-		// 7. PERSILAKAN MASUK ke Handler tujuan!
 		return c.Next()
 	}
 }
