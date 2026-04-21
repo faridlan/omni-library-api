@@ -125,6 +125,29 @@ definitions:
     required:
     - quote
     type: object
+  internal_delivery_http.BookRequest:
+    properties:
+      authors:
+        items:
+          type: string
+        type: array
+      cover_url:
+        type: string
+      description:
+        type: string
+      isbn:
+        description: Tidak wajib (karena buku indie kadang ga punya ISBN)
+        type: string
+      page_count:
+        type: integer
+      published_date:
+        type: string
+      title:
+        type: string
+    required:
+    - authors
+    - title
+    type: object
   internal_delivery_http.FetchBookRequest:
     properties:
       isbn:
@@ -330,6 +353,12 @@ paths:
         name: id
         required: true
         type: string
+      - description: Payload data update
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_delivery_http.BookRequest'
       produces:
       - application/json
       responses:
@@ -390,6 +419,13 @@ paths:
       consumes:
       - application/json
       description: Menambahkan buku lokal tanpa ISBN ke database master
+      parameters:
+      - description: Payload data buku
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_delivery_http.BookRequest'
       produces:
       - application/json
       responses:

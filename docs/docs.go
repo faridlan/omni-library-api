@@ -224,6 +224,17 @@ const docTemplate = `{
                     "Books"
                 ],
                 "summary": "Tambah Buku Manual (Admin Only)",
+                "parameters": [
+                    {
+                        "description": "Payload data buku",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_delivery_http.BookRequest"
+                        }
+                    }
+                ],
                 "responses": {
                     "201": {
                         "description": "Created",
@@ -271,6 +282,15 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "Payload data update",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_delivery_http.BookRequest"
+                        }
                     }
                 ],
                 "responses": {
@@ -837,6 +857,40 @@ const docTemplate = `{
                         "Inspiratif",
                         "Programming"
                     ]
+                }
+            }
+        },
+        "internal_delivery_http.BookRequest": {
+            "type": "object",
+            "required": [
+                "authors",
+                "title"
+            ],
+            "properties": {
+                "authors": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "cover_url": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "isbn": {
+                    "description": "Tidak wajib (karena buku indie kadang ga punya ISBN)",
+                    "type": "string"
+                },
+                "page_count": {
+                    "type": "integer"
+                },
+                "published_date": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
                 }
             }
         },

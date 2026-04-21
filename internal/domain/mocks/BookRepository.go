@@ -32,6 +32,24 @@ func (_m *BookRepository) Create(ctx context.Context, book *domain.Book) error {
 	return r0
 }
 
+// Delete provides a mock function with given fields: ctx, id
+func (_m *BookRepository) Delete(ctx context.Context, id string) error {
+	ret := _m.Called(ctx, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Delete")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, id)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // GetAll provides a mock function with given fields: ctx
 func (_m *BookRepository) GetAll(ctx context.Context) ([]*domain.Book, error) {
 	ret := _m.Called(ctx)
@@ -120,6 +138,24 @@ func (_m *BookRepository) GetByISBN(ctx context.Context, isbn string) (*domain.B
 	}
 
 	return r0, r1
+}
+
+// Update provides a mock function with given fields: ctx, book
+func (_m *BookRepository) Update(ctx context.Context, book *domain.Book) error {
+	ret := _m.Called(ctx, book)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Update")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.Book) error); ok {
+		r0 = rf(ctx, book)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 // NewBookRepository creates a new instance of BookRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.

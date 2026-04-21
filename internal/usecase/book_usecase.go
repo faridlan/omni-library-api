@@ -65,3 +65,67 @@ func (u *bookUsecase) GetAllBooks(ctx context.Context) ([]*domain.Book, error) {
 
 	return books, nil
 }
+
+func (u *bookUsecase) CreateManual(ctx context.Context, book *domain.Book) (*domain.Book, error) {
+	// 1. Cek apakah ISBN sudah dipakai (Jika Admin mengisi ISBN)
+	if book.ISBN != "" {
+		existing, _ := u.bookRepo.GetByISBN(ctx, book.ISBN)
+		if existing != nil {
+			return nil, domain.ErrConflict
+		}
+	}
+
+	// 2. Simpan ke database
+	err := u.bookRepo.Create(ctx, book)
+	if err != nil {
+		return nil, err
+	}
+
+	return book, nil
+}
+
+// Update Buku
+func (u *bookUsecase) UpdateBook(ctx context.Context, id string, req *domain.Book) (*domain.Book, error) {
+	// 1. Pastikan bukunya ada di database
+	existing, err := u.bookRepo.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if existing == nil {
+		return nil, domain.ErrNotFound
+	}
+
+	// 2. Timpa data lama dengan data baru
+	existing.Title = req.Title
+	existing.Authors = req.Authors
+	existing.Description = req.Description
+	existing.PageCount = req.PageCount
+	existing.CoverURL = req.CoverURL
+	if req.ISBN != "" {
+		existing.ISBN = req.ISBN
+	}
+	// (Tambahkan field lain jika perlu)
+
+	// 3. Simpan perubahan
+	err = u.bookRepo.Update(ctx, existing)
+	if err != nil {
+		return nil, err
+	}
+
+	return existing, nil
+}
+
+// Delete Buku
+func (u *bookUsecase) DeleteBook(ctx context.Context, id string) error {
+	// 1. Pastikan bukunya ada
+	existing, err := u.bookRepo.GetByID(ctx, id)
+	if err != nil {
+		return err
+	}
+	if existing == nil {
+		return domain.ErrNotFound
+	}
+
+	// 2. Eksekusi hapus
+	return u.bookRepo.Delete(ctx, id)
+}

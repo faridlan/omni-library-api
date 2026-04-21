@@ -1,6 +1,8 @@
 package http
 
 import (
+	"time"
+
 	"github.com/faridlan/omni-library-api/internal/delivery/http/middleware"
 	"github.com/faridlan/omni-library-api/internal/domain"
 	"github.com/faridlan/omni-library-api/internal/utils"
@@ -101,10 +103,45 @@ func (h *BookHandler) GetAll(c *fiber.Ctx) error {
 // @Success 201 {object} domain.Book
 // @Failure 401 {object} utils.ErrorResponse "Unauthorized (Tidak bawa Token)"
 // @Failure 403 {object} utils.ErrorResponse "Forbidden (Bukan Admin)"
+// @Param request body BookRequest true "Payload data buku"
 // @Router /api/books/manual [post]
 func (h *BookHandler) CreateManual(c *fiber.Ctx) error {
 	// Nanti kita panggil h.bookUsecase.CreateManual(...) di sini
-	return c.Status(fiber.StatusNotImplemented).JSON(fiber.Map{"message": "Fitur tambah manual segera hadir"})
+	var req BookRequest
+	if err := c.BodyParser(&req); err != nil {
+		return utils.SendError(c, fiber.StatusBadRequest, "Format JSON salah")
+	}
+
+	if err := utils.ValidateStruct(&req); err != nil {
+		return utils.SendError(c, fiber.StatusBadRequest, err.Error())
+	}
+
+	var pubDate time.Time
+	if req.PublishedDate != "" {
+		parsed, err := time.Parse("2006-01-02", req.PublishedDate)
+		if err != nil {
+			return utils.SendError(c, fiber.StatusBadRequest, "Format published_date harus YYYY-MM-DD")
+		}
+		pubDate = parsed
+	}
+
+	// Ubah DTO menjadi Domain
+	newBook := &domain.Book{
+		ISBN:          req.ISBN,
+		Title:         req.Title,
+		Authors:       req.Authors,
+		PublishedDate: pubDate,
+		Description:   req.Description,
+		PageCount:     req.PageCount,
+		CoverURL:      req.CoverURL,
+	}
+
+	result, err := h.bookUsecase.CreateManual(c.Context(), newBook)
+	if err != nil {
+		return utils.HandleDomainError(c, err)
+	}
+
+	return c.Status(fiber.StatusCreated).JSON(result)
 }
 
 // UpdateBook godoc
@@ -118,11 +155,48 @@ func (h *BookHandler) CreateManual(c *fiber.Ctx) error {
 // @Success 200 {object} domain.Book
 // @Failure 401 {object} utils.ErrorResponse "Unauthorized"
 // @Failure 403 {object} utils.ErrorResponse "Forbidden"
+// @Param request body BookRequest true "Payload data update"
 // @Router /api/books/{id} [put]
 func (h *BookHandler) UpdateBook(c *fiber.Ctx) error {
 	bookID := c.Params("id")
-	// Nanti kita panggil h.bookUsecase.UpdateBook(...) di sini
-	return c.Status(fiber.StatusNotImplemented).JSON(fiber.Map{"message": "Fitur update untuk buku " + bookID + " segera hadir"})
+	if err := utils.ValidateUUID(bookID, "book_id"); err != nil {
+		return utils.SendError(c, fiber.StatusBadRequest, err.Error())
+	}
+
+	var req BookRequest
+	if err := c.BodyParser(&req); err != nil {
+		return utils.SendError(c, fiber.StatusBadRequest, "Format JSON salah")
+	}
+
+	if err := utils.ValidateStruct(&req); err != nil {
+		return utils.SendError(c, fiber.StatusBadRequest, err.Error())
+	}
+
+	var pubDate time.Time
+	if req.PublishedDate != "" {
+		parsed, err := time.Parse("2006-01-02", req.PublishedDate)
+		if err != nil {
+			return utils.SendError(c, fiber.StatusBadRequest, "Format published_date harus YYYY-MM-DD")
+		}
+		pubDate = parsed
+	}
+
+	updateData := &domain.Book{
+		ISBN:          req.ISBN,
+		Title:         req.Title,
+		Authors:       req.Authors,
+		PublishedDate: pubDate,
+		Description:   req.Description,
+		PageCount:     req.PageCount,
+		CoverURL:      req.CoverURL,
+	}
+
+	result, err := h.bookUsecase.UpdateBook(c.Context(), bookID, updateData)
+	if err != nil {
+		return utils.HandleDomainError(c, err)
+	}
+
+	return c.Status(fiber.StatusOK).JSON(result)
 }
 
 // DeleteBook godoc
@@ -138,6 +212,16 @@ func (h *BookHandler) UpdateBook(c *fiber.Ctx) error {
 // @Router /api/books/{id} [delete]
 func (h *BookHandler) DeleteBook(c *fiber.Ctx) error {
 	bookID := c.Params("id")
-	// Nanti kita panggil h.bookUsecase.DeleteBook(...) di sini
-	return c.Status(fiber.StatusNotImplemented).JSON(fiber.Map{"message": "Fitur hapus untuk buku " + bookID + " segera hadir"})
+	if err := utils.ValidateUUID(bookID, "book_id"); err != nil {
+		return utils.SendError(c, fiber.StatusBadRequest, err.Error())
+	}
+
+	err := h.bookUsecase.DeleteBook(c.Context(), bookID)
+	if err != nil {
+		return utils.HandleDomainError(c, err)
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Buku berhasil dihapus dari sistem",
+	})
 }

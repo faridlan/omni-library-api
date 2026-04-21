@@ -35,6 +35,8 @@ type BookRepository interface {
 	Create(ctx context.Context, book *Book) error
 	GetAll(ctx context.Context) ([]*Book, error)
 	GetByID(ctx context.Context, id string) (*Book, error)
+	Update(ctx context.Context, book *Book) error
+	Delete(ctx context.Context, id string) error
 }
 
 // BookUsecase adalah kontrak untuk layer Usecase (otak bisnis kita).
@@ -43,6 +45,9 @@ type BookUsecase interface {
 	// Fitur 3: Mengambil data dari API luar dan menyimpannya
 	FetchAndSaveMetadata(ctx context.Context, isbn string) (*Book, error)
 	GetAllBooks(ctx context.Context) ([]*Book, error)
+	CreateManual(ctx context.Context, book *Book) (*Book, error)
+	UpdateBook(ctx context.Context, id string, req *Book) (*Book, error)
+	DeleteBook(ctx context.Context, id string) error
 }
 
 // BookMetadataFetcher adalah kontrak untuk mengambil data dari API eksternal (Google Books)

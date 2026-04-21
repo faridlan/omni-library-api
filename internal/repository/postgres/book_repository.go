@@ -27,6 +27,10 @@ func (r *bookRepository) Create(ctx context.Context, book *domain.Book) error {
 		return result.Error
 	}
 
+	book.ID = dbModel.ID
+	book.CreatedAt = dbModel.CreatedAt
+	book.UpdatedAt = dbModel.UpdatedAt
+
 	return nil
 }
 
@@ -80,4 +84,18 @@ func (r *bookRepository) GetByID(ctx context.Context, id string) (*domain.Book, 
 	}
 
 	return model.ToDomain(), nil
+}
+
+// Update data buku
+func (r *bookRepository) Update(ctx context.Context, book *domain.Book) error {
+	model := FromDomain(book)
+	// Gunakan Updates() agar GORM hanya mengupdate field yang tidak kosong/berubah
+	return r.db.WithContext(ctx).Model(&BookModel{}).Where("id = ?", model.ID).Updates(model).Error
+}
+
+// Hapus buku secara permanen (Hard Delete)
+// Catatan: Karena di SQL kamu pasang ON DELETE CASCADE, menghapus buku ini
+// akan otomatis menghapus rak (user_books) dan catatan (book_notes) yang terkait!
+func (r *bookRepository) Delete(ctx context.Context, id string) error {
+	return r.db.WithContext(ctx).Where("id = ?", id).Delete(&BookModel{}).Error
 }
