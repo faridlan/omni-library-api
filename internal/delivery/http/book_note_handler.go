@@ -10,14 +10,14 @@ type BookNoteHandler struct {
 	usecase domain.BookNoteUsecase
 }
 
-func NewBookNoteHandler(router fiber.Router, u domain.BookNoteUsecase) {
-	handler := &BookNoteHandler{usecase: u}
+func NewBookNoteHandler(router fiber.Router, u domain.BookNoteUsecase) *BookNoteHandler {
+	return &BookNoteHandler{usecase: u}
 
 	// Kita buat sub-group di bawah URL yang butuh user_book_id
-	noteGroup := router.Group("/library/:user_book_id/notes")
+	// noteGroup := router.Group("/library/:user_book_id/notes")
 
-	noteGroup.Post("/", handler.AddNote)
-	noteGroup.Get("/", handler.GetNotes)
+	// noteGroup.Post("/", handler.AddNote)
+	// noteGroup.Get("/", handler.GetNotes)
 }
 
 // AddNote godoc

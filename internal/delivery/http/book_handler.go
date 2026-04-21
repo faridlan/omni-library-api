@@ -3,7 +3,6 @@ package http
 import (
 	"time"
 
-	"github.com/faridlan/omni-library-api/internal/delivery/http/middleware"
 	"github.com/faridlan/omni-library-api/internal/domain"
 	"github.com/faridlan/omni-library-api/internal/utils"
 	"github.com/gofiber/fiber/v2"
@@ -13,28 +12,28 @@ type BookHandler struct {
 	bookUsecase domain.BookUsecase
 }
 
-func NewBookHandler(router fiber.Router, bu domain.BookUsecase) {
-	handler := &BookHandler{
+func NewBookHandler(router fiber.Router, bu domain.BookUsecase) *BookHandler {
+	return &BookHandler{
 		bookUsecase: bu,
 	}
 
-	// Buat grup dasar untuk buku (akan menjadi /api/books)
-	bookGroup := router.Group("/books")
+	// // Buat grup dasar untuk buku (akan menjadi /api/books)
+	// bookGroup := router.Group("/books")
 
-	// 🟢 RUTE PUBLIK (Bebas tanpa login)
-	bookGroup.Get("/", handler.GetAll)
+	// // 🟢 RUTE PUBLIK (Bebas tanpa login)
+	// bookGroup.Get("/", handler.GetAll)
 
-	// 🟡 RUTE USER BIASA (Wajib login, tapi tidak harus admin)
-	// Satpam Protected() dipasang langsung spesifik di endpoint ini
-	bookGroup.Post("/fetch", middleware.Protected(), handler.FetchAndSave)
+	// // 🟡 RUTE USER BIASA (Wajib login, tapi tidak harus admin)
+	// // Satpam Protected() dipasang langsung spesifik di endpoint ini
+	// bookGroup.Post("/fetch", middleware.Protected(), handler.FetchAndSave)
 
-	// 🔴 RUTE ADMIN (Wajib login + Wajib Admin)
-	// Kita buat sub-grup yang dijaga ketat oleh dua lapis Satpam
-	adminGroup := bookGroup.Group("/", middleware.Protected(), middleware.AdminOnly())
+	// // 🔴 RUTE ADMIN (Wajib login + Wajib Admin)
+	// // Kita buat sub-grup yang dijaga ketat oleh dua lapis Satpam
+	// adminGroup := bookGroup.Group("/", middleware.Protected(), middleware.AdminOnly())
 
-	adminGroup.Post("/manual", handler.CreateManual)
-	adminGroup.Put("/:id", handler.UpdateBook)
-	adminGroup.Delete("/:id", handler.DeleteBook)
+	// adminGroup.Post("/manual", handler.CreateManual)
+	// adminGroup.Put("/:id", handler.UpdateBook)
+	// adminGroup.Delete("/:id", handler.DeleteBook)
 }
 
 // FetchAndSave godoc

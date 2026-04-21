@@ -10,14 +10,14 @@ type UserBookHandler struct {
 	usecase domain.UserBookUsecase
 }
 
-func NewUserBookHandler(router fiber.Router, u domain.UserBookUsecase) {
-	handler := &UserBookHandler{usecase: u}
+func NewUserBookHandler(router fiber.Router, u domain.UserBookUsecase) *UserBookHandler {
+	return &UserBookHandler{usecase: u}
 
 	// Grup endpoint khusus rak buku (library)
-	libGroup := router.Group("/library")
-	libGroup.Post("/", handler.AddBook)
-	libGroup.Put("/:book_id", handler.UpdateProgress)
-	libGroup.Get("/", handler.GetMyLibrary)
+	// libGroup := router.Group("/library")
+	// libGroup.Post("/", handler.AddBook)
+	// libGroup.Put("/:book_id", handler.UpdateProgress)
+	// libGroup.Get("/", handler.GetMyLibrary)
 }
 
 // ⚠️ HARDCODE SEMENTARA (Ganti dengan UUID dari database-mu)

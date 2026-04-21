@@ -11,15 +11,15 @@ type AuthHandler struct {
 	authUsecase domain.AuthUsecase
 }
 
-func NewAuthHandler(router fiber.Router, uc domain.AuthUsecase) {
-	handler := &AuthHandler{
+func NewAuthHandler(router fiber.Router, uc domain.AuthUsecase) *AuthHandler {
+	return &AuthHandler{
 		authUsecase: uc,
 	}
 
 	// Buat sub-grup khusus auth
-	authGroup := router.Group("/auth")
-	authGroup.Post("/register", handler.Register)
-	authGroup.Post("/login", handler.Login)
+	// authGroup := router.Group("/auth")
+	// authGroup.Post("/register", handler.Register)
+	// authGroup.Post("/login", handler.Login)
 }
 
 // Register godoc
