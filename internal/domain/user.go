@@ -28,5 +28,5 @@ type AuthUsecase interface {
 	Register(ctx context.Context, name, email, password string) (*User, error)
 
 	// Login akan menerima email dan password, lalu mengembalikan token JWT berupa string
-	Login(ctx context.Context, email, password string) (string, error)
+	Login(ctx context.Context, email string, password string) (string, string, error)
 }

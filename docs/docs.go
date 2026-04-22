@@ -156,6 +156,11 @@ const docTemplate = `{
         },
         "/api/books/fetch": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Mencari buku di Google Books via ISBN dan menyimpannya ke database lokal",
                 "consumes": [
                     "application/json"

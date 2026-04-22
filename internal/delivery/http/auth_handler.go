@@ -93,14 +93,15 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 	}
 
 	// 3. Lempar ke Otak (Usecase) untuk divalidasi dan dibuatkan JWT
-	token, err := h.authUsecase.Login(c.Context(), req.Email, req.Password)
+	accessToken, refreshToken, err := h.authUsecase.Login(c.Context(), req.Email, req.Password)
 	if err != nil {
 		return utils.HandleDomainError(c, err)
 	}
 
 	// Buat object DTO Response
 	res := TokenResponse{
-		Token: token,
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
 	}
 
 	// Kembalikan DTO tersebut

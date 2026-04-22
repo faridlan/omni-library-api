@@ -22,6 +22,20 @@ func (UserModel) TableName() string {
 	return "users"
 }
 
+// 1. Model GORM untuk pemetaan ke tabel 'refresh_tokens'
+type RefreshTokenModel struct {
+	ID        string    `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	UserID    string    `gorm:"type:uuid;not null"`
+	Token     string    `gorm:"type:text;unique;not null"`
+	ExpiresAt time.Time `gorm:"not null"`
+	CreatedAt time.Time `gorm:"autoCreateTime"`
+}
+
+// Beri tahu GORM nama tabel pastinya
+func (RefreshTokenModel) TableName() string {
+	return "refresh_tokens"
+}
+
 func (m *UserModel) ToDomain() *domain.User {
 	return &domain.User{
 		ID:        m.ID,

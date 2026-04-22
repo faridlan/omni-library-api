@@ -54,45 +54,54 @@ func (u *authUsecase) Register(ctx context.Context, name, email, password string
 }
 
 // Login untuk mengecek sandi dan menerbitkan Gelang VIP (JWT)
-func (u *authUsecase) Login(ctx context.Context, email, password string) (string, error) {
-	// 1. Cek apakah emailnya ada di database?
+func (u *authUsecase) Login(ctx context.Context, email, password string) (string, string, error) {
+	// 1. Cek User
 	user, err := u.userRepo.GetByEmail(ctx, email)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	if user == nil {
-		return "", domain.ErrNotFound // Email tidak ditemukan
+		return "", "", domain.ErrNotFound
 	}
 
-	// 2. Cek apakah Password-nya cocok dengan hash di database?
+	// 2. Cek Password
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
 	if err != nil {
-		// Kita kembalikan error "Unauthorized" atau BadParamInput jika password salah
-		return "", domain.ErrBadParamInput
+		return "", "", domain.ErrBadParamInput
 	}
 
-	// 3. PEMBUATAN GELANG VIP (JWT)
-	// Kita ambil Kunci Rahasia dari file .env (Atau pakai default jika belum ada)
+	// 3. Ambil Secret Key
 	secret := os.Getenv("JWT_SECRET")
 	if secret == "" {
 		secret = "omnilibrary-super-secret-key"
 	}
 
-	// Tentukan isi informasi (Claims) yang akan diselipkan ke dalam Token
-	claims := jwt.MapClaims{
+	// 4. PEMBUATAN ACCESS TOKEN (15 Menit)
+	accessClaims := jwt.MapClaims{
 		"user_id": user.ID,
 		"role":    user.Role,
-		"exp":     time.Now().Add(time.Hour * 72).Unix(), // Token berlaku 72 jam (3 hari)
+		"exp":     time.Now().Add(time.Minute * 15).Unix(),
 	}
-
-	// Buat token baru menggunakan algoritma HS256
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
-	// Tanda tangani (Sign) token tersebut menggunakan Kunci Rahasia kita
-	signedToken, err := token.SignedString([]byte(secret))
+	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims)
+	signedAccessToken, err := accessToken.SignedString([]byte(secret))
 	if err != nil {
-		return "", errors.New("gagal menerbitkan token")
+		return "", "", errors.New("gagal menerbitkan access token")
 	}
 
-	return signedToken, nil
+	// 5. PEMBUATAN REFRESH TOKEN (7 Hari)
+	refreshClaims := jwt.MapClaims{
+		"user_id": user.ID,
+		"exp":     time.Now().Add(time.Hour * 24 * 7).Unix(),
+	}
+	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims)
+	signedRefreshToken, err := refreshToken.SignedString([]byte(secret))
+	if err != nil {
+		return "", "", errors.New("gagal menerbitkan refresh token")
+	}
+
+	// 6. TODO NANTI: Simpan signedRefreshToken ke Database
+	// err = u.authRepo.SaveRefreshToken(ctx, user.ID, signedRefreshToken, expTime)
+	// ...
+
+	return signedAccessToken, signedRefreshToken, nil
 }

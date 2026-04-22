@@ -72,7 +72,7 @@ func TestLogin_EmailTidakDitemukan(t *testing.T) {
 	mockUserRepo.On("GetByEmail", mock.Anything, "salah@example.com").Return(nil, nil)
 
 	// Action!
-	token, err := uc.Login(context.Background(), "salah@example.com", "password123")
+	token, _, err := uc.Login(context.Background(), "salah@example.com", "password123")
 
 	assert.ErrorIs(t, err, domain.ErrNotFound)
 	assert.Empty(t, token)
@@ -94,7 +94,7 @@ func TestLogin_PasswordSalah(t *testing.T) {
 	mockUserRepo.On("GetByEmail", mock.Anything, "test@example.com").Return(dbUser, nil)
 
 	// Action: Tapi user memasukkan password yang SALAH
-	token, err := uc.Login(context.Background(), "test@example.com", "password_ngawur")
+	token, _, err := uc.Login(context.Background(), "test@example.com", "password_ngawur")
 
 	assert.ErrorIs(t, err, domain.ErrBadParamInput)
 	assert.Empty(t, token)
@@ -117,7 +117,7 @@ func TestLogin_Sukses(t *testing.T) {
 	mockUserRepo.On("GetByEmail", mock.Anything, "test@example.com").Return(dbUser, nil)
 
 	// Action: User memasukkan password yang BENAR ("rahasia123")
-	token, err := uc.Login(context.Background(), "test@example.com", "rahasia123")
+	token, _, err := uc.Login(context.Background(), "test@example.com", "rahasia123")
 
 	assert.NoError(t, err)
 	assert.NotEmpty(t, token) // Pastikan token berhasil dibuat dan tidak kosong

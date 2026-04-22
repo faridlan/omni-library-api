@@ -16,7 +16,7 @@ func Protected() fiber.Handler {
 		// 1. Cek Header "Authorization"
 		authHeader := c.Get("Authorization")
 		if authHeader == "" {
-			return utils.SendError(c, fiber.StatusUnauthorized, "Akses ditolak: Token tidak ditemukan")
+			return utils.SendError(c, fiber.StatusUnauthorized, "Akses ditolak: Token tidak valid atau kadaluarsa")
 		}
 
 		// 2. LOGIKA SATPAM YANG AMAN DARI PANIC (Index Out Of Range)

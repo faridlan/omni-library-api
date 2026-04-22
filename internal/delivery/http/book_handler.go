@@ -48,6 +48,7 @@ func NewBookHandler(router fiber.Router, bu domain.BookUsecase) *BookHandler {
 // @Failure 404 {object} utils.ErrorResponse "Buku tidak ditemukan di Google Books"
 // @Failure 500 {object} utils.ErrorResponse
 // @Router /api/books/fetch [post]
+// @Security BearerAuth
 func (h *BookHandler) FetchAndSave(c *fiber.Ctx) error {
 
 	var req FetchBookRequest

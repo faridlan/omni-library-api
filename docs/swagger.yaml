@@ -411,6 +411,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: Ambil & Simpan Metadata Buku
       tags:
       - Books
