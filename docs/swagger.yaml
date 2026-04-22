@@ -166,6 +166,13 @@ definitions:
     - email
     - password
     type: object
+  internal_delivery_http.RefreshRequest:
+    properties:
+      refresh_token:
+        type: string
+    required:
+    - refresh_token
+    type: object
   internal_delivery_http.RegisterRequest:
     properties:
       email:
@@ -183,7 +190,9 @@ definitions:
     type: object
   internal_delivery_http.TokenResponse:
     properties:
-      token:
+      access_token:
+        type: string
+      refresh_token:
         type: string
     type: object
   internal_delivery_http.UpdateProgressRequest:
@@ -256,6 +265,40 @@ paths:
           schema:
             $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
       summary: Login User (Dapatkan JWT)
+      tags:
+      - Auth
+  /api/auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Menukarkan Refresh Token lama (berumur 7 hari) dengan Access Token
+        baru (15 menit). Cocok dipanggil diam-diam oleh Frontend saat mendapat error
+        401.
+      parameters:
+      - description: Payload Refresh Token
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_delivery_http.RefreshRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Berhasil mendapat access token baru
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Format salah atau token tidak valid
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+        "401":
+          description: Token expired atau ditolak
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+      summary: Perbarui Access Token
       tags:
       - Auth
   /api/auth/register:

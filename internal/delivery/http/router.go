@@ -25,6 +25,7 @@ func SetupRoutes(app *fiber.App, authUC domain.AuthUsecase, bookUC domain.BookUs
 	auth := api.Group("/auth")
 	auth.Post("/register", authHandler.Register)
 	auth.Post("/login", authHandler.Login)
+	auth.Post("/refresh", authHandler.Refresh)
 
 	// Katalog Buku
 	api.Get("/books", bookHandler.GetAll)

@@ -73,6 +73,55 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/auth/refresh": {
+            "post": {
+                "description": "Menukarkan Refresh Token lama (berumur 7 hari) dengan Access Token baru (15 menit). Cocok dipanggil diam-diam oleh Frontend saat mendapat error 401.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Perbarui Access Token",
+                "parameters": [
+                    {
+                        "description": "Payload Refresh Token",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_delivery_http.RefreshRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Berhasil mendapat access token baru",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Format salah atau token tidak valid",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Token expired atau ditolak",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/auth/register": {
             "post": {
                 "description": "Mendaftarkan pengguna baru ke dalam sistem dan melakukan hashing pada password.",
@@ -926,6 +975,17 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_delivery_http.RefreshRequest": {
+            "type": "object",
+            "required": [
+                "refresh_token"
+            ],
+            "properties": {
+                "refresh_token": {
+                    "type": "string"
+                }
+            }
+        },
         "internal_delivery_http.RegisterRequest": {
             "type": "object",
             "required": [
@@ -950,7 +1010,10 @@ const docTemplate = `{
         "internal_delivery_http.TokenResponse": {
             "type": "object",
             "properties": {
-                "token": {
+                "access_token": {
+                    "type": "string"
+                },
+                "refresh_token": {
                     "type": "string"
                 }
             }

@@ -32,6 +32,24 @@ func (_m *UserRepository) Create(ctx context.Context, user *domain.User) error {
 	return r0
 }
 
+// DeleteRefreshToken provides a mock function with given fields: ctx, token
+func (_m *UserRepository) DeleteRefreshToken(ctx context.Context, token string) error {
+	ret := _m.Called(ctx, token)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeleteRefreshToken")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, token)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // GetByEmail provides a mock function with given fields: ctx, email
 func (_m *UserRepository) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
 	ret := _m.Called(ctx, email)
@@ -90,6 +108,54 @@ func (_m *UserRepository) GetByID(ctx context.Context, id string) (*domain.User,
 	}
 
 	return r0, r1
+}
+
+// GetRefreshToken provides a mock function with given fields: ctx, token
+func (_m *UserRepository) GetRefreshToken(ctx context.Context, token string) (*domain.RefreshToken, error) {
+	ret := _m.Called(ctx, token)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetRefreshToken")
+	}
+
+	var r0 *domain.RefreshToken
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*domain.RefreshToken, error)); ok {
+		return rf(ctx, token)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) *domain.RefreshToken); ok {
+		r0 = rf(ctx, token)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*domain.RefreshToken)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, token)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// SaveRefreshToken provides a mock function with given fields: ctx, rt
+func (_m *UserRepository) SaveRefreshToken(ctx context.Context, rt *domain.RefreshToken) error {
+	ret := _m.Called(ctx, rt)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SaveRefreshToken")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.RefreshToken) error); ok {
+		r0 = rf(ctx, rt)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 // NewUserRepository creates a new instance of UserRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.

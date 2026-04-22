@@ -15,7 +15,7 @@ type AuthUsecase struct {
 }
 
 // Login provides a mock function with given fields: ctx, email, password
-func (_m *AuthUsecase) Login(ctx context.Context, email string, password string) (string, error) {
+func (_m *AuthUsecase) Login(ctx context.Context, email string, password string) (string, string, error) {
 	ret := _m.Called(ctx, email, password)
 
 	if len(ret) == 0 {
@@ -23,8 +23,9 @@ func (_m *AuthUsecase) Login(ctx context.Context, email string, password string)
 	}
 
 	var r0 string
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) (string, error)); ok {
+	var r1 string
+	var r2 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (string, string, error)); ok {
 		return rf(ctx, email, password)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) string); ok {
@@ -33,8 +34,42 @@ func (_m *AuthUsecase) Login(ctx context.Context, email string, password string)
 		r0 = ret.Get(0).(string)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) string); ok {
 		r1 = rf(ctx, email, password)
+	} else {
+		r1 = ret.Get(1).(string)
+	}
+
+	if rf, ok := ret.Get(2).(func(context.Context, string, string) error); ok {
+		r2 = rf(ctx, email, password)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
+}
+
+// Refresh provides a mock function with given fields: ctx, tokenString
+func (_m *AuthUsecase) Refresh(ctx context.Context, tokenString string) (string, error) {
+	ret := _m.Called(ctx, tokenString)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Refresh")
+	}
+
+	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (string, error)); ok {
+		return rf(ctx, tokenString)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) string); ok {
+		r0 = rf(ctx, tokenString)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, tokenString)
 	} else {
 		r1 = ret.Error(1)
 	}

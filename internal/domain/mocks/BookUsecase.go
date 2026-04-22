@@ -14,6 +14,54 @@ type BookUsecase struct {
 	mock.Mock
 }
 
+// CreateManual provides a mock function with given fields: ctx, book
+func (_m *BookUsecase) CreateManual(ctx context.Context, book *domain.Book) (*domain.Book, error) {
+	ret := _m.Called(ctx, book)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CreateManual")
+	}
+
+	var r0 *domain.Book
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.Book) (*domain.Book, error)); ok {
+		return rf(ctx, book)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.Book) *domain.Book); ok {
+		r0 = rf(ctx, book)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*domain.Book)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *domain.Book) error); ok {
+		r1 = rf(ctx, book)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// DeleteBook provides a mock function with given fields: ctx, id
+func (_m *BookUsecase) DeleteBook(ctx context.Context, id string) error {
+	ret := _m.Called(ctx, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeleteBook")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, id)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // FetchAndSaveMetadata provides a mock function with given fields: ctx, isbn
 func (_m *BookUsecase) FetchAndSaveMetadata(ctx context.Context, isbn string) (*domain.Book, error) {
 	ret := _m.Called(ctx, isbn)
@@ -67,6 +115,36 @@ func (_m *BookUsecase) GetAllBooks(ctx context.Context) ([]*domain.Book, error) 
 
 	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
 		r1 = rf(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// UpdateBook provides a mock function with given fields: ctx, id, req
+func (_m *BookUsecase) UpdateBook(ctx context.Context, id string, req *domain.Book) (*domain.Book, error) {
+	ret := _m.Called(ctx, id, req)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpdateBook")
+	}
+
+	var r0 *domain.Book
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, *domain.Book) (*domain.Book, error)); ok {
+		return rf(ctx, id, req)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, *domain.Book) *domain.Book); ok {
+		r0 = rf(ctx, id, req)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*domain.Book)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, *domain.Book) error); ok {
+		r1 = rf(ctx, id, req)
 	} else {
 		r1 = ret.Error(1)
 	}

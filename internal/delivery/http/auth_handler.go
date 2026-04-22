@@ -107,3 +107,41 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 	// Kembalikan DTO tersebut
 	return c.Status(fiber.StatusOK).JSON(res)
 }
+
+// Refresh godoc
+// @Summary Perbarui Access Token
+// @Description Menukarkan Refresh Token lama (berumur 7 hari) dengan Access Token baru (15 menit). Cocok dipanggil diam-diam oleh Frontend saat mendapat error 401.
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param request body RefreshRequest true "Payload Refresh Token"
+// @Success 200 {object} map[string]string "Berhasil mendapat access token baru"
+// @Failure 400 {object} utils.ErrorResponse "Format salah atau token tidak valid"
+// @Failure 401 {object} utils.ErrorResponse "Token expired atau ditolak"
+// @Router /api/auth/refresh [post]
+func (h *AuthHandler) Refresh(c *fiber.Ctx) error {
+	var req RefreshRequest
+
+	// 1. Tangkap JSON dari Frontend
+	if err := c.BodyParser(&req); err != nil {
+		return utils.SendError(c, fiber.StatusBadRequest, "Format JSON salah")
+	}
+
+	// 2. Validasi apakah refresh_token kosong
+	if err := utils.ValidateStruct(&req); err != nil {
+		return utils.SendError(c, fiber.StatusBadRequest, err.Error())
+	}
+
+	// 3. Serahkan token lama ke Usecase untuk ditukarkan
+	newAccessToken, err := h.authUsecase.Refresh(c.Context(), req.RefreshToken)
+	if err != nil {
+		// Jika token palsu, expired, atau tidak ada di DB, kita usir
+		return utils.HandleDomainError(c, err)
+	}
+
+	// 4. Berikan Access Token baru ke Frontend
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message":      "Access Token berhasil diperbarui",
+		"access_token": newAccessToken,
+	})
+}

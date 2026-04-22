@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"time"
 
@@ -80,7 +81,7 @@ func (u *authUsecase) Login(ctx context.Context, email, password string) (string
 	accessClaims := jwt.MapClaims{
 		"user_id": user.ID,
 		"role":    user.Role,
-		"exp":     time.Now().Add(time.Minute * 15).Unix(),
+		"exp":     time.Now().Add(time.Minute * 1).Unix(),
 	}
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims)
 	signedAccessToken, err := accessToken.SignedString([]byte(secret))
@@ -88,10 +89,11 @@ func (u *authUsecase) Login(ctx context.Context, email, password string) (string
 		return "", "", errors.New("gagal menerbitkan access token")
 	}
 
+	expTime := time.Now().Add(time.Hour * 24 * 7)
 	// 5. PEMBUATAN REFRESH TOKEN (7 Hari)
 	refreshClaims := jwt.MapClaims{
 		"user_id": user.ID,
-		"exp":     time.Now().Add(time.Hour * 24 * 7).Unix(),
+		"exp":     expTime.Unix(),
 	}
 	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims)
 	signedRefreshToken, err := refreshToken.SignedString([]byte(secret))
@@ -100,8 +102,83 @@ func (u *authUsecase) Login(ctx context.Context, email, password string) (string
 	}
 
 	// 6. TODO NANTI: Simpan signedRefreshToken ke Database
-	// err = u.authRepo.SaveRefreshToken(ctx, user.ID, signedRefreshToken, expTime)
-	// ...
+	rtData := &domain.RefreshToken{
+		UserID:    user.ID,
+		Token:     signedRefreshToken,
+		ExpiresAt: expTime,
+	}
+	err = u.userRepo.SaveRefreshToken(ctx, rtData)
+	if err != nil {
+		return "", "", errors.New("gagal menyimpan sesi login")
+	}
 
 	return signedAccessToken, signedRefreshToken, nil
+}
+
+func (u *authUsecase) Refresh(ctx context.Context, tokenString string) (string, error) {
+	// 1. Cek apakah token ada di Database kita (Belum dicabut/Revoked)
+	rt, err := u.userRepo.GetRefreshToken(ctx, tokenString)
+	if err != nil {
+		return "", err
+	}
+	if rt == nil {
+		return "", domain.ErrBadParamInput // Ditolak: Token tidak ditemukan di DB
+	}
+
+	// 2. Parse dan Validasi JWT (Sekaligus mengecek apakah sudah lewat 7 hari)
+	secret := os.Getenv("JWT_SECRET")
+	if secret == "" {
+		secret = "omnilibrary-super-secret-key"
+	}
+
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("metode enkripsi tidak valid")
+		}
+		return []byte(secret), nil
+	})
+
+	if err != nil || !token.Valid {
+		// Bersih-bersih: Hapus sekalian dari DB jika token sudah kadaluarsa
+		_ = u.userRepo.DeleteRefreshToken(ctx, tokenString)
+		return "", domain.ErrBadParamInput // Ditolak: Token expired atau invalid
+	}
+
+	// 3. Ambil UserID dari dalam token
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return "", errors.New("gagal membaca payload token")
+	}
+	userID := claims["user_id"].(string)
+
+	// 4. Ambil data User TERBARU dari database (Penting untuk mengecek Role terkini!)
+	user, err := u.userRepo.GetByID(ctx, userID) // Pastikan fungsi GetByID ada di UserRepository kamu
+	if err != nil || user == nil {
+		return "", domain.ErrNotFound
+	}
+
+	// 5. Cetak Access Token BARU (15 Menit)
+	accessClaims := jwt.MapClaims{
+		"user_id": user.ID,
+		"role":    user.Role, // Menggunakan role terbaru dari DB!
+		"exp":     time.Now().Add(time.Minute * 15).Unix(),
+	}
+	newAccessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims)
+	signedAccessToken, err := newAccessToken.SignedString([]byte(secret))
+	if err != nil {
+		return "", errors.New("gagal menerbitkan access token baru")
+	}
+
+	// ==========================================
+	// 💡 RUANG KOSONG UNTUK MASA DEPAN (ROTATION)
+	// ==========================================
+	// Nanti, saat kamu ingin upgrade ke strategi Rotation, buka komen ini:
+	/*
+		_ = u.authRepo.DeleteRefreshToken(ctx, tokenString)
+		newRefreshToken := ... (cetak & simpan ke DB)
+		return signedAccessToken, newRefreshToken, nil
+	*/
+
+	// Untuk MVP ini (Fixed Strategy), kita cukup kembalikan Access Token baru
+	return signedAccessToken, nil
 }
