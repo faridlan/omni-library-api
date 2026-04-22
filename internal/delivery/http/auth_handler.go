@@ -1,6 +1,7 @@
 package http
 
 import (
+	"github.com/faridlan/omni-library-api/internal/delivery/http/dto"
 	"github.com/faridlan/omni-library-api/internal/domain"
 	"github.com/faridlan/omni-library-api/internal/utils"
 	"github.com/gofiber/fiber/v2"
@@ -15,11 +16,6 @@ func NewAuthHandler(router fiber.Router, uc domain.AuthUsecase) *AuthHandler {
 	return &AuthHandler{
 		authUsecase: uc,
 	}
-
-	// Buat sub-grup khusus auth
-	// authGroup := router.Group("/auth")
-	// authGroup.Post("/register", handler.Register)
-	// authGroup.Post("/login", handler.Login)
 }
 
 // Register godoc
@@ -28,14 +24,14 @@ func NewAuthHandler(router fiber.Router, uc domain.AuthUsecase) *AuthHandler {
 // @Tags Auth
 // @Accept json
 // @Produce json
-// @Param request body RegisterRequest true "Payload registrasi pengguna baru"
-// @Success 201 {object} UserResponse "Registrasi berhasil (mengembalikan data user tanpa password)"
+// @Param request body dto.RegisterRequest true "Payload registrasi pengguna baru"
+// @Success 201 {object} dto.UserResponse "Registrasi berhasil (mengembalikan data user tanpa password)"
 // @Failure 400 {object} utils.ErrorResponse "Format JSON salah atau validasi gagal"
 // @Failure 409 {object} utils.ErrorResponse "Email sudah terdaftar (Conflict)"
 // @Failure 500 {object} utils.ErrorResponse "Internal Server Error"
 // @Router /api/auth/register [post]
 func (h *AuthHandler) Register(c *fiber.Ctx) error {
-	var req RegisterRequest
+	var req dto.RegisterRequest
 
 	// 1. Tangkap JSON Body
 	if err := c.BodyParser(&req); err != nil {
@@ -54,7 +50,7 @@ func (h *AuthHandler) Register(c *fiber.Ctx) error {
 	}
 
 	// 4. Kembalikan Response Sukses (Jangan pernah kembalikan password di response!)
-	res := UserResponse{
+	res := dto.UserResponse{
 		ID:        user.ID,
 		Name:      user.Name,
 		Email:     user.Email,
@@ -72,15 +68,15 @@ func (h *AuthHandler) Register(c *fiber.Ctx) error {
 // @Tags Auth
 // @Accept json
 // @Produce json
-// @Param request body LoginRequest true "Payload kredensial login"
-// @Success 200 {object} TokenResponse "Login berhasil (mengembalikan token JWT)"
+// @Param request body dto.LoginRequest true "Payload kredensial login"
+// @Success 200 {object} dto.TokenResponse "Login berhasil (mengembalikan token JWT)"
 // @Failure 400 {object} utils.ErrorResponse "Format JSON salah atau validasi gagal"
 // @Failure 401 {object} utils.ErrorResponse "Email atau Password salah"
 // @Failure 404 {object} utils.ErrorResponse "Email tidak ditemukan"
 // @Failure 500 {object} utils.ErrorResponse "Internal Server Error"
 // @Router /api/auth/login [post]
 func (h *AuthHandler) Login(c *fiber.Ctx) error {
-	var req LoginRequest
+	var req dto.LoginRequest
 
 	// 1. Tangkap JSON Body
 	if err := c.BodyParser(&req); err != nil {
@@ -99,7 +95,7 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 	}
 
 	// Buat object DTO Response
-	res := TokenResponse{
+	res := dto.TokenResponse{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 	}
@@ -114,13 +110,13 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 // @Tags Auth
 // @Accept json
 // @Produce json
-// @Param request body RefreshRequest true "Payload Refresh Token"
+// @Param request body dto.RefreshRequest true "Payload Refresh Token"
 // @Success 200 {object} map[string]string "Berhasil mendapat access token baru"
 // @Failure 400 {object} utils.ErrorResponse "Format salah atau token tidak valid"
 // @Failure 401 {object} utils.ErrorResponse "Token expired atau ditolak"
 // @Router /api/auth/refresh [post]
 func (h *AuthHandler) Refresh(c *fiber.Ctx) error {
-	var req RefreshRequest
+	var req dto.RefreshRequest
 
 	// 1. Tangkap JSON dari Frontend
 	if err := c.BodyParser(&req); err != nil {

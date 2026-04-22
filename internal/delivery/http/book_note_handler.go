@@ -1,6 +1,7 @@
 package http
 
 import (
+	"github.com/faridlan/omni-library-api/internal/delivery/http/dto"
 	"github.com/faridlan/omni-library-api/internal/domain"
 	"github.com/faridlan/omni-library-api/internal/utils"
 	"github.com/gofiber/fiber/v2"
@@ -13,11 +14,6 @@ type BookNoteHandler struct {
 func NewBookNoteHandler(router fiber.Router, u domain.BookNoteUsecase) *BookNoteHandler {
 	return &BookNoteHandler{usecase: u}
 
-	// Kita buat sub-group di bawah URL yang butuh user_book_id
-	// noteGroup := router.Group("/library/:user_book_id/notes")
-
-	// noteGroup.Post("/", handler.AddNote)
-	// noteGroup.Get("/", handler.GetNotes)
 }
 
 // AddNote godoc
@@ -27,7 +23,7 @@ func NewBookNoteHandler(router fiber.Router, u domain.BookNoteUsecase) *BookNote
 // @Accept json
 // @Produce json
 // @Param user_book_id path string true "ID progres buku di rak (Bukan master Book ID)"
-// @Param request body AddNoteRequest true "Payload isi kutipan dan tag"
+// @Param request body dto.AddNoteRequest true "Payload isi kutipan dan tag"
 // @Success 201 {object} domain.BookNote "Catatan berhasil disimpan"
 // @Failure 400 {object} utils.ErrorResponse "Format JSON salah atau Quote kosong"
 // @Failure 401 {object} utils.ErrorResponse "Unauthorized (Token tidak ada/salah)"
@@ -43,7 +39,7 @@ func (h *BookNoteHandler) AddNote(c *fiber.Ctx) error {
 	}
 
 	// Gunakan DTO yang baru dibuat
-	var req AddNoteRequest
+	var req dto.AddNoteRequest
 	if err := c.BodyParser(&req); err != nil {
 		return utils.SendError(c, fiber.StatusBadRequest, "Format JSON salah")
 	}

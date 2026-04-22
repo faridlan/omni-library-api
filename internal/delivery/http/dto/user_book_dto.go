@@ -1,4 +1,4 @@
-package http
+package dto
 
 // ==========================================
 // DTO UNTUK REQUEST LIBRARY

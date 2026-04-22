@@ -49,7 +49,8 @@ func main() {
 
 	//Fitur Authentication & Authorization
 	userRepo := postgres.NewUserRepository(db)
-	authUsecase := usecase.NewAuthUsecase(userRepo)
+	authRepo := postgres.NewAuthRepository(db)
+	authUsecase := usecase.NewAuthUsecase(userRepo, authRepo)
 
 	// Fitur Book Metadata
 	bookRepo := postgres.NewBookRepository(db)

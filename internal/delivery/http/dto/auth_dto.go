@@ -1,4 +1,4 @@
-package http
+package dto
 
 // DTO untuk validasi Input
 type RegisterRequest struct {

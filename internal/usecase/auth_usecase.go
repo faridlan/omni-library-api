@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/faridlan/omni-library-api/internal/domain"
@@ -13,19 +14,44 @@ import (
 )
 
 type authUsecase struct {
-	userRepo domain.UserRepository
+	userRepo        domain.UserRepository
+	authRepo        domain.AuthRepository
+	jwtSecret       string
+	accessExpMinute int
+	refreshExpDay   int
 }
 
-func NewAuthUsecase(ur domain.UserRepository) domain.AuthUsecase {
+func NewAuthUsecase(ur domain.UserRepository, ar domain.AuthRepository) domain.AuthUsecase {
+	secret := os.Getenv("JWT_SECRET")
+	if secret == "" {
+		secret = "omnilibrary-super-secret-key"
+	}
+
+	// 2. Baca Access Expiry
+	accessMin, err := strconv.Atoi(os.Getenv("ACCESS_TOKEN_EXPIRY_MINUTE"))
+	if err != nil || accessMin == 0 {
+		accessMin = 15 // Default
+	}
+
+	// 3. Baca Refresh Expiry
+	refreshDay, err := strconv.Atoi(os.Getenv("REFRESH_TOKEN_EXPIRY_DAY"))
+	if err != nil || refreshDay == 0 {
+		refreshDay = 7 // Default
+	}
+
 	return &authUsecase{
-		userRepo: ur,
+		userRepo:        ur,
+		authRepo:        ar,
+		jwtSecret:       secret,
+		accessExpMinute: accessMin,
+		refreshExpDay:   refreshDay,
 	}
 }
 
 // Register untuk mendaftarkan Warga baru
 func (u *authUsecase) Register(ctx context.Context, name, email, password string) (*domain.User, error) {
 	// 1. ATURAN BISNIS: Cek apakah email sudah pernah didaftarkan?
-	existingUser, _ := u.userRepo.GetByEmail(ctx, email)
+	existingUser, _ := u.authRepo.GetByEmail(ctx, email)
 	if existingUser != nil {
 		return nil, domain.ErrConflict // Menolak jika email kembar
 	}
@@ -56,8 +82,7 @@ func (u *authUsecase) Register(ctx context.Context, name, email, password string
 
 // Login untuk mengecek sandi dan menerbitkan Gelang VIP (JWT)
 func (u *authUsecase) Login(ctx context.Context, email, password string) (string, string, error) {
-	// 1. Cek User
-	user, err := u.userRepo.GetByEmail(ctx, email)
+	user, err := u.authRepo.GetByEmail(ctx, email)
 	if err != nil {
 		return "", "", err
 	}
@@ -65,49 +90,42 @@ func (u *authUsecase) Login(ctx context.Context, email, password string) (string
 		return "", "", domain.ErrNotFound
 	}
 
-	// 2. Cek Password
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
 	if err != nil {
 		return "", "", domain.ErrBadParamInput
 	}
 
-	// 3. Ambil Secret Key
-	secret := os.Getenv("JWT_SECRET")
-	if secret == "" {
-		secret = "omnilibrary-super-secret-key"
-	}
-
-	// 4. PEMBUATAN ACCESS TOKEN (15 Menit)
+	// 3. PEMBUATAN ACCESS TOKEN (Gunakan u.accessExpMinute dan u.jwtSecret)
 	accessClaims := jwt.MapClaims{
 		"user_id": user.ID,
 		"role":    user.Role,
-		"exp":     time.Now().Add(time.Minute * 1).Unix(),
+		"exp":     time.Now().Add(time.Minute * time.Duration(u.accessExpMinute)).Unix(),
 	}
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims)
-	signedAccessToken, err := accessToken.SignedString([]byte(secret))
+	signedAccessToken, err := accessToken.SignedString([]byte(u.jwtSecret))
 	if err != nil {
 		return "", "", errors.New("gagal menerbitkan access token")
 	}
 
-	expTime := time.Now().Add(time.Hour * 24 * 7)
-	// 5. PEMBUATAN REFRESH TOKEN (7 Hari)
+	// 4. PEMBUATAN REFRESH TOKEN (Gunakan u.refreshExpDay)
+	expTime := time.Now().Add(time.Hour * 24 * time.Duration(u.refreshExpDay))
 	refreshClaims := jwt.MapClaims{
 		"user_id": user.ID,
 		"exp":     expTime.Unix(),
 	}
 	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims)
-	signedRefreshToken, err := refreshToken.SignedString([]byte(secret))
+	signedRefreshToken, err := refreshToken.SignedString([]byte(u.jwtSecret))
 	if err != nil {
 		return "", "", errors.New("gagal menerbitkan refresh token")
 	}
 
-	// 6. TODO NANTI: Simpan signedRefreshToken ke Database
+	// 5. SIMPAN KE DATABASE
 	rtData := &domain.RefreshToken{
 		UserID:    user.ID,
 		Token:     signedRefreshToken,
 		ExpiresAt: expTime,
 	}
-	err = u.userRepo.SaveRefreshToken(ctx, rtData)
+	err = u.authRepo.SaveRefreshToken(ctx, rtData)
 	if err != nil {
 		return "", "", errors.New("gagal menyimpan sesi login")
 	}
@@ -117,7 +135,7 @@ func (u *authUsecase) Login(ctx context.Context, email, password string) (string
 
 func (u *authUsecase) Refresh(ctx context.Context, tokenString string) (string, error) {
 	// 1. Cek apakah token ada di Database kita (Belum dicabut/Revoked)
-	rt, err := u.userRepo.GetRefreshToken(ctx, tokenString)
+	rt, err := u.authRepo.GetRefreshToken(ctx, tokenString)
 	if err != nil {
 		return "", err
 	}
@@ -125,23 +143,16 @@ func (u *authUsecase) Refresh(ctx context.Context, tokenString string) (string, 
 		return "", domain.ErrBadParamInput // Ditolak: Token tidak ditemukan di DB
 	}
 
-	// 2. Parse dan Validasi JWT (Sekaligus mengecek apakah sudah lewat 7 hari)
-	secret := os.Getenv("JWT_SECRET")
-	if secret == "" {
-		secret = "omnilibrary-super-secret-key"
-	}
-
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("metode enkripsi tidak valid")
 		}
-		return []byte(secret), nil
+		return []byte(u.jwtSecret), nil // <-- Jauh lebih rapi
 	})
 
 	if err != nil || !token.Valid {
-		// Bersih-bersih: Hapus sekalian dari DB jika token sudah kadaluarsa
-		_ = u.userRepo.DeleteRefreshToken(ctx, tokenString)
-		return "", domain.ErrBadParamInput // Ditolak: Token expired atau invalid
+		_ = u.authRepo.DeleteRefreshToken(ctx, tokenString)
+		return "", domain.ErrBadParamInput
 	}
 
 	// 3. Ambil UserID dari dalam token
@@ -152,7 +163,7 @@ func (u *authUsecase) Refresh(ctx context.Context, tokenString string) (string, 
 	userID := claims["user_id"].(string)
 
 	// 4. Ambil data User TERBARU dari database (Penting untuk mengecek Role terkini!)
-	user, err := u.userRepo.GetByID(ctx, userID) // Pastikan fungsi GetByID ada di UserRepository kamu
+	user, err := u.authRepo.GetByID(ctx, userID) // Pastikan fungsi GetByID ada di UserRepository kamu
 	if err != nil || user == nil {
 		return "", domain.ErrNotFound
 	}
@@ -160,11 +171,11 @@ func (u *authUsecase) Refresh(ctx context.Context, tokenString string) (string, 
 	// 5. Cetak Access Token BARU (15 Menit)
 	accessClaims := jwt.MapClaims{
 		"user_id": user.ID,
-		"role":    user.Role, // Menggunakan role terbaru dari DB!
-		"exp":     time.Now().Add(time.Minute * 15).Unix(),
+		"role":    user.Role,
+		"exp":     time.Now().Add(time.Minute * time.Duration(u.accessExpMinute)).Unix(),
 	}
 	newAccessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims)
-	signedAccessToken, err := newAccessToken.SignedString([]byte(secret))
+	signedAccessToken, err := newAccessToken.SignedString([]byte(u.jwtSecret))
 	if err != nil {
 		return "", errors.New("gagal menerbitkan access token baru")
 	}

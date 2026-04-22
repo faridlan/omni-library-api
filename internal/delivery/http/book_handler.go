@@ -3,6 +3,7 @@ package http
 import (
 	"time"
 
+	"github.com/faridlan/omni-library-api/internal/delivery/http/dto"
 	"github.com/faridlan/omni-library-api/internal/domain"
 	"github.com/faridlan/omni-library-api/internal/utils"
 	"github.com/gofiber/fiber/v2"
@@ -16,24 +17,6 @@ func NewBookHandler(router fiber.Router, bu domain.BookUsecase) *BookHandler {
 	return &BookHandler{
 		bookUsecase: bu,
 	}
-
-	// // Buat grup dasar untuk buku (akan menjadi /api/books)
-	// bookGroup := router.Group("/books")
-
-	// // 🟢 RUTE PUBLIK (Bebas tanpa login)
-	// bookGroup.Get("/", handler.GetAll)
-
-	// // 🟡 RUTE USER BIASA (Wajib login, tapi tidak harus admin)
-	// // Satpam Protected() dipasang langsung spesifik di endpoint ini
-	// bookGroup.Post("/fetch", middleware.Protected(), handler.FetchAndSave)
-
-	// // 🔴 RUTE ADMIN (Wajib login + Wajib Admin)
-	// // Kita buat sub-grup yang dijaga ketat oleh dua lapis Satpam
-	// adminGroup := bookGroup.Group("/", middleware.Protected(), middleware.AdminOnly())
-
-	// adminGroup.Post("/manual", handler.CreateManual)
-	// adminGroup.Put("/:id", handler.UpdateBook)
-	// adminGroup.Delete("/:id", handler.DeleteBook)
 }
 
 // FetchAndSave godoc
@@ -42,7 +25,7 @@ func NewBookHandler(router fiber.Router, bu domain.BookUsecase) *BookHandler {
 // @Tags Books
 // @Accept json
 // @Produce json
-// @Param request body FetchBookRequest true "Payload berisi ISBN"
+// @Param request body dto.FetchBookRequest true "Payload berisi ISBN"
 // @Success 200 {object} domain.Book
 // @Failure 400 {object} utils.ErrorResponse
 // @Failure 404 {object} utils.ErrorResponse "Buku tidak ditemukan di Google Books"
@@ -51,7 +34,7 @@ func NewBookHandler(router fiber.Router, bu domain.BookUsecase) *BookHandler {
 // @Security BearerAuth
 func (h *BookHandler) FetchAndSave(c *fiber.Ctx) error {
 
-	var req FetchBookRequest
+	var req dto.FetchBookRequest
 
 	// 1. Tangkap JSON
 	if err := c.BodyParser(&req); err != nil {
@@ -103,11 +86,11 @@ func (h *BookHandler) GetAll(c *fiber.Ctx) error {
 // @Success 201 {object} domain.Book
 // @Failure 401 {object} utils.ErrorResponse "Unauthorized (Tidak bawa Token)"
 // @Failure 403 {object} utils.ErrorResponse "Forbidden (Bukan Admin)"
-// @Param request body BookRequest true "Payload data buku"
+// @Param request body dto.BookRequest true "Payload data buku"
 // @Router /api/books/manual [post]
 func (h *BookHandler) CreateManual(c *fiber.Ctx) error {
 	// Nanti kita panggil h.bookUsecase.CreateManual(...) di sini
-	var req BookRequest
+	var req dto.BookRequest
 	if err := c.BodyParser(&req); err != nil {
 		return utils.SendError(c, fiber.StatusBadRequest, "Format JSON salah")
 	}
@@ -155,7 +138,7 @@ func (h *BookHandler) CreateManual(c *fiber.Ctx) error {
 // @Success 200 {object} domain.Book
 // @Failure 401 {object} utils.ErrorResponse "Unauthorized"
 // @Failure 403 {object} utils.ErrorResponse "Forbidden"
-// @Param request body BookRequest true "Payload data update"
+// @Param request body dto.BookRequest true "Payload data update"
 // @Router /api/books/{id} [put]
 func (h *BookHandler) UpdateBook(c *fiber.Ctx) error {
 	bookID := c.Params("id")
@@ -163,7 +146,7 @@ func (h *BookHandler) UpdateBook(c *fiber.Ctx) error {
 		return utils.SendError(c, fiber.StatusBadRequest, err.Error())
 	}
 
-	var req BookRequest
+	var req dto.BookRequest
 	if err := c.BodyParser(&req); err != nil {
 		return utils.SendError(c, fiber.StatusBadRequest, "Format JSON salah")
 	}

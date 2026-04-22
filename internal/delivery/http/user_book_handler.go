@@ -1,6 +1,7 @@
 package http
 
 import (
+	"github.com/faridlan/omni-library-api/internal/delivery/http/dto"
 	"github.com/faridlan/omni-library-api/internal/domain"
 	"github.com/faridlan/omni-library-api/internal/utils"
 	"github.com/gofiber/fiber/v2"
@@ -13,15 +14,7 @@ type UserBookHandler struct {
 func NewUserBookHandler(router fiber.Router, u domain.UserBookUsecase) *UserBookHandler {
 	return &UserBookHandler{usecase: u}
 
-	// Grup endpoint khusus rak buku (library)
-	// libGroup := router.Group("/library")
-	// libGroup.Post("/", handler.AddBook)
-	// libGroup.Put("/:book_id", handler.UpdateProgress)
-	// libGroup.Get("/", handler.GetMyLibrary)
 }
-
-// ⚠️ HARDCODE SEMENTARA (Ganti dengan UUID dari database-mu)
-// const DummyUserID = "08a2fccf-46c8-473f-bb86-53a1c0b2b8a6"
 
 // AddBook godoc
 // @Summary Tambah Buku ke Rak
@@ -29,7 +22,7 @@ func NewUserBookHandler(router fiber.Router, u domain.UserBookUsecase) *UserBook
 // @Tags Library
 // @Accept json
 // @Produce json
-// @Param request body AddBookRequest true "Payload berisi ID Buku"
+// @Param request body dto.AddBookRequest true "Payload berisi ID Buku"
 // @Success 201 {object} domain.UserBook "Buku berhasil ditambahkan"
 // @Failure 400 {object} utils.ErrorResponse "Format JSON salah"
 // @Failure 401 {object} utils.ErrorResponse "Unauthorized (Token tidak ada/salah)"
@@ -38,7 +31,7 @@ func NewUserBookHandler(router fiber.Router, u domain.UserBookUsecase) *UserBook
 // @Security BearerAuth
 // @Router /api/library [post]
 func (h *UserBookHandler) AddBook(c *fiber.Ctx) error {
-	var req AddBookRequest
+	var req dto.AddBookRequest
 	if err := c.BodyParser(&req); err != nil {
 		return utils.SendError(c, fiber.StatusBadRequest, "Format JSON salah")
 	}
@@ -64,7 +57,7 @@ func (h *UserBookHandler) AddBook(c *fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Param book_id path string true "ID Buku di database master"
-// @Param request body UpdateProgressRequest true "Payload update progres"
+// @Param request body dto.UpdateProgressRequest true "Payload update progres"
 // @Success 200 {object} domain.UserBook "Berhasil update progres"
 // @Failure 400 {object} utils.ErrorResponse "Format JSON salah"
 // @Failure 401 {object} utils.ErrorResponse "Unauthorized (Token tidak ada/salah)"
@@ -79,7 +72,7 @@ func (h *UserBookHandler) UpdateProgress(c *fiber.Ctx) error {
 		return utils.SendError(c, fiber.StatusBadRequest, err.Error())
 	}
 
-	var req UpdateProgressRequest
+	var req dto.UpdateProgressRequest
 	if err := c.BodyParser(&req); err != nil {
 		return utils.SendError(c, fiber.StatusBadRequest, "Format JSON salah")
 	}
