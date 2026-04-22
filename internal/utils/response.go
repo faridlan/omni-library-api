@@ -2,7 +2,7 @@ package utils
 
 import (
 	"errors"
-	"log"
+	"log/slog"
 
 	"github.com/faridlan/omni-library-api/internal/domain"
 	"github.com/gofiber/fiber/v2"
@@ -20,17 +20,26 @@ func SendError(c *fiber.Ctx, statusCode int, message string, detail ...string) e
 	}
 
 	// ====================================================================
-	// FILTER KEAMANAN (Mencegah Information Disclosure)
+	// FILTER KEAMANAN & STRUCTURED LOGGING
 	// ====================================================================
 	if statusCode >= fiber.StatusInternalServerError {
-		// 1. LOGGING: Cetak error asli ke terminal agar mudah di-debug
+
+		// 1. Siapkan detail error asli (jika ada)
+		var errDetail string
 		if len(detail) > 0 && detail[0] != "" {
-			log.Printf("[CRITICAL SERVER ERROR %d] %s: %s\n", statusCode, message, detail[0])
-		} else {
-			log.Printf("[CRITICAL SERVER ERROR %d] %s\n", statusCode, message)
+			errDetail = detail[0] // Isi variabelnya di sini
 		}
 
-		// 2. MASKING: Pastikan detail dikosongkan agar tidak menjadi JSON
+		// 2. LOGGING: Panggil slog.Error SATU KALI saja
+		slog.Error("CRITICAL SERVER ERROR",
+			slog.Int("status_code", statusCode),
+			slog.String("path", c.Path()),     // Catat URL mana yang error
+			slog.String("method", c.Method()), // Catat methodnya (POST/GET)
+			slog.String("error_message", message),
+			slog.String("sql_detail", errDetail), // Otomatis terisi atau kosong
+		)
+
+		// 3. MASKING: Pastikan detail dikosongkan agar tidak masuk ke JSON Response
 		resp.Detail = ""
 	} else {
 		// Untuk error 4xx (Client Error), aman untuk menampilkan detail ke user

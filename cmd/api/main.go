@@ -1,7 +1,7 @@
 package main
 
 import (
-	"log"
+	"log/slog"
 	"os"
 
 	"github.com/faridlan/omni-library-api/internal/config"
@@ -9,6 +9,7 @@ import (
 	"github.com/faridlan/omni-library-api/internal/repository/external"
 	"github.com/faridlan/omni-library-api/internal/repository/postgres"
 	"github.com/faridlan/omni-library-api/internal/usecase"
+	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/joho/godotenv"
 
 	_ "github.com/faridlan/omni-library-api/docs"
@@ -32,9 +33,10 @@ func main() {
 
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		// Gunakan slog, lalu paksa aplikasi berhenti
+		slog.Error("Error loading .env file", slog.String("detail", err.Error()))
+		os.Exit(1)
 	}
-
 	// Ambil nilai dengan os.Getenv
 	dbUser := os.Getenv("DB_USER")
 	dbPassword := os.Getenv("DB_PASSWORD")
@@ -71,11 +73,21 @@ func main() {
 		AllowMethods: "GET, POST, HEAD, PUT, DELETE, PATCH",
 	}))
 
+	app.Use(logger.New(logger.Config{
+		Format:     "[${time}] ${status} - ${latency} ${method} ${path}\n",
+		TimeFormat: "2006-01-02 15:04:05",
+		TimeZone:   "Asia/Jakarta", // Sesuaikan dengan zona waktumu
+	}))
+
 	app.Get("/swagger/*", swagger.HandlerDefault)
 
 	// Daftarkan Handler
 	myHttp.SetupRoutes(app, authUsecase, bookUsecase, userBookUsecase, bookNoteUsecase)
 
 	// Start Server
-	log.Fatal(app.Listen(":8080"))
+	slog.Info("Starting OmniLibrary API Server", slog.String("port", "8080"))
+	if err := app.Listen(":8080"); err != nil {
+		slog.Error("Server failed to start", slog.String("detail", err.Error()))
+		os.Exit(1)
+	}
 }
