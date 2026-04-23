@@ -13,6 +13,12 @@ type ErrorResponse struct {
 	Detail string `json:"detail,omitempty"`
 }
 
+type PaginatedResponse struct {
+	Message string                `json:"message"`
+	Data    any                   `json:"data"`
+	Meta    domain.PaginationMeta `json:"meta"`
+}
+
 // SendError adalah helper agar Handler kita makin tipis
 func SendError(c *fiber.Ctx, statusCode int, message string, detail ...string) error {
 	resp := ErrorResponse{
@@ -72,4 +78,12 @@ func HandleDomainError(c *fiber.Ctx, err error) error {
 		// Namun sekarang SendError akan mencetaknya ke terminal dan mencegahnya masuk ke JSON.
 		return SendError(c, fiber.StatusInternalServerError, domain.ErrInternalServerError.Error(), err.Error())
 	}
+}
+
+func SendSuccessPaginated(c *fiber.Ctx, message string, data any, meta domain.PaginationMeta) error {
+	return c.Status(fiber.StatusOK).JSON(PaginatedResponse{
+		Message: message,
+		Data:    data,
+		Meta:    meta,
+	})
 }

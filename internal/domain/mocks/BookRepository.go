@@ -50,34 +50,41 @@ func (_m *BookRepository) Delete(ctx context.Context, id string) error {
 	return r0
 }
 
-// GetAll provides a mock function with given fields: ctx
-func (_m *BookRepository) GetAll(ctx context.Context) ([]*domain.Book, error) {
-	ret := _m.Called(ctx)
+// GetAll provides a mock function with given fields: ctx, params
+func (_m *BookRepository) GetAll(ctx context.Context, params domain.PaginationQuery) ([]*domain.Book, int64, error) {
+	ret := _m.Called(ctx, params)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetAll")
 	}
 
 	var r0 []*domain.Book
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context) ([]*domain.Book, error)); ok {
-		return rf(ctx)
+	var r1 int64
+	var r2 error
+	if rf, ok := ret.Get(0).(func(context.Context, domain.PaginationQuery) ([]*domain.Book, int64, error)); ok {
+		return rf(ctx, params)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context) []*domain.Book); ok {
-		r0 = rf(ctx)
+	if rf, ok := ret.Get(0).(func(context.Context, domain.PaginationQuery) []*domain.Book); ok {
+		r0 = rf(ctx, params)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*domain.Book)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(ctx)
+	if rf, ok := ret.Get(1).(func(context.Context, domain.PaginationQuery) int64); ok {
+		r1 = rf(ctx, params)
 	} else {
-		r1 = ret.Error(1)
+		r1 = ret.Get(1).(int64)
 	}
 
-	return r0, r1
+	if rf, ok := ret.Get(2).(func(context.Context, domain.PaginationQuery) error); ok {
+		r2 = rf(ctx, params)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }
 
 // GetByID provides a mock function with given fields: ctx, id

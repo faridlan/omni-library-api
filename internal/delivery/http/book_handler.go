@@ -56,16 +56,28 @@ func (h *BookHandler) FetchAndSave(c *fiber.Ctx) error {
 
 // GetAll godoc
 // @Summary Ambil Katalog Buku
-// @Description Mengambil daftar seluruh buku yang tersimpan di database lokal
+// @Description Mengambil daftar buku dari database secara terpaginasi (pagination)
 // @Tags Books
 // @Produce json
-// @Success 200 {array} domain.Book "Berhasil mengambil daftar buku"
+// @Param page query int false "Nomor Halaman (Default: 1)"
+// @Param limit query int false "Jumlah Data per Halaman (Default: 10)"
+// @Success 200 {object} utils.PaginatedResponse "Berhasil mengambil daftar buku"
 // @Failure 500 {object} utils.ErrorResponse "Internal Server Error"
 // @Router /api/books [get]
 func (h *BookHandler) GetAll(c *fiber.Ctx) error {
-	books, err := h.bookUsecase.GetAllBooks(c.Context())
+	// 1. Tangkap parameter dari URL (berikan default value jika user tidak mengirimnya)
+	page := c.QueryInt("page", 1)
+	limit := c.QueryInt("limit", 10)
+
+	// 2. Bungkus ke dalam Struct PaginationQuery
+	params := domain.PaginationQuery{
+		Page:  page,
+		Limit: limit,
+	}
+
+	// 3. Panggil Usecase
+	books, meta, err := h.bookUsecase.GetAllBooks(c.Context(), params)
 	if err != nil {
-		// Kita gunakan utils.SendError agar format JSON-nya konsisten 100%
 		return utils.SendError(c, fiber.StatusInternalServerError, "Gagal mengambil data buku", err.Error())
 	}
 
@@ -73,7 +85,8 @@ func (h *BookHandler) GetAll(c *fiber.Ctx) error {
 		books = make([]*domain.Book, 0)
 	}
 
-	return c.Status(fiber.StatusOK).JSON(books)
+	// 4. Kembalikan Response Menggunakan Format Sukses yang Baru!
+	return utils.SendSuccessPaginated(c, "Berhasil mengambil katalog buku", books, meta)
 }
 
 // CreateManual godoc

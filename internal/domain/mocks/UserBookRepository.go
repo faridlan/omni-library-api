@@ -92,34 +92,41 @@ func (_m *UserBookRepository) GetByUserAndBookID(ctx context.Context, userID str
 	return r0, r1
 }
 
-// GetByUserID provides a mock function with given fields: ctx, userID, status
-func (_m *UserBookRepository) GetByUserID(ctx context.Context, userID string, status string) ([]*domain.UserBookWithMetadata, error) {
-	ret := _m.Called(ctx, userID, status)
+// GetByUserID provides a mock function with given fields: ctx, userID, status, params
+func (_m *UserBookRepository) GetByUserID(ctx context.Context, userID string, status string, params domain.PaginationQuery) ([]*domain.UserBookWithMetadata, int64, error) {
+	ret := _m.Called(ctx, userID, status, params)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetByUserID")
 	}
 
 	var r0 []*domain.UserBookWithMetadata
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) ([]*domain.UserBookWithMetadata, error)); ok {
-		return rf(ctx, userID, status)
+	var r1 int64
+	var r2 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, domain.PaginationQuery) ([]*domain.UserBookWithMetadata, int64, error)); ok {
+		return rf(ctx, userID, status, params)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) []*domain.UserBookWithMetadata); ok {
-		r0 = rf(ctx, userID, status)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, domain.PaginationQuery) []*domain.UserBookWithMetadata); ok {
+		r0 = rf(ctx, userID, status, params)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*domain.UserBookWithMetadata)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, userID, status)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, domain.PaginationQuery) int64); ok {
+		r1 = rf(ctx, userID, status, params)
 	} else {
-		r1 = ret.Error(1)
+		r1 = ret.Get(1).(int64)
 	}
 
-	return r0, r1
+	if rf, ok := ret.Get(2).(func(context.Context, string, string, domain.PaginationQuery) error); ok {
+		r2 = rf(ctx, userID, status, params)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }
 
 // UpdateProgress provides a mock function with given fields: ctx, ub

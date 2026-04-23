@@ -227,3 +227,73 @@ func TestDeleteBook_Success(t *testing.T) {
 
 	assert.NoError(t, err)
 }
+
+// ==========================================
+// TEST GET ALL BOOKS (PAGINATION)
+// ==========================================
+
+func TestGetAllBooks_Sukses_MenghitungPaginasi(t *testing.T) {
+	// 1. SIAPKAN STUNTMAN
+	mockRepo := new(mocks.BookRepository)
+	mockFetcher := new(mocks.BookMetadataFetcher)
+	uc := usecase.NewBookUsecase(mockRepo, mockFetcher)
+
+	// 2. SIAPKAN DATA PALSU DAN PARAMETER
+	params := domain.PaginationQuery{
+		Page:  1,
+		Limit: 10,
+	}
+
+	mockBooks := []*domain.Book{
+		{ID: "book-1", Title: "Buku Golang 101"},
+		{ID: "book-2", Title: "Clean Architecture"},
+	}
+
+	// Skenario krusial: Total SELURUH buku di database ada 25
+	var totalDataFromDB int64 = 25
+
+	// 3. ATUR SKENARIO (Ekspektasi)
+	// Kita perintahkan Stuntman Repo untuk mengembalikan 2 buku dan total data 25
+	mockRepo.On("GetAll", mock.Anything, params).Return(mockBooks, totalDataFromDB, nil)
+
+	// 4. EKSEKUSI ACTION!
+	books, meta, err := uc.GetAllBooks(context.Background(), params)
+
+	// 5. VALIDASI HASIL (Assert)
+	assert.NoError(t, err)
+	assert.NotNil(t, books)
+	assert.Len(t, books, 2) // Pastikan data buku yang dikembalikan sesuai (2 buku)
+
+	// 6. VALIDASI KALKULASI MATEMATIKA (Sangat Penting!)
+	assert.Equal(t, int64(25), meta.TotalItems)
+	assert.Equal(t, 10, meta.Limit)
+	assert.Equal(t, 1, meta.CurrentPage)
+
+	// Jika ada 25 buku, dan 1 halaman isinya 10,
+	// maka total halamannya HARUS 3 (2.5 dibulatkan ke atas).
+	assert.Equal(t, 3, meta.TotalPages)
+}
+
+func TestGetAllBooks_Gagal_DariRepository(t *testing.T) {
+	// 1. SIAPKAN STUNTMAN
+	mockRepo := new(mocks.BookRepository)
+	mockFetcher := new(mocks.BookMetadataFetcher)
+	uc := usecase.NewBookUsecase(mockRepo, mockFetcher)
+
+	params := domain.PaginationQuery{Page: 1, Limit: 10}
+
+	// Skenario: Database tiba-tiba mati / meledak
+	dbError := domain.ErrInternalServerError // Atau error apapun dari repo
+
+	// 2. ATUR SKENARIO
+	mockRepo.On("GetAll", mock.Anything, params).Return(nil, int64(0), dbError)
+
+	// 3. EKSEKUSI ACTION!
+	books, meta, err := uc.GetAllBooks(context.Background(), params)
+
+	// 4. VALIDASI HASIL
+	assert.Error(t, err)
+	assert.Equal(t, dbError, err)
+	assert.Nil(t, books)                // Data harus kosong
+	assert.Equal(t, 0, meta.TotalPages) // Meta harus kosong karena gagal
+}

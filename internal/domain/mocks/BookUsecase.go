@@ -92,34 +92,41 @@ func (_m *BookUsecase) FetchAndSaveMetadata(ctx context.Context, isbn string) (*
 	return r0, r1
 }
 
-// GetAllBooks provides a mock function with given fields: ctx
-func (_m *BookUsecase) GetAllBooks(ctx context.Context) ([]*domain.Book, error) {
-	ret := _m.Called(ctx)
+// GetAllBooks provides a mock function with given fields: ctx, params
+func (_m *BookUsecase) GetAllBooks(ctx context.Context, params domain.PaginationQuery) ([]*domain.Book, domain.PaginationMeta, error) {
+	ret := _m.Called(ctx, params)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetAllBooks")
 	}
 
 	var r0 []*domain.Book
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context) ([]*domain.Book, error)); ok {
-		return rf(ctx)
+	var r1 domain.PaginationMeta
+	var r2 error
+	if rf, ok := ret.Get(0).(func(context.Context, domain.PaginationQuery) ([]*domain.Book, domain.PaginationMeta, error)); ok {
+		return rf(ctx, params)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context) []*domain.Book); ok {
-		r0 = rf(ctx)
+	if rf, ok := ret.Get(0).(func(context.Context, domain.PaginationQuery) []*domain.Book); ok {
+		r0 = rf(ctx, params)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*domain.Book)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(ctx)
+	if rf, ok := ret.Get(1).(func(context.Context, domain.PaginationQuery) domain.PaginationMeta); ok {
+		r1 = rf(ctx, params)
 	} else {
-		r1 = ret.Error(1)
+		r1 = ret.Get(1).(domain.PaginationMeta)
 	}
 
-	return r0, r1
+	if rf, ok := ret.Get(2).(func(context.Context, domain.PaginationQuery) error); ok {
+		r2 = rf(ctx, params)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }
 
 // UpdateBook provides a mock function with given fields: ctx, id, req

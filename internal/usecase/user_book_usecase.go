@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"math"
 
 	"github.com/faridlan/omni-library-api/internal/domain"
 )
@@ -82,6 +83,20 @@ func (u *userBookUsecase) UpdateReadingStatus(ctx context.Context, userID, bookI
 	return track, nil
 }
 
-func (u *userBookUsecase) GetUserLibrary(ctx context.Context, userID string, status string) ([]*domain.UserBookWithMetadata, error) {
-	return u.userBookRepo.GetByUserID(ctx, userID, status)
+func (u *userBookUsecase) GetUserLibrary(ctx context.Context, userID string, status string, params domain.PaginationQuery) ([]*domain.UserBookWithMetadata, domain.PaginationMeta, error) {
+	books, totalItems, err := u.userBookRepo.GetByUserID(ctx, userID, status, params)
+	if err != nil {
+		return nil, domain.PaginationMeta{}, err
+	}
+
+	totalPages := int(math.Ceil(float64(totalItems) / float64(params.Limit)))
+
+	meta := domain.PaginationMeta{
+		CurrentPage: params.Page,
+		Limit:       params.Limit,
+		TotalItems:  totalItems,
+		TotalPages:  totalPages,
+	}
+
+	return books, meta, nil
 }

@@ -32,34 +32,41 @@ func (_m *BookNoteRepository) Create(ctx context.Context, note *domain.BookNote)
 	return r0
 }
 
-// GetByUserBookID provides a mock function with given fields: ctx, userBookID
-func (_m *BookNoteRepository) GetByUserBookID(ctx context.Context, userBookID string) ([]*domain.BookNote, error) {
-	ret := _m.Called(ctx, userBookID)
+// GetByUserBookID provides a mock function with given fields: ctx, userBookID, params
+func (_m *BookNoteRepository) GetByUserBookID(ctx context.Context, userBookID string, params domain.PaginationQuery) ([]*domain.BookNote, int64, error) {
+	ret := _m.Called(ctx, userBookID, params)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetByUserBookID")
 	}
 
 	var r0 []*domain.BookNote
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*domain.BookNote, error)); ok {
-		return rf(ctx, userBookID)
+	var r1 int64
+	var r2 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, domain.PaginationQuery) ([]*domain.BookNote, int64, error)); ok {
+		return rf(ctx, userBookID, params)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) []*domain.BookNote); ok {
-		r0 = rf(ctx, userBookID)
+	if rf, ok := ret.Get(0).(func(context.Context, string, domain.PaginationQuery) []*domain.BookNote); ok {
+		r0 = rf(ctx, userBookID, params)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*domain.BookNote)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, userBookID)
+	if rf, ok := ret.Get(1).(func(context.Context, string, domain.PaginationQuery) int64); ok {
+		r1 = rf(ctx, userBookID, params)
 	} else {
-		r1 = ret.Error(1)
+		r1 = ret.Get(1).(int64)
 	}
 
-	return r0, r1
+	if rf, ok := ret.Get(2).(func(context.Context, string, domain.PaginationQuery) error); ok {
+		r2 = rf(ctx, userBookID, params)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }
 
 // NewBookNoteRepository creates a new instance of BookNoteRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.

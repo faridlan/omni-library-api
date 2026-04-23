@@ -49,27 +49,37 @@ func (r *bookRepository) GetByISBN(ctx context.Context, isbn string) (*domain.Bo
 	return dbModel.ToDomain(), nil
 }
 
-// GetAll mengambil seluruh data buku dari tabel 'books'
-func (r *bookRepository) GetAll(ctx context.Context) ([]*domain.Book, error) {
-	var dbModels []BookModel // Menampung hasil dari GORM/Postgres
+// GetAll mengambil seluruh data buku dengan Pagination
+func (r *bookRepository) GetAll(ctx context.Context, params domain.PaginationQuery) ([]*domain.Book, int64, error) {
+	var dbModels []BookModel
+	var totalItems int64
 
-	// Gunakan Find() untuk mengambil semua baris data
-	result := r.db.WithContext(ctx).Table("books").Find(&dbModels)
-	if result.Error != nil {
-		return nil, result.Error
+	// 1. Hitung total seluruh data di tabel (mengabaikan limit/offset)
+	err := r.db.WithContext(ctx).Model(&BookModel{}).Count(&totalItems).Error
+	if err != nil {
+		return nil, 0, err
 	}
 
-	// Kita buat slice kosong untuk menampung data Domain murni
-	var books []*domain.Book
+	// 2. Ambil data spesifik sesuai halaman yang diminta
+	// Pro-Tip: Selalu gunakan Order agar urutan data konsisten saat di-paged!
+	err = r.db.WithContext(ctx).
+		Limit(params.Limit).
+		Offset(params.GetOffset()).
+		Order("created_at DESC"). // Tampilkan buku terbaru di halaman 1
+		Find(&dbModels).Error
 
-	// Looping untuk mengonversi setiap dbModel kembali menjadi Domain murni
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Mapping ke Domain
+	var books []*domain.Book
 	for _, model := range dbModels {
-		// Karena range di Golang menggunakan pass-by-value, kita butuh variable lokal
 		m := model
 		books = append(books, m.ToDomain())
 	}
 
-	return books, nil
+	return books, totalItems, nil
 }
 
 func (r *bookRepository) GetByID(ctx context.Context, id string) (*domain.Book, error) {

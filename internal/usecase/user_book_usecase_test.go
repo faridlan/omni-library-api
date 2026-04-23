@@ -157,3 +157,65 @@ func TestUpdateReadingStatus_Sukses(t *testing.T) {
 	// Validasi bahwa semua Stuntman menjalankan naskahnya
 	mockUserBookRepo.AssertExpectations(t)
 }
+
+// ==========================================
+// TEST GET USER LIBRARY (PAGINATION)
+// ==========================================
+
+func TestGetUserLibrary_Sukses_HitungPaginasi(t *testing.T) {
+	// 1. SIAPKAN STUNTMAN
+	mockUserBookRepo := new(mocks.UserBookRepository)
+	mockBookRepo := new(mocks.BookRepository)
+	uc := usecase.NewUserBookUsecase(mockUserBookRepo, mockBookRepo)
+
+	// 2. SIAPKAN DATA PALSU & PARAMETER
+	userID := "user-123"
+	statusFilter := "READING"
+	params := domain.PaginationQuery{Page: 1, Limit: 5} // Limit 5 per halaman
+
+	// Pura-puranya kita balikin 2 buku
+	mockData := []*domain.UserBookWithMetadata{
+		{UserBook: domain.UserBook{ID: "ub-1", BookID: "book-1"}},
+		{UserBook: domain.UserBook{ID: "ub-2", BookID: "book-2"}},
+	}
+
+	// Total data di DB ada 12
+	var totalData int64 = 12
+
+	// 3. ATUR SKENARIO (Ekspektasi)
+	mockUserBookRepo.On("GetByUserID", mock.Anything, userID, statusFilter, params).
+		Return(mockData, totalData, nil)
+
+	// 4. EKSEKUSI ACTION!
+	result, meta, err := uc.GetUserLibrary(context.Background(), userID, statusFilter, params)
+
+	// 5. VALIDASI HASIL
+	assert.NoError(t, err)
+	assert.Len(t, result, 2)
+
+	// 6. VALIDASI MATEMATIKA PAGINASI
+	assert.Equal(t, int64(12), meta.TotalItems)
+	assert.Equal(t, 5, meta.Limit)
+
+	// 12 data dibagi 5 per halaman = 2.4 (Dibulatkan ke atas jadi 3 Halaman)
+	assert.Equal(t, 3, meta.TotalPages)
+}
+
+func TestGetUserLibrary_Gagal_DariRepo(t *testing.T) {
+	mockUserBookRepo := new(mocks.UserBookRepository)
+	mockBookRepo := new(mocks.BookRepository)
+	uc := usecase.NewUserBookUsecase(mockUserBookRepo, mockBookRepo)
+
+	userID := "user-123"
+	params := domain.PaginationQuery{Page: 1, Limit: 10}
+	expectedErr := domain.ErrInternalServerError
+
+	mockUserBookRepo.On("GetByUserID", mock.Anything, userID, "", params).
+		Return(nil, int64(0), expectedErr)
+
+	result, meta, err := uc.GetUserLibrary(context.Background(), userID, "", params)
+
+	assert.ErrorIs(t, err, expectedErr)
+	assert.Nil(t, result)
+	assert.Equal(t, 0, meta.TotalPages)
+}

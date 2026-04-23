@@ -96,6 +96,8 @@ func (h *UserBookHandler) UpdateProgress(c *fiber.Ctx) error {
 // @Description Menampilkan seluruh buku yang ada di rak personal user, lengkap dengan metadata bukunya. Bisa difilter berdasarkan status.
 // @Tags Library
 // @Produce json
+// @Param page query int false "Nomor Halaman (Default: 1)"
+// @Param limit query int false "Jumlah Data per Halaman (Default: 10)"
 // @Param status query string false "Filter status: TO_READ, READING, FINISHED"
 // @Success 200 {array} domain.UserBookWithMetadata "Daftar buku di rak"
 // @Failure 401 {object} utils.ErrorResponse "Unauthorized (Token tidak ada/salah)"
@@ -105,10 +107,17 @@ func (h *UserBookHandler) UpdateProgress(c *fiber.Ctx) error {
 // @Security BearerAuth
 func (h *UserBookHandler) GetMyLibrary(c *fiber.Ctx) error {
 	statusFilter := c.Query("status")
+	page := c.QueryInt("page", 1)
+	limit := c.QueryInt("limit", 10)
+
+	params := domain.PaginationQuery{
+		Page:  page,
+		Limit: limit,
+	}
 
 	userID := c.Locals("user_id").(string)
 
-	books, err := h.usecase.GetUserLibrary(c.Context(), userID, statusFilter)
+	books, meta, err := h.usecase.GetUserLibrary(c.Context(), userID, statusFilter, params)
 	if err != nil {
 		return utils.HandleDomainError(c, err)
 	}
@@ -117,5 +126,5 @@ func (h *UserBookHandler) GetMyLibrary(c *fiber.Ctx) error {
 		books = make([]*domain.UserBookWithMetadata, 0)
 	}
 
-	return c.Status(fiber.StatusOK).JSON(books)
+	return utils.SendSuccessPaginated(c, "Berhasil mengambil buku dari rak", books, meta)
 }

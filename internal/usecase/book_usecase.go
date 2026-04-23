@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"math"
 
 	"github.com/faridlan/omni-library-api/internal/domain"
 )
@@ -55,15 +56,28 @@ func (u *bookUsecase) FetchAndSaveMetadata(ctx context.Context, isbn string) (*d
 	return newBook, nil
 }
 
-// GetAllBooks mengambil seluruh katalog buku dari database lokal
-func (u *bookUsecase) GetAllBooks(ctx context.Context) ([]*domain.Book, error) {
-	// Memanggil fungsi GetAll yang baru saja kita buat di Repository
-	books, err := u.bookRepo.GetAll(ctx)
+// GetAllBooks mengambil seluruh katalog buku dari database dengan Pagination
+func (u *bookUsecase) GetAllBooks(ctx context.Context, params domain.PaginationQuery) ([]*domain.Book, domain.PaginationMeta, error) {
+
+	// 1. Panggil Repository untuk ambil buku dan total angkanya
+	books, totalItems, err := u.bookRepo.GetAll(ctx, params)
 	if err != nil {
-		return nil, err
+		return nil, domain.PaginationMeta{}, err
 	}
 
-	return books, nil
+	// 2. Hitung Total Halaman (Misal: 25 Buku, Limit 10 -> Total Halaman = 3)
+	// Kita gunakan math.Ceil untuk membulatkan ke atas (2.5 -> 3.0)
+	totalPages := int(math.Ceil(float64(totalItems) / float64(params.Limit)))
+
+	// 3. Susun Metadata
+	meta := domain.PaginationMeta{
+		CurrentPage: params.Page,
+		Limit:       params.Limit,
+		TotalItems:  totalItems,
+		TotalPages:  totalPages,
+	}
+
+	return books, meta, nil
 }
 
 func (u *bookUsecase) CreateManual(ctx context.Context, book *domain.Book) (*domain.Book, error) {

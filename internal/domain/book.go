@@ -33,7 +33,7 @@ type Book struct {
 type BookRepository interface {
 	GetByISBN(ctx context.Context, isbn string) (*Book, error)
 	Create(ctx context.Context, book *Book) error
-	GetAll(ctx context.Context) ([]*Book, error)
+	GetAll(ctx context.Context, params PaginationQuery) ([]*Book, int64, error)
 	GetByID(ctx context.Context, id string) (*Book, error)
 	Update(ctx context.Context, book *Book) error
 	Delete(ctx context.Context, id string) error
@@ -44,7 +44,7 @@ type BookRepository interface {
 type BookUsecase interface {
 	// Fitur 3: Mengambil data dari API luar dan menyimpannya
 	FetchAndSaveMetadata(ctx context.Context, isbn string) (*Book, error)
-	GetAllBooks(ctx context.Context) ([]*Book, error)
+	GetAllBooks(ctx context.Context, params PaginationQuery) ([]*Book, PaginationMeta, error)
 	CreateManual(ctx context.Context, book *Book) (*Book, error)
 	UpdateBook(ctx context.Context, id string, req *Book) (*Book, error)
 	DeleteBook(ctx context.Context, id string) error

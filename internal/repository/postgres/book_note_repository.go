@@ -28,12 +28,27 @@ func (r *bookNoteRepository) Create(ctx context.Context, note *domain.BookNote) 
 	return nil
 }
 
-func (r *bookNoteRepository) GetByUserBookID(ctx context.Context, userBookID string) ([]*domain.BookNote, error) {
+func (r *bookNoteRepository) GetByUserBookID(ctx context.Context, userBookID string, params domain.PaginationQuery) ([]*domain.BookNote, int64, error) {
 	var models []BookNoteModel
+	var totalItems int64
 
-	result := r.db.WithContext(ctx).Where("user_book_id = ?", userBookID).Find(&models)
-	if result.Error != nil {
-		return nil, result.Error
+	// 1. Buat Base Query (Kondisi Utama)
+	baseQuery := r.db.WithContext(ctx).Model(&BookNoteModel{}).Where("user_book_id = ?", userBookID)
+
+	// 2. Hitung Total (Berdasarkan kondisi di atas)
+	if err := baseQuery.Count(&totalItems).Error; err != nil {
+		return nil, 0, err
+	}
+
+	// 3. Ambil Data (Kondisi WHERE sudah menempel di baseQuery)
+	err := baseQuery.
+		Limit(params.Limit).
+		Offset(params.GetOffset()).
+		Order("created_at DESC").
+		Find(&models).Error
+
+	if err != nil {
+		return nil, 0, err
 	}
 
 	var notes []*domain.BookNote
@@ -42,5 +57,5 @@ func (r *bookNoteRepository) GetByUserBookID(ctx context.Context, userBookID str
 		notes = append(notes, mCopy.ToDomain())
 	}
 
-	return notes, nil
+	return notes, totalItems, nil
 }

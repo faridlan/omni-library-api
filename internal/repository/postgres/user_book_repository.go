@@ -65,33 +65,43 @@ func (r *userBookRepository) UpdateProgress(ctx context.Context, ub *domain.User
 	return result.Error
 }
 
-func (r *userBookRepository) GetByUserID(ctx context.Context, userID string, status string) ([]*domain.UserBookWithMetadata, error) {
+func (r *userBookRepository) GetByUserID(ctx context.Context, userID string, status string, params domain.PaginationQuery) ([]*domain.UserBookWithMetadata, int64, error) {
 	var dbModels []UserBookModel
+	var totalItems int64
 
-	// Kita gunakan Preload("Book") agar GORM otomatis melakukan JOIN ke tabel books
-	query := r.db.WithContext(ctx).Table("user_books").
-		Preload("Book").
-		Where("user_id = ?", userID)
+	// 1. Buat Base Query (Tanpa Preload Dulu!)
+	baseQuery := r.db.WithContext(ctx).Model(&UserBookModel{}).Where("user_id = ?", userID)
 
 	if status != "" {
-		query = query.Where("status = ?", status)
+		baseQuery = baseQuery.Where("status = ?", status)
 	}
 
-	result := query.Find(&dbModels)
+	// 2. Hitung Total Data (Lebih cepat karena tanpa JOIN)
+	if err := baseQuery.Count(&totalItems).Error; err != nil {
+		return nil, 0, err
+	}
 
-	if result.Error != nil {
-		return nil, result.Error
+	// 3. Ambil Data (Baru kita tambahkan Preload, Limit, dan Offset)
+	err := baseQuery.
+		Preload("Book"). // Pasang Preload di sini!
+		Limit(params.Limit).
+		Offset(params.GetOffset()).
+		Order("created_at DESC").
+		Find(&dbModels).Error
+
+	if err != nil {
+		return nil, 0, err
 	}
 
 	var results []*domain.UserBookWithMetadata
 	for _, m := range dbModels {
 		results = append(results, &domain.UserBookWithMetadata{
 			UserBook: *m.ToDomain(),
-			Book:     *m.Book.ToDomain(), // Konversi BookModel ke Domain Book
+			Book:     *m.Book.ToDomain(),
 		})
 	}
 
-	return results, nil
+	return results, totalItems, nil
 }
 
 func (r *userBookRepository) GetByID(ctx context.Context, id string) (*domain.UserBook, error) {

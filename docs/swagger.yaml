@@ -1,5 +1,127 @@
 basePath: /
 definitions:
+  github_com_faridlan_omni-library-api_internal_delivery_http_dto.AddBookRequest:
+    properties:
+      book_id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+    required:
+    - book_id
+    type: object
+  github_com_faridlan_omni-library-api_internal_delivery_http_dto.AddNoteRequest:
+    properties:
+      page_reference:
+        example: 42
+        type: integer
+      quote:
+        example: Bekerjalah seperti programmer pemalas...
+        type: string
+      tags:
+        example:
+        - Inspiratif
+        - Programming
+        items:
+          type: string
+        type: array
+    required:
+    - quote
+    type: object
+  github_com_faridlan_omni-library-api_internal_delivery_http_dto.BookRequest:
+    properties:
+      authors:
+        items:
+          type: string
+        type: array
+      cover_url:
+        type: string
+      description:
+        type: string
+      isbn:
+        description: Tidak wajib (karena buku indie kadang ga punya ISBN)
+        type: string
+      page_count:
+        type: integer
+      published_date:
+        type: string
+      title:
+        type: string
+    required:
+    - authors
+    - title
+    type: object
+  github_com_faridlan_omni-library-api_internal_delivery_http_dto.FetchBookRequest:
+    properties:
+      isbn:
+        example: "9786020633176"
+        type: string
+    required:
+    - isbn
+    type: object
+  github_com_faridlan_omni-library-api_internal_delivery_http_dto.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  github_com_faridlan_omni-library-api_internal_delivery_http_dto.RefreshRequest:
+    properties:
+      refresh_token:
+        type: string
+    required:
+    - refresh_token
+    type: object
+  github_com_faridlan_omni-library-api_internal_delivery_http_dto.RegisterRequest:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      password:
+        description: Minimal 6 karakter agar aman
+        minLength: 6
+        type: string
+    required:
+    - email
+    - name
+    - password
+    type: object
+  github_com_faridlan_omni-library-api_internal_delivery_http_dto.TokenResponse:
+    properties:
+      access_token:
+        type: string
+      refresh_token:
+        type: string
+    type: object
+  github_com_faridlan_omni-library-api_internal_delivery_http_dto.UpdateProgressRequest:
+    properties:
+      current_page:
+        example: 125
+        type: integer
+      rating:
+        example: 5
+        type: integer
+      status:
+        example: READING
+        type: string
+    type: object
+  github_com_faridlan_omni-library-api_internal_delivery_http_dto.UserResponse:
+    properties:
+      created_at:
+        description: Format string agar mudah dibaca di JSON
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      role:
+        type: string
+    type: object
   github_com_faridlan_omni-library-api_internal_domain.Book:
     properties:
       authors:
@@ -46,6 +168,17 @@ definitions:
       user_book_id:
         description: Relasi ke buku di rak user
         type: string
+    type: object
+  github_com_faridlan_omni-library-api_internal_domain.PaginationMeta:
+    properties:
+      current_page:
+        type: integer
+      limit:
+        type: integer
+      total_items:
+        type: integer
+      total_pages:
+        type: integer
     type: object
   github_com_faridlan_omni-library-api_internal_domain.UserBook:
     properties:
@@ -99,127 +232,13 @@ definitions:
         example: pesan error
         type: string
     type: object
-  internal_delivery_http.AddBookRequest:
+  github_com_faridlan_omni-library-api_internal_utils.PaginatedResponse:
     properties:
-      book_id:
-        example: 550e8400-e29b-41d4-a716-446655440000
+      data: {}
+      message:
         type: string
-    required:
-    - book_id
-    type: object
-  internal_delivery_http.AddNoteRequest:
-    properties:
-      page_reference:
-        example: 42
-        type: integer
-      quote:
-        example: Bekerjalah seperti programmer pemalas...
-        type: string
-      tags:
-        example:
-        - Inspiratif
-        - Programming
-        items:
-          type: string
-        type: array
-    required:
-    - quote
-    type: object
-  internal_delivery_http.BookRequest:
-    properties:
-      authors:
-        items:
-          type: string
-        type: array
-      cover_url:
-        type: string
-      description:
-        type: string
-      isbn:
-        description: Tidak wajib (karena buku indie kadang ga punya ISBN)
-        type: string
-      page_count:
-        type: integer
-      published_date:
-        type: string
-      title:
-        type: string
-    required:
-    - authors
-    - title
-    type: object
-  internal_delivery_http.FetchBookRequest:
-    properties:
-      isbn:
-        example: "9786020633176"
-        type: string
-    required:
-    - isbn
-    type: object
-  internal_delivery_http.LoginRequest:
-    properties:
-      email:
-        type: string
-      password:
-        type: string
-    required:
-    - email
-    - password
-    type: object
-  internal_delivery_http.RefreshRequest:
-    properties:
-      refresh_token:
-        type: string
-    required:
-    - refresh_token
-    type: object
-  internal_delivery_http.RegisterRequest:
-    properties:
-      email:
-        type: string
-      name:
-        type: string
-      password:
-        description: Minimal 6 karakter agar aman
-        minLength: 6
-        type: string
-    required:
-    - email
-    - name
-    - password
-    type: object
-  internal_delivery_http.TokenResponse:
-    properties:
-      access_token:
-        type: string
-      refresh_token:
-        type: string
-    type: object
-  internal_delivery_http.UpdateProgressRequest:
-    properties:
-      current_page:
-        example: 125
-        type: integer
-      rating:
-        example: 5
-        type: integer
-      status:
-        example: READING
-        type: string
-    type: object
-  internal_delivery_http.UserResponse:
-    properties:
-      created_at:
-        description: Format string agar mudah dibaca di JSON
-        type: string
-      email:
-        type: string
-      id:
-        type: string
-      name:
-        type: string
-      role:
-        type: string
+      meta:
+        $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_domain.PaginationMeta'
     type: object
 host: localhost:8080
 info:
@@ -240,14 +259,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_delivery_http.LoginRequest'
+          $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_delivery_http_dto.LoginRequest'
       produces:
       - application/json
       responses:
         "200":
           description: Login berhasil (mengembalikan token JWT)
           schema:
-            $ref: '#/definitions/internal_delivery_http.TokenResponse'
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_delivery_http_dto.TokenResponse'
         "400":
           description: Format JSON salah atau validasi gagal
           schema:
@@ -280,7 +299,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_delivery_http.RefreshRequest'
+          $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_delivery_http_dto.RefreshRequest'
       produces:
       - application/json
       responses:
@@ -313,14 +332,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_delivery_http.RegisterRequest'
+          $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_delivery_http_dto.RegisterRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Registrasi berhasil (mengembalikan data user tanpa password)
           schema:
-            $ref: '#/definitions/internal_delivery_http.UserResponse'
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_delivery_http_dto.UserResponse'
         "400":
           description: Format JSON salah atau validasi gagal
           schema:
@@ -338,16 +357,23 @@ paths:
       - Auth
   /api/books:
     get:
-      description: Mengambil daftar seluruh buku yang tersimpan di database lokal
+      description: Mengambil daftar buku dari database secara terpaginasi (pagination)
+      parameters:
+      - description: 'Nomor Halaman (Default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Jumlah Data per Halaman (Default: 10)'
+        in: query
+        name: limit
+        type: integer
       produces:
       - application/json
       responses:
         "200":
           description: Berhasil mengambil daftar buku
           schema:
-            items:
-              $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_domain.Book'
-            type: array
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.PaginatedResponse'
         "500":
           description: Internal Server Error
           schema:
@@ -401,7 +427,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_delivery_http.BookRequest'
+          $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_delivery_http_dto.BookRequest'
       produces:
       - application/json
       responses:
@@ -434,7 +460,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_delivery_http.FetchBookRequest'
+          $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_delivery_http_dto.FetchBookRequest'
       produces:
       - application/json
       responses:
@@ -470,7 +496,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_delivery_http.BookRequest'
+          $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_delivery_http_dto.BookRequest'
       produces:
       - application/json
       responses:
@@ -496,6 +522,14 @@ paths:
       description: Menampilkan seluruh buku yang ada di rak personal user, lengkap
         dengan metadata bukunya. Bisa difilter berdasarkan status.
       parameters:
+      - description: 'Nomor Halaman (Default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Jumlah Data per Halaman (Default: 10)'
+        in: query
+        name: limit
+        type: integer
       - description: 'Filter status: TO_READ, READING, FINISHED'
         in: query
         name: status
@@ -537,7 +571,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_delivery_http.AddBookRequest'
+          $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_delivery_http_dto.AddBookRequest'
       produces:
       - application/json
       responses:
@@ -583,7 +617,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_delivery_http.UpdateProgressRequest'
+          $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_delivery_http_dto.UpdateProgressRequest'
       produces:
       - application/json
       responses:
@@ -617,6 +651,14 @@ paths:
       description: Melihat seluruh kutipan dan catatan yang pernah ditulis untuk satu
         buku spesifik di rak
       parameters:
+      - description: 'Nomor Halaman (Default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Jumlah Data per Halaman (Default: 10)'
+        in: query
+        name: limit
+        type: integer
       - description: ID progres buku di rak
         in: path
         name: user_book_id
@@ -664,7 +706,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_delivery_http.AddNoteRequest'
+          $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_delivery_http_dto.AddNoteRequest'
       produces:
       - application/json
       responses:

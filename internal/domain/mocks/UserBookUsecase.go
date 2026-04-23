@@ -14,34 +14,41 @@ type UserBookUsecase struct {
 	mock.Mock
 }
 
-// GetUserLibrary provides a mock function with given fields: ctx, userID, status
-func (_m *UserBookUsecase) GetUserLibrary(ctx context.Context, userID string, status string) ([]*domain.UserBookWithMetadata, error) {
-	ret := _m.Called(ctx, userID, status)
+// GetUserLibrary provides a mock function with given fields: ctx, userID, status, params
+func (_m *UserBookUsecase) GetUserLibrary(ctx context.Context, userID string, status string, params domain.PaginationQuery) ([]*domain.UserBookWithMetadata, domain.PaginationMeta, error) {
+	ret := _m.Called(ctx, userID, status, params)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetUserLibrary")
 	}
 
 	var r0 []*domain.UserBookWithMetadata
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) ([]*domain.UserBookWithMetadata, error)); ok {
-		return rf(ctx, userID, status)
+	var r1 domain.PaginationMeta
+	var r2 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, domain.PaginationQuery) ([]*domain.UserBookWithMetadata, domain.PaginationMeta, error)); ok {
+		return rf(ctx, userID, status, params)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) []*domain.UserBookWithMetadata); ok {
-		r0 = rf(ctx, userID, status)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, domain.PaginationQuery) []*domain.UserBookWithMetadata); ok {
+		r0 = rf(ctx, userID, status, params)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*domain.UserBookWithMetadata)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, userID, status)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, domain.PaginationQuery) domain.PaginationMeta); ok {
+		r1 = rf(ctx, userID, status, params)
 	} else {
-		r1 = ret.Error(1)
+		r1 = ret.Get(1).(domain.PaginationMeta)
 	}
 
-	return r0, r1
+	if rf, ok := ret.Get(2).(func(context.Context, string, string, domain.PaginationQuery) error); ok {
+		r2 = rf(ctx, userID, status, params)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }
 
 // TrackNewBook provides a mock function with given fields: ctx, userID, bookID

@@ -35,7 +35,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_delivery_http.LoginRequest"
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_delivery_http_dto.LoginRequest"
                         }
                     }
                 ],
@@ -43,7 +43,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Login berhasil (mengembalikan token JWT)",
                         "schema": {
-                            "$ref": "#/definitions/internal_delivery_http.TokenResponse"
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_delivery_http_dto.TokenResponse"
                         }
                     },
                     "400": {
@@ -93,7 +93,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_delivery_http.RefreshRequest"
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_delivery_http_dto.RefreshRequest"
                         }
                     }
                 ],
@@ -142,7 +142,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_delivery_http.RegisterRequest"
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_delivery_http_dto.RegisterRequest"
                         }
                     }
                 ],
@@ -150,7 +150,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Registrasi berhasil (mengembalikan data user tanpa password)",
                         "schema": {
-                            "$ref": "#/definitions/internal_delivery_http.UserResponse"
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_delivery_http_dto.UserResponse"
                         }
                     },
                     "400": {
@@ -176,7 +176,7 @@ const docTemplate = `{
         },
         "/api/books": {
             "get": {
-                "description": "Mengambil daftar seluruh buku yang tersimpan di database lokal",
+                "description": "Mengambil daftar buku dari database secara terpaginasi (pagination)",
                 "produces": [
                     "application/json"
                 ],
@@ -184,14 +184,25 @@ const docTemplate = `{
                     "Books"
                 ],
                 "summary": "Ambil Katalog Buku",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Nomor Halaman (Default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Jumlah Data per Halaman (Default: 10)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Berhasil mengambil daftar buku",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_domain.Book"
-                            }
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.PaginatedResponse"
                         }
                     },
                     "500": {
@@ -228,7 +239,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_delivery_http.FetchBookRequest"
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_delivery_http_dto.FetchBookRequest"
                         }
                     }
                 ],
@@ -285,7 +296,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_delivery_http.BookRequest"
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_delivery_http_dto.BookRequest"
                         }
                     }
                 ],
@@ -343,7 +354,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_delivery_http.BookRequest"
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_delivery_http_dto.BookRequest"
                         }
                     }
                 ],
@@ -433,6 +444,18 @@ const docTemplate = `{
                 "summary": "Lihat Isi Rak Buku",
                 "parameters": [
                     {
+                        "type": "integer",
+                        "description": "Nomor Halaman (Default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Jumlah Data per Halaman (Default: 10)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
                         "type": "string",
                         "description": "Filter status: TO_READ, READING, FINISHED",
                         "name": "status",
@@ -493,7 +516,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_delivery_http.AddBookRequest"
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_delivery_http_dto.AddBookRequest"
                         }
                     }
                 ],
@@ -563,7 +586,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_delivery_http.UpdateProgressRequest"
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_delivery_http_dto.UpdateProgressRequest"
                         }
                     }
                 ],
@@ -617,6 +640,18 @@ const docTemplate = `{
                 ],
                 "summary": "Ambil Daftar Catatan Buku",
                 "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Nomor Halaman (Default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Jumlah Data per Halaman (Default: 10)",
+                        "name": "limit",
+                        "in": "query"
+                    },
                     {
                         "type": "string",
                         "description": "ID progres buku di rak",
@@ -686,7 +721,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_delivery_http.AddNoteRequest"
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_delivery_http_dto.AddNoteRequest"
                         }
                     }
                 ],
@@ -726,6 +761,186 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "github_com_faridlan_omni-library-api_internal_delivery_http_dto.AddBookRequest": {
+            "type": "object",
+            "required": [
+                "book_id"
+            ],
+            "properties": {
+                "book_id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                }
+            }
+        },
+        "github_com_faridlan_omni-library-api_internal_delivery_http_dto.AddNoteRequest": {
+            "type": "object",
+            "required": [
+                "quote"
+            ],
+            "properties": {
+                "page_reference": {
+                    "type": "integer",
+                    "example": 42
+                },
+                "quote": {
+                    "type": "string",
+                    "example": "Bekerjalah seperti programmer pemalas..."
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "Inspiratif",
+                        "Programming"
+                    ]
+                }
+            }
+        },
+        "github_com_faridlan_omni-library-api_internal_delivery_http_dto.BookRequest": {
+            "type": "object",
+            "required": [
+                "authors",
+                "title"
+            ],
+            "properties": {
+                "authors": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "cover_url": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "isbn": {
+                    "description": "Tidak wajib (karena buku indie kadang ga punya ISBN)",
+                    "type": "string"
+                },
+                "page_count": {
+                    "type": "integer"
+                },
+                "published_date": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_faridlan_omni-library-api_internal_delivery_http_dto.FetchBookRequest": {
+            "type": "object",
+            "required": [
+                "isbn"
+            ],
+            "properties": {
+                "isbn": {
+                    "type": "string",
+                    "example": "9786020633176"
+                }
+            }
+        },
+        "github_com_faridlan_omni-library-api_internal_delivery_http_dto.LoginRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "password"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_faridlan_omni-library-api_internal_delivery_http_dto.RefreshRequest": {
+            "type": "object",
+            "required": [
+                "refresh_token"
+            ],
+            "properties": {
+                "refresh_token": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_faridlan_omni-library-api_internal_delivery_http_dto.RegisterRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "name",
+                "password"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "password": {
+                    "description": "Minimal 6 karakter agar aman",
+                    "type": "string",
+                    "minLength": 6
+                }
+            }
+        },
+        "github_com_faridlan_omni-library-api_internal_delivery_http_dto.TokenResponse": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "type": "string"
+                },
+                "refresh_token": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_faridlan_omni-library-api_internal_delivery_http_dto.UpdateProgressRequest": {
+            "type": "object",
+            "properties": {
+                "current_page": {
+                    "type": "integer",
+                    "example": 125
+                },
+                "rating": {
+                    "type": "integer",
+                    "example": 5
+                },
+                "status": {
+                    "type": "string",
+                    "example": "READING"
+                }
+            }
+        },
+        "github_com_faridlan_omni-library-api_internal_delivery_http_dto.UserResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "description": "Format string agar mudah dibaca di JSON",
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "role": {
+                    "type": "string"
+                }
+            }
+        },
         "github_com_faridlan_omni-library-api_internal_domain.Book": {
             "type": "object",
             "properties": {
@@ -793,6 +1008,23 @@ const docTemplate = `{
                 "user_book_id": {
                     "description": "Relasi ke buku di rak user",
                     "type": "string"
+                }
+            }
+        },
+        "github_com_faridlan_omni-library-api_internal_domain.PaginationMeta": {
+            "type": "object",
+            "properties": {
+                "current_page": {
+                    "type": "integer"
+                },
+                "limit": {
+                    "type": "integer"
+                },
+                "total_items": {
+                    "type": "integer"
+                },
+                "total_pages": {
+                    "type": "integer"
                 }
             }
         },
@@ -876,183 +1108,15 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_delivery_http.AddBookRequest": {
-            "type": "object",
-            "required": [
-                "book_id"
-            ],
-            "properties": {
-                "book_id": {
-                    "type": "string",
-                    "example": "550e8400-e29b-41d4-a716-446655440000"
-                }
-            }
-        },
-        "internal_delivery_http.AddNoteRequest": {
-            "type": "object",
-            "required": [
-                "quote"
-            ],
-            "properties": {
-                "page_reference": {
-                    "type": "integer",
-                    "example": 42
-                },
-                "quote": {
-                    "type": "string",
-                    "example": "Bekerjalah seperti programmer pemalas..."
-                },
-                "tags": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "Inspiratif",
-                        "Programming"
-                    ]
-                }
-            }
-        },
-        "internal_delivery_http.BookRequest": {
-            "type": "object",
-            "required": [
-                "authors",
-                "title"
-            ],
-            "properties": {
-                "authors": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "cover_url": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "isbn": {
-                    "description": "Tidak wajib (karena buku indie kadang ga punya ISBN)",
-                    "type": "string"
-                },
-                "page_count": {
-                    "type": "integer"
-                },
-                "published_date": {
-                    "type": "string"
-                },
-                "title": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_delivery_http.FetchBookRequest": {
-            "type": "object",
-            "required": [
-                "isbn"
-            ],
-            "properties": {
-                "isbn": {
-                    "type": "string",
-                    "example": "9786020633176"
-                }
-            }
-        },
-        "internal_delivery_http.LoginRequest": {
-            "type": "object",
-            "required": [
-                "email",
-                "password"
-            ],
-            "properties": {
-                "email": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_delivery_http.RefreshRequest": {
-            "type": "object",
-            "required": [
-                "refresh_token"
-            ],
-            "properties": {
-                "refresh_token": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_delivery_http.RegisterRequest": {
-            "type": "object",
-            "required": [
-                "email",
-                "name",
-                "password"
-            ],
-            "properties": {
-                "email": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "password": {
-                    "description": "Minimal 6 karakter agar aman",
-                    "type": "string",
-                    "minLength": 6
-                }
-            }
-        },
-        "internal_delivery_http.TokenResponse": {
+        "github_com_faridlan_omni-library-api_internal_utils.PaginatedResponse": {
             "type": "object",
             "properties": {
-                "access_token": {
+                "data": {},
+                "message": {
                     "type": "string"
                 },
-                "refresh_token": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_delivery_http.UpdateProgressRequest": {
-            "type": "object",
-            "properties": {
-                "current_page": {
-                    "type": "integer",
-                    "example": 125
-                },
-                "rating": {
-                    "type": "integer",
-                    "example": 5
-                },
-                "status": {
-                    "type": "string",
-                    "example": "READING"
-                }
-            }
-        },
-        "internal_delivery_http.UserResponse": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "description": "Format string agar mudah dibaca di JSON",
-                    "type": "string"
-                },
-                "email": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "role": {
-                    "type": "string"
+                "meta": {
+                    "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_domain.PaginationMeta"
                 }
             }
         }

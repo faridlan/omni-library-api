@@ -24,10 +24,10 @@ type BookNote struct {
 type BookNoteRepository interface {
 	Create(ctx context.Context, note *BookNote) error
 	// Mengambil semua catatan dari satu buku tertentu di rak
-	GetByUserBookID(ctx context.Context, userBookID string) ([]*BookNote, error)
+	GetByUserBookID(ctx context.Context, userBookID string, params PaginationQuery) ([]*BookNote, int64, error)
 }
 
 type BookNoteUsecase interface {
 	AddNote(ctx context.Context, note *BookNote) error
-	GetNotesForBook(ctx context.Context, userBookID string) ([]*BookNote, error)
+	GetNotesForBook(ctx context.Context, userBookID string, params PaginationQuery) ([]*BookNote, PaginationMeta, error)
 }

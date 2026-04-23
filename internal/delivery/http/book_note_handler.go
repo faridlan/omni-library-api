@@ -68,6 +68,8 @@ func (h *BookNoteHandler) AddNote(c *fiber.Ctx) error {
 // @Description Melihat seluruh kutipan dan catatan yang pernah ditulis untuk satu buku spesifik di rak
 // @Tags Book Notes
 // @Produce json
+// @Param page query int false "Nomor Halaman (Default: 1)"
+// @Param limit query int false "Jumlah Data per Halaman (Default: 10)"
 // @Param user_book_id path string true "ID progres buku di rak"
 // @Success 200 {array} domain.BookNote "Daftar catatan"
 // @Failure 401 {object} utils.ErrorResponse "Unauthorized (Token tidak ada/salah)"
@@ -77,12 +79,19 @@ func (h *BookNoteHandler) AddNote(c *fiber.Ctx) error {
 // @Router /api/library/{user_book_id}/notes [get]
 func (h *BookNoteHandler) GetNotes(c *fiber.Ctx) error {
 	userBookID := c.Params("user_book_id")
+	page := c.QueryInt("page", 1)
+	limit := c.QueryInt("limit", 10)
+
+	params := domain.PaginationQuery{
+		Page:  page,
+		Limit: limit,
+	}
 
 	if err := utils.ValidateUUID(userBookID, "user_book_id"); err != nil {
 		return utils.SendError(c, fiber.StatusBadRequest, err.Error())
 	}
 
-	notes, err := h.usecase.GetNotesForBook(c.Context(), userBookID)
+	notes, meta, err := h.usecase.GetNotesForBook(c.Context(), userBookID, params)
 	if err != nil {
 		return utils.HandleDomainError(c, err)
 	}
@@ -92,5 +101,5 @@ func (h *BookNoteHandler) GetNotes(c *fiber.Ctx) error {
 		notes = make([]*domain.BookNote, 0)
 	}
 
-	return c.Status(fiber.StatusOK).JSON(notes)
+	return utils.SendSuccessPaginated(c, "Berhasil mengambil note buku", notes, meta)
 }
