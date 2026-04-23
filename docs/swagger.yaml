@@ -200,30 +200,6 @@ definitions:
       user_id:
         type: string
     type: object
-  github_com_faridlan_omni-library-api_internal_domain.UserBookWithMetadata:
-    properties:
-      book:
-        allOf:
-        - $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_domain.Book'
-        description: Informasi detail buku
-      book_id:
-        type: string
-      created_at:
-        type: string
-      current_page:
-        type: integer
-      id:
-        type: string
-      rating:
-        type: integer
-      status:
-        description: '''TO_READ'', ''READING'', ''FINISHED'''
-        type: string
-      updated_at:
-        type: string
-      user_id:
-        type: string
-    type: object
   github_com_faridlan_omni-library-api_internal_utils.ErrorResponse:
     properties:
       detail:
@@ -541,7 +517,7 @@ paths:
           description: Daftar buku di rak
           schema:
             items:
-              $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_domain.UserBookWithMetadata'
+              $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.PaginatedResponse'
             type: array
         "401":
           description: Unauthorized (Token tidak ada/salah)
@@ -671,7 +647,7 @@ paths:
           description: Daftar catatan
           schema:
             items:
-              $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_domain.BookNote'
+              $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.PaginatedResponse'
             type: array
         "401":
           description: Unauthorized (Token tidak ada/salah)

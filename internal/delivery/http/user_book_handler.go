@@ -47,7 +47,7 @@ func (h *UserBookHandler) AddBook(c *fiber.Ctx) error {
 		return utils.HandleDomainError(c, err)
 	}
 
-	return c.Status(fiber.StatusCreated).JSON(result)
+	return utils.SendSuccess(c, fiber.StatusCreated, "Buku berhasil ditambahkan ke rak", result)
 }
 
 // UpdateProgress godoc
@@ -88,7 +88,7 @@ func (h *UserBookHandler) UpdateProgress(c *fiber.Ctx) error {
 		return utils.HandleDomainError(c, err)
 	}
 
-	return c.Status(fiber.StatusOK).JSON(result)
+	return utils.SendSuccess(c, fiber.StatusOK, "Progres bacaan berhasil diperbarui", result)
 }
 
 // GetMyLibrary godoc
@@ -99,7 +99,7 @@ func (h *UserBookHandler) UpdateProgress(c *fiber.Ctx) error {
 // @Param page query int false "Nomor Halaman (Default: 1)"
 // @Param limit query int false "Jumlah Data per Halaman (Default: 10)"
 // @Param status query string false "Filter status: TO_READ, READING, FINISHED"
-// @Success 200 {array} domain.UserBookWithMetadata "Daftar buku di rak"
+// @Success 200 {array} utils.PaginatedResponse "Daftar buku di rak"
 // @Failure 401 {object} utils.ErrorResponse "Unauthorized (Token tidak ada/salah)"
 // @Failure 404 {object} utils.ErrorResponse "Rak buku tidak ditemukan"
 // @Failure 500 {object} utils.ErrorResponse "Internal Server Error"

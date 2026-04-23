@@ -19,6 +19,11 @@ type PaginatedResponse struct {
 	Meta    domain.PaginationMeta `json:"meta"`
 }
 
+type SuccessResponse struct {
+	Message string `json:"message"`
+	Data    any    `json:"data,omitempty"` // omitempty: jika nil, key "data" tidak ditampilkan (opsional)
+}
+
 // SendError adalah helper agar Handler kita makin tipis
 func SendError(c *fiber.Ctx, statusCode int, message string, detail ...string) error {
 	resp := ErrorResponse{
@@ -85,5 +90,12 @@ func SendSuccessPaginated(c *fiber.Ctx, message string, data any, meta domain.Pa
 		Message: message,
 		Data:    data,
 		Meta:    meta,
+	})
+}
+
+func SendSuccess(c *fiber.Ctx, statusCode int, message string, data any) error {
+	return c.Status(statusCode).JSON(SuccessResponse{
+		Message: message,
+		Data:    data,
 	})
 }

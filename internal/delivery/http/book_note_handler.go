@@ -60,7 +60,7 @@ func (h *BookNoteHandler) AddNote(c *fiber.Ctx) error {
 		return utils.HandleDomainError(c, err)
 	}
 
-	return c.Status(fiber.StatusCreated).JSON(note)
+	return utils.SendSuccess(c, fiber.StatusOK, "Note buku berhasil ditambahkan", note)
 }
 
 // GetNotes godoc
@@ -71,7 +71,7 @@ func (h *BookNoteHandler) AddNote(c *fiber.Ctx) error {
 // @Param page query int false "Nomor Halaman (Default: 1)"
 // @Param limit query int false "Jumlah Data per Halaman (Default: 10)"
 // @Param user_book_id path string true "ID progres buku di rak"
-// @Success 200 {array} domain.BookNote "Daftar catatan"
+// @Success 200 {array} utils.PaginatedResponse "Daftar catatan"
 // @Failure 401 {object} utils.ErrorResponse "Unauthorized (Token tidak ada/salah)"
 // @Failure 404 {object} utils.ErrorResponse "Buku tidak ditemukan di rak"
 // @Failure 500 {object} utils.ErrorResponse "Internal Server Error"

@@ -468,7 +468,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_domain.UserBookWithMetadata"
+                                "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.PaginatedResponse"
                             }
                         }
                     },
@@ -666,7 +666,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_domain.BookNote"
+                                "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.PaginatedResponse"
                             }
                         }
                     },
@@ -1031,44 +1031,6 @@ const docTemplate = `{
         "github_com_faridlan_omni-library-api_internal_domain.UserBook": {
             "type": "object",
             "properties": {
-                "book_id": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "current_page": {
-                    "type": "integer"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "rating": {
-                    "type": "integer"
-                },
-                "status": {
-                    "description": "'TO_READ', 'READING', 'FINISHED'",
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "user_id": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_faridlan_omni-library-api_internal_domain.UserBookWithMetadata": {
-            "type": "object",
-            "properties": {
-                "book": {
-                    "description": "Informasi detail buku",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_domain.Book"
-                        }
-                    ]
-                },
                 "book_id": {
                     "type": "string"
                 },

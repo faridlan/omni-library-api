@@ -59,7 +59,7 @@ func (h *AuthHandler) Register(c *fiber.Ctx) error {
 	}
 
 	// Kembalikan DTO tersebut
-	return c.Status(fiber.StatusCreated).JSON(res)
+	return utils.SendSuccess(c, fiber.StatusOK, "User berhasil dibuat", res)
 }
 
 // Login godoc
@@ -101,7 +101,7 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 	}
 
 	// Kembalikan DTO tersebut
-	return c.Status(fiber.StatusOK).JSON(res)
+	return utils.SendSuccess(c, fiber.StatusOK, "Login berhasil", res)
 }
 
 // Refresh godoc
@@ -136,8 +136,7 @@ func (h *AuthHandler) Refresh(c *fiber.Ctx) error {
 	}
 
 	// 4. Berikan Access Token baru ke Frontend
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"message":      "Access Token berhasil diperbarui",
+	return utils.SendSuccess(c, fiber.StatusOK, "Access Token berhasil diperbarui", fiber.Map{
 		"access_token": newAccessToken,
 	})
 }

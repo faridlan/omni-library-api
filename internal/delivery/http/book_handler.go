@@ -51,7 +51,7 @@ func (h *BookHandler) FetchAndSave(c *fiber.Ctx) error {
 		return utils.HandleDomainError(c, err)
 	}
 
-	return c.Status(fiber.StatusOK).JSON(book)
+	return utils.SendSuccess(c, fiber.StatusOK, "Metadata buku berhasil diambil", book)
 }
 
 // GetAll godoc
@@ -137,7 +137,7 @@ func (h *BookHandler) CreateManual(c *fiber.Ctx) error {
 		return utils.HandleDomainError(c, err)
 	}
 
-	return c.Status(fiber.StatusCreated).JSON(result)
+	return utils.SendSuccess(c, fiber.StatusCreated, "Buku berhasil ditambahkan", result)
 }
 
 // UpdateBook godoc
@@ -192,7 +192,7 @@ func (h *BookHandler) UpdateBook(c *fiber.Ctx) error {
 		return utils.HandleDomainError(c, err)
 	}
 
-	return c.Status(fiber.StatusOK).JSON(result)
+	return utils.SendSuccess(c, fiber.StatusOK, "Metadata buku berhasil diperbarui", result)
 }
 
 // DeleteBook godoc
@@ -217,7 +217,5 @@ func (h *BookHandler) DeleteBook(c *fiber.Ctx) error {
 		return utils.HandleDomainError(c, err)
 	}
 
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"message": "Buku berhasil dihapus dari sistem",
-	})
+	return utils.SendSuccess(c, fiber.StatusOK, "Buku berhasil dihapus dari sistem", nil)
 }
