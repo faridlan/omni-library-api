@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  omni-api:
+    build: .
+    container_name: omni-api-container
+    ports:
+      - "8080:8080"
+
+    env_file:
+      - .env
+      
+    networks:
+      - database_luar
+
+networks:
+  database_luar:
+    external: true
+    name: psqldb_network
