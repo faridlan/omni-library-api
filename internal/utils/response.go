@@ -13,16 +13,18 @@ type ErrorResponse struct {
 	Detail string `json:"detail,omitempty"`
 }
 
-type PaginatedResponse struct {
+type PaginatedResponse[T any] struct {
 	Message string                `json:"message"`
-	Data    any                   `json:"data"`
+	Data    []T                   `json:"data"`
 	Meta    domain.PaginationMeta `json:"meta"`
 }
 
-type SuccessResponse struct {
+type SuccessResponse[T any] struct {
 	Message string `json:"message"`
-	Data    any    `json:"data,omitempty"` // omitempty: jika nil, key "data" tidak ditampilkan (opsional)
+	Data    T      `json:"data,omitempty"` // omitempty: jika nil, key "data" tidak ditampilkan (opsional)
 }
+
+type EmptyObj struct{}
 
 // SendError adalah helper agar Handler kita makin tipis
 func SendError(c *fiber.Ctx, statusCode int, message string, detail ...string) error {
@@ -86,16 +88,16 @@ func HandleDomainError(c *fiber.Ctx, err error) error {
 }
 
 func SendSuccessPaginated(c *fiber.Ctx, message string, data any, meta domain.PaginationMeta) error {
-	return c.Status(fiber.StatusOK).JSON(PaginatedResponse{
-		Message: message,
-		Data:    data,
-		Meta:    meta,
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": message,
+		"data":    data,
+		"meta":    meta,
 	})
 }
 
 func SendSuccess(c *fiber.Ctx, statusCode int, message string, data any) error {
-	return c.Status(statusCode).JSON(SuccessResponse{
-		Message: message,
-		Data:    data,
+	return c.Status(statusCode).JSON(fiber.Map{
+		"message": message,
+		"data":    data,
 	})
 }

@@ -41,9 +41,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Login berhasil (mengembalikan token JWT)",
+                        "description": "Login berhasil, berisi access_token dan refresh_token",
                         "schema": {
-                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_delivery_http_dto.TokenResponse"
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-github_com_faridlan_omni-library-api_internal_delivery_http_dto_TokenResponse"
                         }
                     },
                     "400": {
@@ -101,10 +101,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Berhasil mendapat access token baru",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-github_com_faridlan_omni-library-api_internal_delivery_http_dto_TokenResponse"
                         }
                     },
                     "400": {
@@ -148,9 +145,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "201": {
-                        "description": "Registrasi berhasil (mengembalikan data user tanpa password)",
+                        "description": "User berhasil dibuat",
                         "schema": {
-                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_delivery_http_dto.UserResponse"
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-github_com_faridlan_omni-library-api_internal_delivery_http_dto_UserResponse"
                         }
                     },
                     "400": {
@@ -200,9 +197,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Berhasil mengambil daftar buku",
+                        "description": "Berhasil mengambil katalog buku",
                         "schema": {
-                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.PaginatedResponse"
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.PaginatedResponse-github_com_faridlan_omni-library-api_internal_domain_Book"
                         }
                     },
                     "500": {
@@ -245,9 +242,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Metadata buku berhasil diambil",
                         "schema": {
-                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_domain.Book"
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-github_com_faridlan_omni-library-api_internal_domain_Book"
                         }
                     },
                     "400": {
@@ -302,9 +299,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "201": {
-                        "description": "Created",
+                        "description": "Buku berhasil ditambahkan",
                         "schema": {
-                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_domain.Book"
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-github_com_faridlan_omni-library-api_internal_domain_Book"
                         }
                     },
                     "401": {
@@ -360,9 +357,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Metadata buku berhasil diperbarui",
                         "schema": {
-                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_domain.Book"
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-github_com_faridlan_omni-library-api_internal_domain_Book"
                         }
                     },
                     "401": {
@@ -404,12 +401,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Buku berhasil dihapus dari sistem",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-github_com_faridlan_omni-library-api_internal_utils_EmptyObj"
                         }
                     },
                     "401": {
@@ -464,12 +458,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Daftar buku di rak",
+                        "description": "Berhasil mengambil buku dari rak",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.PaginatedResponse"
-                            }
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.PaginatedResponse-github_com_faridlan_omni-library-api_internal_domain_UserBookWithMetadata"
                         }
                     },
                     "401": {
@@ -522,9 +513,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "201": {
-                        "description": "Buku berhasil ditambahkan",
+                        "description": "Buku berhasil ditambahkan ke rak",
                         "schema": {
-                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_domain.UserBook"
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-github_com_faridlan_omni-library-api_internal_domain_UserBook"
                         }
                     },
                     "400": {
@@ -592,9 +583,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Berhasil update progres",
+                        "description": "Progres bacaan berhasil diperbarui",
                         "schema": {
-                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_domain.UserBook"
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-github_com_faridlan_omni-library-api_internal_domain_UserBook"
                         }
                     },
                     "400": {
@@ -662,12 +653,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Daftar catatan",
+                        "description": "Berhasil mengambil note buku",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.PaginatedResponse"
-                            }
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.PaginatedResponse-github_com_faridlan_omni-library-api_internal_domain_BookNote"
                         }
                     },
                     "401": {
@@ -726,10 +714,10 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "201": {
-                        "description": "Catatan berhasil disimpan",
+                    "200": {
+                        "description": "Note buku berhasil ditambahkan",
                         "schema": {
-                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_domain.BookNote"
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-github_com_faridlan_omni-library-api_internal_domain_BookNote"
                         }
                     },
                     "400": {
@@ -1058,6 +1046,47 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_faridlan_omni-library-api_internal_domain.UserBookWithMetadata": {
+            "type": "object",
+            "properties": {
+                "book": {
+                    "description": "Informasi detail buku",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_domain.Book"
+                        }
+                    ]
+                },
+                "book_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "current_page": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "rating": {
+                    "type": "integer"
+                },
+                "status": {
+                    "description": "'TO_READ', 'READING', 'FINISHED'",
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_faridlan_omni-library-api_internal_utils.EmptyObj": {
+            "type": "object"
+        },
         "github_com_faridlan_omni-library-api_internal_utils.ErrorResponse": {
             "type": "object",
             "properties": {
@@ -1070,15 +1099,150 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_faridlan_omni-library-api_internal_utils.PaginatedResponse": {
+        "github_com_faridlan_omni-library-api_internal_utils.PaginatedResponse-github_com_faridlan_omni-library-api_internal_domain_Book": {
             "type": "object",
             "properties": {
-                "data": {},
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_domain.Book"
+                    }
+                },
                 "message": {
                     "type": "string"
                 },
                 "meta": {
                     "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_domain.PaginationMeta"
+                }
+            }
+        },
+        "github_com_faridlan_omni-library-api_internal_utils.PaginatedResponse-github_com_faridlan_omni-library-api_internal_domain_BookNote": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_domain.BookNote"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {
+                    "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_domain.PaginationMeta"
+                }
+            }
+        },
+        "github_com_faridlan_omni-library-api_internal_utils.PaginatedResponse-github_com_faridlan_omni-library-api_internal_domain_UserBookWithMetadata": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_domain.UserBookWithMetadata"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {
+                    "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_domain.PaginationMeta"
+                }
+            }
+        },
+        "github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-github_com_faridlan_omni-library-api_internal_delivery_http_dto_TokenResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "description": "omitempty: jika nil, key \"data\" tidak ditampilkan (opsional)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_delivery_http_dto.TokenResponse"
+                        }
+                    ]
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-github_com_faridlan_omni-library-api_internal_delivery_http_dto_UserResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "description": "omitempty: jika nil, key \"data\" tidak ditampilkan (opsional)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_delivery_http_dto.UserResponse"
+                        }
+                    ]
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-github_com_faridlan_omni-library-api_internal_domain_Book": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "description": "omitempty: jika nil, key \"data\" tidak ditampilkan (opsional)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_domain.Book"
+                        }
+                    ]
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-github_com_faridlan_omni-library-api_internal_domain_BookNote": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "description": "omitempty: jika nil, key \"data\" tidak ditampilkan (opsional)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_domain.BookNote"
+                        }
+                    ]
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-github_com_faridlan_omni-library-api_internal_domain_UserBook": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "description": "omitempty: jika nil, key \"data\" tidak ditampilkan (opsional)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_domain.UserBook"
+                        }
+                    ]
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-github_com_faridlan_omni-library-api_internal_utils_EmptyObj": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "description": "omitempty: jika nil, key \"data\" tidak ditampilkan (opsional)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.EmptyObj"
+                        }
+                    ]
+                },
+                "message": {
+                    "type": "string"
                 }
             }
         }

@@ -200,6 +200,32 @@ definitions:
       user_id:
         type: string
     type: object
+  github_com_faridlan_omni-library-api_internal_domain.UserBookWithMetadata:
+    properties:
+      book:
+        allOf:
+        - $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_domain.Book'
+        description: Informasi detail buku
+      book_id:
+        type: string
+      created_at:
+        type: string
+      current_page:
+        type: integer
+      id:
+        type: string
+      rating:
+        type: integer
+      status:
+        description: '''TO_READ'', ''READING'', ''FINISHED'''
+        type: string
+      updated_at:
+        type: string
+      user_id:
+        type: string
+    type: object
+  github_com_faridlan_omni-library-api_internal_utils.EmptyObj:
+    type: object
   github_com_faridlan_omni-library-api_internal_utils.ErrorResponse:
     properties:
       detail:
@@ -208,13 +234,92 @@ definitions:
         example: pesan error
         type: string
     type: object
-  github_com_faridlan_omni-library-api_internal_utils.PaginatedResponse:
+  github_com_faridlan_omni-library-api_internal_utils.PaginatedResponse-github_com_faridlan_omni-library-api_internal_domain_Book:
     properties:
-      data: {}
+      data:
+        items:
+          $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_domain.Book'
+        type: array
       message:
         type: string
       meta:
         $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_domain.PaginationMeta'
+    type: object
+  ? github_com_faridlan_omni-library-api_internal_utils.PaginatedResponse-github_com_faridlan_omni-library-api_internal_domain_BookNote
+  : properties:
+      data:
+        items:
+          $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_domain.BookNote'
+        type: array
+      message:
+        type: string
+      meta:
+        $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_domain.PaginationMeta'
+    type: object
+  ? github_com_faridlan_omni-library-api_internal_utils.PaginatedResponse-github_com_faridlan_omni-library-api_internal_domain_UserBookWithMetadata
+  : properties:
+      data:
+        items:
+          $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_domain.UserBookWithMetadata'
+        type: array
+      message:
+        type: string
+      meta:
+        $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_domain.PaginationMeta'
+    type: object
+  ? github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-github_com_faridlan_omni-library-api_internal_delivery_http_dto_TokenResponse
+  : properties:
+      data:
+        allOf:
+        - $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_delivery_http_dto.TokenResponse'
+        description: 'omitempty: jika nil, key "data" tidak ditampilkan (opsional)'
+      message:
+        type: string
+    type: object
+  ? github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-github_com_faridlan_omni-library-api_internal_delivery_http_dto_UserResponse
+  : properties:
+      data:
+        allOf:
+        - $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_delivery_http_dto.UserResponse'
+        description: 'omitempty: jika nil, key "data" tidak ditampilkan (opsional)'
+      message:
+        type: string
+    type: object
+  github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-github_com_faridlan_omni-library-api_internal_domain_Book:
+    properties:
+      data:
+        allOf:
+        - $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_domain.Book'
+        description: 'omitempty: jika nil, key "data" tidak ditampilkan (opsional)'
+      message:
+        type: string
+    type: object
+  ? github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-github_com_faridlan_omni-library-api_internal_domain_BookNote
+  : properties:
+      data:
+        allOf:
+        - $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_domain.BookNote'
+        description: 'omitempty: jika nil, key "data" tidak ditampilkan (opsional)'
+      message:
+        type: string
+    type: object
+  ? github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-github_com_faridlan_omni-library-api_internal_domain_UserBook
+  : properties:
+      data:
+        allOf:
+        - $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_domain.UserBook'
+        description: 'omitempty: jika nil, key "data" tidak ditampilkan (opsional)'
+      message:
+        type: string
+    type: object
+  github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-github_com_faridlan_omni-library-api_internal_utils_EmptyObj:
+    properties:
+      data:
+        allOf:
+        - $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.EmptyObj'
+        description: 'omitempty: jika nil, key "data" tidak ditampilkan (opsional)'
+      message:
+        type: string
     type: object
 host: localhost:8080
 info:
@@ -240,9 +345,9 @@ paths:
       - application/json
       responses:
         "200":
-          description: Login berhasil (mengembalikan token JWT)
+          description: Login berhasil, berisi access_token dan refresh_token
           schema:
-            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_delivery_http_dto.TokenResponse'
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-github_com_faridlan_omni-library-api_internal_delivery_http_dto_TokenResponse'
         "400":
           description: Format JSON salah atau validasi gagal
           schema:
@@ -282,9 +387,7 @@ paths:
         "200":
           description: Berhasil mendapat access token baru
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-github_com_faridlan_omni-library-api_internal_delivery_http_dto_TokenResponse'
         "400":
           description: Format salah atau token tidak valid
           schema:
@@ -313,9 +416,9 @@ paths:
       - application/json
       responses:
         "201":
-          description: Registrasi berhasil (mengembalikan data user tanpa password)
+          description: User berhasil dibuat
           schema:
-            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_delivery_http_dto.UserResponse'
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-github_com_faridlan_omni-library-api_internal_delivery_http_dto_UserResponse'
         "400":
           description: Format JSON salah atau validasi gagal
           schema:
@@ -347,9 +450,9 @@ paths:
       - application/json
       responses:
         "200":
-          description: Berhasil mengambil daftar buku
+          description: Berhasil mengambil katalog buku
           schema:
-            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.PaginatedResponse'
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.PaginatedResponse-github_com_faridlan_omni-library-api_internal_domain_Book'
         "500":
           description: Internal Server Error
           schema:
@@ -370,11 +473,9 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Buku berhasil dihapus dari sistem
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-github_com_faridlan_omni-library-api_internal_utils_EmptyObj'
         "401":
           description: Unauthorized
           schema:
@@ -408,9 +509,9 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Metadata buku berhasil diperbarui
           schema:
-            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_domain.Book'
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-github_com_faridlan_omni-library-api_internal_domain_Book'
         "401":
           description: Unauthorized
           schema:
@@ -441,9 +542,9 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Metadata buku berhasil diambil
           schema:
-            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_domain.Book'
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-github_com_faridlan_omni-library-api_internal_domain_Book'
         "400":
           description: Bad Request
           schema:
@@ -477,9 +578,9 @@ paths:
       - application/json
       responses:
         "201":
-          description: Created
+          description: Buku berhasil ditambahkan
           schema:
-            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_domain.Book'
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-github_com_faridlan_omni-library-api_internal_domain_Book'
         "401":
           description: Unauthorized (Tidak bawa Token)
           schema:
@@ -514,11 +615,9 @@ paths:
       - application/json
       responses:
         "200":
-          description: Daftar buku di rak
+          description: Berhasil mengambil buku dari rak
           schema:
-            items:
-              $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.PaginatedResponse'
-            type: array
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.PaginatedResponse-github_com_faridlan_omni-library-api_internal_domain_UserBookWithMetadata'
         "401":
           description: Unauthorized (Token tidak ada/salah)
           schema:
@@ -552,9 +651,9 @@ paths:
       - application/json
       responses:
         "201":
-          description: Buku berhasil ditambahkan
+          description: Buku berhasil ditambahkan ke rak
           schema:
-            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_domain.UserBook'
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-github_com_faridlan_omni-library-api_internal_domain_UserBook'
         "400":
           description: Format JSON salah
           schema:
@@ -598,9 +697,9 @@ paths:
       - application/json
       responses:
         "200":
-          description: Berhasil update progres
+          description: Progres bacaan berhasil diperbarui
           schema:
-            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_domain.UserBook'
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-github_com_faridlan_omni-library-api_internal_domain_UserBook'
         "400":
           description: Format JSON salah
           schema:
@@ -644,11 +743,9 @@ paths:
       - application/json
       responses:
         "200":
-          description: Daftar catatan
+          description: Berhasil mengambil note buku
           schema:
-            items:
-              $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.PaginatedResponse'
-            type: array
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.PaginatedResponse-github_com_faridlan_omni-library-api_internal_domain_BookNote'
         "401":
           description: Unauthorized (Token tidak ada/salah)
           schema:
@@ -686,10 +783,10 @@ paths:
       produces:
       - application/json
       responses:
-        "201":
-          description: Catatan berhasil disimpan
+        "200":
+          description: Note buku berhasil ditambahkan
           schema:
-            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_domain.BookNote'
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-github_com_faridlan_omni-library-api_internal_domain_BookNote'
         "400":
           description: Format JSON salah atau Quote kosong
           schema:

@@ -25,7 +25,9 @@ func NewAuthHandler(router fiber.Router, uc domain.AuthUsecase) *AuthHandler {
 // @Accept json
 // @Produce json
 // @Param request body dto.RegisterRequest true "Payload registrasi pengguna baru"
-// @Success 201 {object} dto.UserResponse "Registrasi berhasil (mengembalikan data user tanpa password)"
+// @Success 201 {object} utils.SuccessResponse[dto.UserResponse] "User berhasil dibuat"
+// @Failure 400 {object} utils.ErrorResponse "Format JSON salah atau validasi gagal"
+// @Failure 409 {object} utils.ErrorResponse "Email sudah terdaftar (Conflict)"
 // @Failure 400 {object} utils.ErrorResponse "Format JSON salah atau validasi gagal"
 // @Failure 409 {object} utils.ErrorResponse "Email sudah terdaftar (Conflict)"
 // @Failure 500 {object} utils.ErrorResponse "Internal Server Error"
@@ -69,7 +71,7 @@ func (h *AuthHandler) Register(c *fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Param request body dto.LoginRequest true "Payload kredensial login"
-// @Success 200 {object} dto.TokenResponse "Login berhasil (mengembalikan token JWT)"
+// @Success 200 {object} utils.SuccessResponse[dto.TokenResponse] "Login berhasil, berisi access_token dan refresh_token"
 // @Failure 400 {object} utils.ErrorResponse "Format JSON salah atau validasi gagal"
 // @Failure 401 {object} utils.ErrorResponse "Email atau Password salah"
 // @Failure 404 {object} utils.ErrorResponse "Email tidak ditemukan"
@@ -111,7 +113,7 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Param request body dto.RefreshRequest true "Payload Refresh Token"
-// @Success 200 {object} map[string]string "Berhasil mendapat access token baru"
+// @Success 200 {object} utils.SuccessResponse[dto.TokenResponse] "Berhasil mendapat access token baru"
 // @Failure 400 {object} utils.ErrorResponse "Format salah atau token tidak valid"
 // @Failure 401 {object} utils.ErrorResponse "Token expired atau ditolak"
 // @Router /api/auth/refresh [post]
@@ -135,8 +137,10 @@ func (h *AuthHandler) Refresh(c *fiber.Ctx) error {
 		return utils.HandleDomainError(c, err)
 	}
 
+	resdata := dto.TokenResponse{
+		AccessToken: newAccessToken,
+	}
+
 	// 4. Berikan Access Token baru ke Frontend
-	return utils.SendSuccess(c, fiber.StatusOK, "Access Token berhasil diperbarui", fiber.Map{
-		"access_token": newAccessToken,
-	})
+	return utils.SendSuccess(c, fiber.StatusOK, "Access Token berhasil diperbarui", resdata)
 }

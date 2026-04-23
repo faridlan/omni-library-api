@@ -26,7 +26,7 @@ func NewBookHandler(router fiber.Router, bu domain.BookUsecase) *BookHandler {
 // @Accept json
 // @Produce json
 // @Param request body dto.FetchBookRequest true "Payload berisi ISBN"
-// @Success 200 {object} domain.Book
+// @Success 200 {object} utils.SuccessResponse[domain.Book] "Metadata buku berhasil diambil"
 // @Failure 400 {object} utils.ErrorResponse
 // @Failure 404 {object} utils.ErrorResponse "Buku tidak ditemukan di Google Books"
 // @Failure 500 {object} utils.ErrorResponse
@@ -61,7 +61,7 @@ func (h *BookHandler) FetchAndSave(c *fiber.Ctx) error {
 // @Produce json
 // @Param page query int false "Nomor Halaman (Default: 1)"
 // @Param limit query int false "Jumlah Data per Halaman (Default: 10)"
-// @Success 200 {object} utils.PaginatedResponse "Berhasil mengambil daftar buku"
+// @Success 200 {object} utils.PaginatedResponse[domain.Book] "Berhasil mengambil katalog buku"
 // @Failure 500 {object} utils.ErrorResponse "Internal Server Error"
 // @Router /api/books [get]
 func (h *BookHandler) GetAll(c *fiber.Ctx) error {
@@ -96,7 +96,7 @@ func (h *BookHandler) GetAll(c *fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Success 201 {object} domain.Book
+// @Success 201 {object} utils.SuccessResponse[domain.Book] "Buku berhasil ditambahkan"
 // @Failure 401 {object} utils.ErrorResponse "Unauthorized (Tidak bawa Token)"
 // @Failure 403 {object} utils.ErrorResponse "Forbidden (Bukan Admin)"
 // @Param request body dto.BookRequest true "Payload data buku"
@@ -148,7 +148,7 @@ func (h *BookHandler) CreateManual(c *fiber.Ctx) error {
 // @Produce json
 // @Param id path string true "ID Buku"
 // @Security BearerAuth
-// @Success 200 {object} domain.Book
+// @Success 200 {object} utils.SuccessResponse[domain.Book] "Metadata buku berhasil diperbarui"
 // @Failure 401 {object} utils.ErrorResponse "Unauthorized"
 // @Failure 403 {object} utils.ErrorResponse "Forbidden"
 // @Param request body dto.BookRequest true "Payload data update"
@@ -202,7 +202,7 @@ func (h *BookHandler) UpdateBook(c *fiber.Ctx) error {
 // @Produce json
 // @Param id path string true "ID Buku"
 // @Security BearerAuth
-// @Success 200 {object} map[string]string
+// @Success 200 {object} utils.SuccessResponse[utils.EmptyObj] "Buku berhasil dihapus dari sistem"
 // @Failure 401 {object} utils.ErrorResponse "Unauthorized"
 // @Failure 403 {object} utils.ErrorResponse "Forbidden"
 // @Router /api/books/{id} [delete]

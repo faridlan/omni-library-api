@@ -23,7 +23,7 @@ func NewUserBookHandler(router fiber.Router, u domain.UserBookUsecase) *UserBook
 // @Accept json
 // @Produce json
 // @Param request body dto.AddBookRequest true "Payload berisi ID Buku"
-// @Success 201 {object} domain.UserBook "Buku berhasil ditambahkan"
+// @Success 201 {object} utils.SuccessResponse[domain.UserBook] "Buku berhasil ditambahkan ke rak"
 // @Failure 400 {object} utils.ErrorResponse "Format JSON salah"
 // @Failure 401 {object} utils.ErrorResponse "Unauthorized (Token tidak ada/salah)"
 // @Failure 409 {object} utils.ErrorResponse "Buku sudah ada di rak (Conflict)"
@@ -58,7 +58,7 @@ func (h *UserBookHandler) AddBook(c *fiber.Ctx) error {
 // @Produce json
 // @Param book_id path string true "ID Buku di database master"
 // @Param request body dto.UpdateProgressRequest true "Payload update progres"
-// @Success 200 {object} domain.UserBook "Berhasil update progres"
+// @Success 200 {object} utils.SuccessResponse[domain.UserBook] "Progres bacaan berhasil diperbarui"
 // @Failure 400 {object} utils.ErrorResponse "Format JSON salah"
 // @Failure 401 {object} utils.ErrorResponse "Unauthorized (Token tidak ada/salah)"
 // @Failure 404 {object} utils.ErrorResponse "Buku tidak ditemukan di rak"
@@ -99,7 +99,7 @@ func (h *UserBookHandler) UpdateProgress(c *fiber.Ctx) error {
 // @Param page query int false "Nomor Halaman (Default: 1)"
 // @Param limit query int false "Jumlah Data per Halaman (Default: 10)"
 // @Param status query string false "Filter status: TO_READ, READING, FINISHED"
-// @Success 200 {array} utils.PaginatedResponse "Daftar buku di rak"
+// @Success 200 {object} utils.PaginatedResponse[domain.UserBookWithMetadata] "Berhasil mengambil buku dari rak"
 // @Failure 401 {object} utils.ErrorResponse "Unauthorized (Token tidak ada/salah)"
 // @Failure 404 {object} utils.ErrorResponse "Rak buku tidak ditemukan"
 // @Failure 500 {object} utils.ErrorResponse "Internal Server Error"
