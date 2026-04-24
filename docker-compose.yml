@@ -16,4 +16,4 @@ services:
 networks:
   database_luar:
     external: true
-    name: psqldb_network
+    name: omni_network

@@ -3,6 +3,8 @@ package main
 import (
 	"log/slog"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/faridlan/omni-library-api/internal/config"
 	myHttp "github.com/faridlan/omni-library-api/internal/delivery/http"
@@ -33,10 +35,9 @@ func main() {
 
 	err := godotenv.Load()
 	if err != nil {
-		// Gunakan slog, lalu paksa aplikasi berhenti
-		slog.Error("Error loading .env file", slog.String("detail", err.Error()))
-		os.Exit(1)
+		slog.Warn("File .env tidak ditemukan, menggunakan environment variable dari sistem")
 	}
+
 	// Ambil nilai dengan os.Getenv
 	dbUser := os.Getenv("DB_USER")
 	dbPassword := os.Getenv("DB_PASSWORD")
@@ -68,9 +69,13 @@ func main() {
 	// Setup Fiber & Route
 	app := fiber.New()
 
+	frontendURL := os.Getenv("FRONTEND_URL")
+	if frontendURL == "" {
+		frontendURL = "*" // Fallback untuk kemudahan di lokal
+	}
 	app.Use(cors.New(cors.Config{
-		AllowOrigins: "*",                                           // Sementara izinkan dari mana saja (Bisa diganti "http://localhost:3000" saat production)
-		AllowHeaders: "Origin, Content-Type, Accept, Authorization", // SANGAT PENTING: Izinkan header Authorization!
+		AllowOrigins: frontendURL,
+		AllowHeaders: "Origin, Content-Type, Accept, Authorization",
 		AllowMethods: "GET, POST, HEAD, PUT, DELETE, PATCH",
 	}))
 
@@ -86,9 +91,27 @@ func main() {
 	myHttp.SetupRoutes(app, authUsecase, bookUsecase, userBookUsecase, bookNoteUsecase)
 
 	// Start Server
-	slog.Info("Starting OmniLibrary API Server", slog.String("port", "8080"))
-	if err := app.Listen(":8080"); err != nil {
-		slog.Error("Server failed to start", slog.String("detail", err.Error()))
-		os.Exit(1)
+	go func() {
+		slog.Info("Starting OmniLibrary API Server", slog.String("port", "8080"))
+		if err := app.Listen(":8080"); err != nil {
+			slog.Error("Server failed to start", slog.String("detail", err.Error()))
+		}
+	}()
+
+	// 2. Buat "Jebakan" Sinyal (Menunggu CTRL+C atau instruksi Docker Stop)
+	quit := make(chan os.Signal, 1)
+	// SIGINT = CTRL+C, SIGTERM = Sinyal kill dari Docker/Linux
+	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
+
+	<-quit // Main Thread akan BERHENTI di sini menunggu sinyal masuk ke channel
+
+	// 3. Menutup Warung dengan Sopan (Graceful Shutdown)
+	slog.Info("Menerima sinyal mati, mematikan server dengan sopan...")
+
+	// Fiber akan menolak request baru, tapi menunggu request yang sedang berjalan selesai
+	if err := app.Shutdown(); err != nil {
+		slog.Error("Server dipaksa mati karena error", slog.String("detail", err.Error()))
 	}
+
+	slog.Info("OmniLibrary API Server berhasil dimatikan dengan aman. Sampai jumpa!")
 }
