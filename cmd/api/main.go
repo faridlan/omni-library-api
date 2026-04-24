@@ -66,6 +66,11 @@ func main() {
 	bookNoteRepo := postgres.NewBookNoteRepository(db)
 	bookNoteUsecase := usecase.NewBookNoteUsecase(bookNoteRepo, userBookRepo)
 
+	dbURL := os.Getenv("DB_URL")
+
+	// 1. Jalankan Migrasi Otomatis!
+	config.RunDBMigration(dbURL)
+
 	// Setup Fiber & Route
 	app := fiber.New()
 
