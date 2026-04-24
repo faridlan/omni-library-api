@@ -37,7 +37,7 @@ COPY --from=builder /app/omni-api .
 
 # (Opsional) Copy file .env jika ada konfigurasi default 
 # Biasanya saat produksi, variabel di-inject via docker-compose/server
-COPY .env .
+# COPY .env .
 
 # Beritahu Docker port berapa yang digunakan aplikasimu (Misal: 8080)
 EXPOSE 8080

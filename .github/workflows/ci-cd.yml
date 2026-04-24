@@ -1,0 +1,59 @@
+name: OmniLibrary CI/CD
+
+on:
+  push:
+    branches: [ "main", "stag" ]
+    tags: [ "v*.*.*" ]
+  pull_request:
+    branches: [ "main", "stag" ]
+
+jobs:
+  test:
+    name: Unit Testing
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+
+      - name: Run Tests
+        run: go test -v ./internal/usecase/... ./internal/utils/...
+
+  build-and-push:
+    name: Build & Push Docker Image
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'push'
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Set Image Tag
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            # Mengambil v1.0.0 menjadi 1.0.0
+            VERSION=${GITHUB_REF#refs/tags/v}
+            echo "IMAGE_TAG=$VERSION" >> $GITHUB_ENV
+          elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "IMAGE_TAG=latest" >> $GITHUB_ENV
+          else
+            echo "IMAGE_TAG=staging" >> $GITHUB_ENV
+          fi
+
+      - name: Build and Push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/omni-api:${{ env.IMAGE_TAG }}
