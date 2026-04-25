@@ -74,14 +74,16 @@ func main() {
 	// Setup Fiber & Route
 	app := fiber.New()
 
-	frontendURL := os.Getenv("FRONTEND_URL")
-	if frontendURL == "" {
-		frontendURL = "*" // Fallback untuk kemudahan di lokal
-	}
+	// frontendURL := os.Getenv("FRONTEND_URL")
+	// if frontendURL == "" {
+	// 	frontendURL = "*" // Fallback untuk kemudahan di lokal
+	// }
+
 	app.Use(cors.New(cors.Config{
-		AllowOrigins: frontendURL,
-		AllowHeaders: "Origin, Content-Type, Accept, Authorization",
-		AllowMethods: "GET, POST, HEAD, PUT, DELETE, PATCH",
+		AllowOrigins:     "*",
+		AllowHeaders:     "Origin, Content-Type, Accept, Authorization",
+		AllowMethods:     "GET, POST, HEAD, PUT, DELETE, PATCH, OPTIONS",
+		AllowCredentials: true,
 	}))
 
 	app.Use(logger.New(logger.Config{
