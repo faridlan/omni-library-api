@@ -57,3 +57,29 @@ jobs:
           context: .
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/omni-api:${{ env.IMAGE_TAG }}
+
+  deploy-staging:
+    name: Deploy to Azure Staging
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    # PENTING: Job ini HANYA akan dieksekusi jika push terjadi di branch 'stag'
+    if: github.ref == 'refs/heads/stag'
+    
+    steps:
+      - name: Execute SSH Commands on Azure VM
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.AZURE_HOST }}
+          username: ${{ secrets.AZURE_USERNAME }}
+          key: ${{ secrets.AZURE_KEY }}
+          script: |
+            echo "Memasuki ruang Staging..."
+            cd ~/omnilibrary/stag
+            
+            echo "Menarik image terbaru dari Docker Hub..."
+            sudo docker-compose pull
+            
+            echo "Me-restart container Staging..."
+            sudo docker-compose up -d
+            
+            echo "Deployment Staging Selesai! 🚀"
