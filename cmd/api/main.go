@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/faridlan/omni-library-api/docs"
 	"github.com/faridlan/omni-library-api/internal/config"
 	myHttp "github.com/faridlan/omni-library-api/internal/delivery/http"
 	"github.com/faridlan/omni-library-api/internal/repository/external"
@@ -71,16 +72,21 @@ func main() {
 	// 1. Jalankan Migrasi Otomatis!
 	config.RunDBMigration(dbURL)
 
+	swaggerHost := os.Getenv("SWAGGER_HOST")
+	if swaggerHost != "" {
+		docs.SwaggerInfo.Host = swaggerHost
+	}
+
 	// Setup Fiber & Route
 	app := fiber.New()
 
-	// frontendURL := os.Getenv("FRONTEND_URL")
-	// if frontendURL == "" {
-	// 	frontendURL = "*" // Fallback untuk kemudahan di lokal
-	// }
+	frontendURL := os.Getenv("FRONTEND_URL")
+	if frontendURL == "" {
+		frontendURL = "*" // Fallback untuk kemudahan di lokal
+	}
 
 	app.Use(cors.New(cors.Config{
-		AllowOrigins:     "*",
+		AllowOrigins:     frontendURL,
 		AllowHeaders:     "Origin, Content-Type, Accept, Authorization",
 		AllowMethods:     "GET, POST, HEAD, PUT, DELETE, PATCH, OPTIONS",
 		AllowCredentials: false,
