@@ -83,3 +83,40 @@ jobs:
             sudo docker compose up -d
             
             echo "Deployment Staging Selesai! 🚀"
+  deploy-production:
+    name: Deploy to Azure Production
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    # PENTING: Job ini HANYA tereksekusi jika push berupa Tag (misal: v1.0.0)
+    if: startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+      - name: Execute SSH Commands on Azure VM
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          GITHUB_REF: ${{ github.ref }}
+        with:
+          host: ${{ secrets.AZURE_HOST }}
+          username: ${{ secrets.AZURE_USERNAME }}
+          key: ${{ secrets.AZURE_KEY }}
+          envs: GITHUB_REF
+          script: |
+            echo "🚀 Memasuki ruang Production..."
+            cd ~/omnilibrary/prod
+            
+            echo "📦 Mengekstrak versi dari Git Tag..."
+            # Menghapus kata 'refs/tags/v' sehingga 'v1.0.0' menjadi '1.0.0'
+            VERSION=${GITHUB_REF#refs/tags/v}
+            echo "Versi yang akan di-deploy: $VERSION"
+            
+            echo "📝 Menulis versi ke file .env.version untuk Docker Compose..."
+            echo "API_VERSION=$VERSION" > .env.version
+            
+            echo "⬇️ Menarik image versi $VERSION dari Docker Hub..."
+            # Menjalankan compose dengan menggabungkan .env asli dan .env.version
+            sudo docker compose --env-file .env --env-file .env.version pull
+            
+            echo "🔄 Me-restart container Production..."
+            sudo docker compose --env-file .env --env-file .env.version up -d
+            
+            echo "✅ Deployment Production Selesai!"
