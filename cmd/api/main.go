@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/faridlan/omni-library-api/docs"
 	"github.com/faridlan/omni-library-api/internal/config"
 	myHttp "github.com/faridlan/omni-library-api/internal/delivery/http"
 	"github.com/faridlan/omni-library-api/internal/repository/external"
@@ -66,6 +67,16 @@ func main() {
 	bookNoteRepo := postgres.NewBookNoteRepository(db)
 	bookNoteUsecase := usecase.NewBookNoteUsecase(bookNoteRepo, userBookRepo)
 
+	dbURL := os.Getenv("DB_URL")
+
+	// 1. Jalankan Migrasi Otomatis!
+	config.RunDBMigration(dbURL)
+
+	swaggerHost := os.Getenv("SWAGGER_HOST")
+	if swaggerHost != "" {
+		docs.SwaggerInfo.Host = swaggerHost
+	}
+
 	// Setup Fiber & Route
 	app := fiber.New()
 
@@ -73,10 +84,12 @@ func main() {
 	if frontendURL == "" {
 		frontendURL = "*" // Fallback untuk kemudahan di lokal
 	}
+
 	app.Use(cors.New(cors.Config{
-		AllowOrigins: frontendURL,
-		AllowHeaders: "Origin, Content-Type, Accept, Authorization",
-		AllowMethods: "GET, POST, HEAD, PUT, DELETE, PATCH",
+		AllowOrigins:     frontendURL,
+		AllowHeaders:     "Origin, Content-Type, Accept, Authorization",
+		AllowMethods:     "GET, POST, HEAD, PUT, DELETE, PATCH, OPTIONS",
+		AllowCredentials: false,
 	}))
 
 	app.Use(logger.New(logger.Config{
@@ -89,6 +102,15 @@ func main() {
 
 	// Daftarkan Handler
 	myHttp.SetupRoutes(app, authUsecase, bookUsecase, userBookUsecase, bookNoteUsecase)
+
+	// Endpoint Tracer Bullet untuk mengetes CI/CD
+	app.Get("/api/health", func(c *fiber.Ctx) error {
+		return c.JSON(fiber.Map{
+			"status":  "success",
+			"message": "Hello dari Staging! CI/CD Otomatis berhasil mendarat dengan mulus. 🚀",
+			"version": "1.0.1-beta",
+		})
+	})
 
 	// Start Server
 	go func() {
