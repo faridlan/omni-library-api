@@ -103,15 +103,6 @@ func main() {
 	// Daftarkan Handler
 	myHttp.SetupRoutes(app, authUsecase, bookUsecase, userBookUsecase, bookNoteUsecase)
 
-	// Endpoint Tracer Bullet untuk mengetes CI/CD
-	app.Get("/api/health", func(c *fiber.Ctx) error {
-		return c.JSON(fiber.Map{
-			"status":  "success",
-			"message": "Hello dari Staging! CI/CD Otomatis berhasil mendarat dengan mulus. 🚀",
-			"version": "1.0.1-beta",
-		})
-	})
-
 	// Start Server
 	go func() {
 		slog.Info("Starting OmniLibrary API Server", slog.String("port", "8080"))
