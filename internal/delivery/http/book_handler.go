@@ -89,6 +89,29 @@ func (h *BookHandler) GetAll(c *fiber.Ctx) error {
 	return utils.SendSuccessPaginated(c, "Berhasil mengambil katalog buku", books, meta)
 }
 
+// GetBookByID godoc
+// @Summary Ambil Buku Berdasarkan ID
+// @Description Mengambil detail buku berdasarkan ID yang diberikan
+// @Tags Books
+// @Produce json
+// @Param id path string true "ID Buku"
+// @Success 200 {object} utils.SuccessResponse[domain.Book] "Buku ditemukan"
+// @Failure 404 {object} utils.ErrorResponse "Buku tidak ditemukan"
+// @Router /api/books/{id} [get]
+func (h *BookHandler) GetBookByID(c *fiber.Ctx) error {
+	bookID := c.Params("id")
+	if err := utils.ValidateUUID(bookID, "book_id"); err != nil {
+		return utils.SendError(c, fiber.StatusBadRequest, err.Error())
+	}
+
+	book, err := h.bookUsecase.GetBookByID(c.Context(), bookID)
+	if err != nil {
+		return utils.HandleDomainError(c, err)
+	}
+
+	return utils.SendSuccess(c, fiber.StatusOK, "Buku ditemukan", book)
+}
+
 // CreateManual godoc
 // @Summary Tambah Buku Manual (Admin Only)
 // @Description Menambahkan buku lokal tanpa ISBN ke database master

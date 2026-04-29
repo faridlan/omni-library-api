@@ -47,6 +47,7 @@ func SetupRoutes(app *fiber.App, authUC domain.AuthUsecase, bookUC domain.BookUs
 
 	// Katalog Buku
 	api.Get("/books", bookHandler.GetAll)
+	api.Get("/books/:id", bookHandler.GetBookByID)
 
 	// Endpoint Tracer Bullet untuk mengetes CI/CD
 	api.Get("/api/health", func(c *fiber.Ctx) error {

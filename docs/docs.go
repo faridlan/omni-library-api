@@ -320,6 +320,39 @@ const docTemplate = `{
             }
         },
         "/api/books/{id}": {
+            "get": {
+                "description": "Mengambil detail buku berdasarkan ID yang diberikan",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Books"
+                ],
+                "summary": "Ambil Buku Berdasarkan ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID Buku",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Buku ditemukan",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-github_com_faridlan_omni-library-api_internal_domain_Book"
+                        }
+                    },
+                    "404": {
+                        "description": "Buku tidak ditemukan",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
+                        }
+                    }
+                }
+            },
             "put": {
                 "security": [
                     {
