@@ -32,9 +32,27 @@ func (_m *UserBookRepository) AddBookToShelf(ctx context.Context, ub *domain.Use
 	return r0
 }
 
-// GetByID provides a mock function with given fields: ctx, userID
-func (_m *UserBookRepository) GetByID(ctx context.Context, userID string) (*domain.UserBook, error) {
-	ret := _m.Called(ctx, userID)
+// Delete provides a mock function with given fields: ctx, userID, bookID
+func (_m *UserBookRepository) Delete(ctx context.Context, userID string, bookID string) error {
+	ret := _m.Called(ctx, userID, bookID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Delete")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+		r0 = rf(ctx, userID, bookID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// GetByID provides a mock function with given fields: ctx, id
+func (_m *UserBookRepository) GetByID(ctx context.Context, id string) (*domain.UserBook, error) {
+	ret := _m.Called(ctx, id)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetByID")
@@ -43,10 +61,10 @@ func (_m *UserBookRepository) GetByID(ctx context.Context, userID string) (*doma
 	var r0 *domain.UserBook
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) (*domain.UserBook, error)); ok {
-		return rf(ctx, userID)
+		return rf(ctx, id)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *domain.UserBook); ok {
-		r0 = rf(ctx, userID)
+		r0 = rf(ctx, id)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*domain.UserBook)
@@ -54,7 +72,7 @@ func (_m *UserBookRepository) GetByID(ctx context.Context, userID string) (*doma
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, userID)
+		r1 = rf(ctx, id)
 	} else {
 		r1 = ret.Error(1)
 	}

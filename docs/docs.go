@@ -696,6 +696,62 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Menghapus buku dari rak personal user",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Library"
+                ],
+                "summary": "Hapus Buku dari Rak",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID Buku",
+                        "name": "book_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Buku berhasil dihapus dari rak",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-string"
+                        }
+                    },
+                    "400": {
+                        "description": "Format UUID salah",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized (Token tidak ada/salah)",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Buku tidak ditemukan di rak",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
+                        }
+                    }
+                }
             }
         },
         "/api/library/{user_book_id}/notes": {
@@ -1493,6 +1549,18 @@ const docTemplate = `{
                             "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.EmptyObj"
                         }
                     ]
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-string": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "description": "omitempty: jika nil, key \"data\" tidak ditampilkan (opsional)",
+                    "type": "string"
                 },
                 "message": {
                     "type": "string"

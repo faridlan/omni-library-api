@@ -350,6 +350,14 @@ definitions:
       message:
         type: string
     type: object
+  github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-string:
+    properties:
+      data:
+        description: 'omitempty: jika nil, key "data" tidak ditampilkan (opsional)'
+        type: string
+      message:
+        type: string
+    type: object
 host: localhost:8080
 info:
   contact: {}
@@ -727,6 +735,42 @@ paths:
       tags:
       - Library
   /api/library/{book_id}:
+    delete:
+      description: Menghapus buku dari rak personal user
+      parameters:
+      - description: ID Buku
+        in: path
+        name: book_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Buku berhasil dihapus dari rak
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-string'
+        "400":
+          description: Format UUID salah
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+        "401":
+          description: Unauthorized (Token tidak ada/salah)
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+        "404":
+          description: Buku tidak ditemukan di rak
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Hapus Buku dari Rak
+      tags:
+      - Library
     get:
       description: Menampilkan seluruh buku yang ada di rak personal user, lengkap
         dengan metadata bukunya. Bisa difilter berdasarkan status.

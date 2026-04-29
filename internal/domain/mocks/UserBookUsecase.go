@@ -14,6 +14,24 @@ type UserBookUsecase struct {
 	mock.Mock
 }
 
+// DeleteBookFromShelf provides a mock function with given fields: ctx, userID, bookID
+func (_m *UserBookUsecase) DeleteBookFromShelf(ctx context.Context, userID string, bookID string) error {
+	ret := _m.Called(ctx, userID, bookID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeleteBookFromShelf")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+		r0 = rf(ctx, userID, bookID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // GetUserBookDetail provides a mock function with given fields: ctx, userID, bookID
 func (_m *UserBookUsecase) GetUserBookDetail(ctx context.Context, userID string, bookID string) (*domain.UserBookWithMetadata, error) {
 	ret := _m.Called(ctx, userID, bookID)

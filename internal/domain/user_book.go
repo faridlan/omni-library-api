@@ -37,7 +37,8 @@ type UserBookRepository interface {
 	// Mengecek apakah buku sudah ada di rak user
 	GetByUserAndBookID(ctx context.Context, userID, bookID string) (*UserBookWithMetadata, error)
 	GetByUserID(ctx context.Context, userID string, status string, params PaginationQuery) ([]*UserBookWithMetadata, int64, error)
-	GetByID(ctx context.Context, userID string) (*UserBook, error)
+	GetByID(ctx context.Context, id string) (*UserBook, error)
+	Delete(ctx context.Context, userID, bookID string) error
 }
 
 type UserBookUsecase interface {
@@ -48,4 +49,5 @@ type UserBookUsecase interface {
 	UpdateReadingStatus(ctx context.Context, userID, bookID, status string, page, rating int) (*UserBook, error)
 	GetUserLibrary(ctx context.Context, userID string, status string, params PaginationQuery) ([]*UserBookWithMetadata, PaginationMeta, error)
 	GetUserBookDetail(ctx context.Context, userID, bookID string) (*UserBookWithMetadata, error)
+	DeleteBookFromShelf(ctx context.Context, userID, bookID string) error
 }

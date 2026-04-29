@@ -124,3 +124,8 @@ func (r *userBookRepository) GetByID(ctx context.Context, id string) (*domain.Us
 	}
 	return model.ToDomain(), nil
 }
+
+func (r *userBookRepository) Delete(ctx context.Context, userID, bookID string) error {
+	result := r.db.WithContext(ctx).Table("user_books").Where("user_id = ? AND id = ?", userID, bookID).Delete(&UserBookModel{})
+	return result.Error
+}

@@ -112,3 +112,15 @@ func (u *userBookUsecase) GetUserBookDetail(ctx context.Context, userID, bookID 
 
 	return book, nil
 }
+
+func (u *userBookUsecase) DeleteBookFromShelf(ctx context.Context, userID, bookID string) error {
+	existing, err := u.userBookRepo.GetByUserAndBookID(ctx, userID, bookID)
+	if err != nil {
+		return err
+	}
+	if existing == nil {
+		return domain.ErrNotFound
+	}
+
+	return u.userBookRepo.Delete(ctx, userID, bookID)
+}

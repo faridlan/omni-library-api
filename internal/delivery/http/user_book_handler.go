@@ -157,3 +157,31 @@ func (h *UserBookHandler) GetUserBookDetail(c *fiber.Ctx) error {
 	}
 	return utils.SendSuccess(c, fiber.StatusOK, "Berhasil mengambil detail buku dari rak", result)
 }
+
+// DeleteBookFromShelf godoc
+// @Summary Hapus Buku dari Rak
+// @Description Menghapus buku dari rak personal user
+// @Tags Library
+// @Produce json
+// @Param book_id path string true "ID Buku"
+// @Success 200 {object} utils.SuccessResponse[string] "Buku berhasil dihapus dari rak"
+// @Failure 400 {object} utils.ErrorResponse "Format UUID salah"
+// @Failure 401 {object} utils.ErrorResponse "Unauthorized (Token tidak ada/salah)"
+// @Failure 404 {object} utils.ErrorResponse "Buku tidak ditemukan di rak"
+// @Failure 500 {object} utils.ErrorResponse "Internal Server Error"
+// @Router /api/library/{book_id} [delete]
+// @Security BearerAuth
+func (h *UserBookHandler) DeleteBookFromShelf(c *fiber.Ctx) error {
+	bookID := c.Params("book_id")
+	if err := utils.ValidateUUID(bookID, "book_id"); err != nil {
+		return utils.SendError(c, fiber.StatusBadRequest, err.Error())
+	}
+	userID := c.Locals("user_id").(string)
+
+	err := h.usecase.DeleteBookFromShelf(c.Context(), userID, bookID)
+	if err != nil {
+		return utils.HandleDomainError(c, err)
+	}
+
+	return utils.SendSuccess(c, fiber.StatusOK, "Buku berhasil dihapus dari rak", nil)
+}

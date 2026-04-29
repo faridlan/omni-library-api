@@ -71,6 +71,7 @@ func SetupRoutes(app *fiber.App, authUC domain.AuthUsecase, bookUC domain.BookUs
 	lib.Post("/", userBookHandler.AddBook)
 	lib.Get("/", userBookHandler.GetMyLibrary)
 	lib.Put("/:book_id", userBookHandler.UpdateProgress)
+	lib.Delete("/:book_id", userBookHandler.DeleteBookFromShelf)
 	lib.Get("/:book_id", userBookHandler.GetUserBookDetail)
 
 	// Catatan Buku (Notes)
