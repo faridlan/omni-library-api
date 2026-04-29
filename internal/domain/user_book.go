@@ -35,7 +35,7 @@ type UserBookRepository interface {
 	UpdateProgress(ctx context.Context, ub *UserBook) error
 
 	// Mengecek apakah buku sudah ada di rak user
-	GetByUserAndBookID(ctx context.Context, userID, bookID string) (*UserBook, error)
+	GetByUserAndBookID(ctx context.Context, userID, bookID string) (*UserBookWithMetadata, error)
 	GetByUserID(ctx context.Context, userID string, status string, params PaginationQuery) ([]*UserBookWithMetadata, int64, error)
 	GetByID(ctx context.Context, userID string) (*UserBook, error)
 }
@@ -47,4 +47,5 @@ type UserBookUsecase interface {
 	// Fitur: User ingin mengupdate dia sampai halaman berapa / kasih rating
 	UpdateReadingStatus(ctx context.Context, userID, bookID, status string, page, rating int) (*UserBook, error)
 	GetUserLibrary(ctx context.Context, userID string, status string, params PaginationQuery) ([]*UserBookWithMetadata, PaginationMeta, error)
+	GetUserBookDetail(ctx context.Context, userID, bookID string) (*UserBookWithMetadata, error)
 }

@@ -63,23 +63,23 @@ func (_m *UserBookRepository) GetByID(ctx context.Context, userID string) (*doma
 }
 
 // GetByUserAndBookID provides a mock function with given fields: ctx, userID, bookID
-func (_m *UserBookRepository) GetByUserAndBookID(ctx context.Context, userID string, bookID string) (*domain.UserBook, error) {
+func (_m *UserBookRepository) GetByUserAndBookID(ctx context.Context, userID string, bookID string) (*domain.UserBookWithMetadata, error) {
 	ret := _m.Called(ctx, userID, bookID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetByUserAndBookID")
 	}
 
-	var r0 *domain.UserBook
+	var r0 *domain.UserBookWithMetadata
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*domain.UserBook, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*domain.UserBookWithMetadata, error)); ok {
 		return rf(ctx, userID, bookID)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) *domain.UserBook); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *domain.UserBookWithMetadata); ok {
 		r0 = rf(ctx, userID, bookID)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*domain.UserBook)
+			r0 = ret.Get(0).(*domain.UserBookWithMetadata)
 		}
 	}
 

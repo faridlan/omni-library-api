@@ -128,3 +128,32 @@ func (h *UserBookHandler) GetMyLibrary(c *fiber.Ctx) error {
 
 	return utils.SendSuccessPaginated(c, "Berhasil mengambil buku dari rak", books, meta)
 }
+
+// GetUserBookDetail godoc
+// @Summary Lihat Isi Rak Buku
+// @Description Menampilkan seluruh buku yang ada di rak personal user, lengkap dengan metadata bukunya. Bisa difilter berdasarkan status.
+// @Tags Library
+// @Produce json
+// @Param book_id path string true "ID Buku"
+// @Success 200 {object} utils.SuccessResponse[domain.UserBookWithMetadata] "Berhasil mengambil detail buku"
+// @Failure 401 {object} utils.ErrorResponse "Unauthorized (Token tidak ada/salah)"
+// @Failure 404 {object} utils.ErrorResponse "Buku tidak ditemukan di rak"
+// @Failure 500 {object} utils.ErrorResponse "Internal Server Error"
+// @Router /api/library/{book_id} [get]
+// @Security BearerAuth
+func (h *UserBookHandler) GetUserBookDetail(c *fiber.Ctx) error {
+	bookID := c.Params("book_id")
+	if err := utils.ValidateUUID(bookID, "book_id"); err != nil {
+		return utils.SendError(c, fiber.StatusBadRequest, err.Error())
+	}
+	userID := c.Locals("user_id").(string)
+
+	result, err := h.usecase.GetUserBookDetail(c.Context(), userID, bookID)
+	if err != nil {
+		return utils.HandleDomainError(c, err)
+	}
+	if result == nil {
+		return utils.SendError(c, fiber.StatusNotFound, "Buku tidak ditemukan di rak")
+	}
+	return utils.SendSuccess(c, fiber.StatusOK, "Berhasil mengambil detail buku dari rak", result)
+}

@@ -99,7 +99,6 @@ definitions:
   github_com_faridlan_omni-library-api_internal_delivery_http_dto.UpdateNoteRequest:
     properties:
       id:
-        example: 123e4567-e89b-12d3-a456-426614174000
         type: string
       page_reference:
         example: 42
@@ -115,7 +114,6 @@ definitions:
           type: string
         type: array
     required:
-    - id
     - quote
     type: object
   github_com_faridlan_omni-library-api_internal_delivery_http_dto.UpdateProgressRequest:
@@ -330,6 +328,15 @@ definitions:
       data:
         allOf:
         - $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_domain.UserBook'
+        description: 'omitempty: jika nil, key "data" tidak ditampilkan (opsional)'
+      message:
+        type: string
+    type: object
+  ? github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-github_com_faridlan_omni-library-api_internal_domain_UserBookWithMetadata
+  : properties:
+      data:
+        allOf:
+        - $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_domain.UserBookWithMetadata'
         description: 'omitempty: jika nil, key "data" tidak ditampilkan (opsional)'
       message:
         type: string
@@ -720,6 +727,39 @@ paths:
       tags:
       - Library
   /api/library/{book_id}:
+    get:
+      description: Menampilkan seluruh buku yang ada di rak personal user, lengkap
+        dengan metadata bukunya. Bisa difilter berdasarkan status.
+      parameters:
+      - description: ID Buku
+        in: path
+        name: book_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Berhasil mengambil detail buku
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-github_com_faridlan_omni-library-api_internal_domain_UserBookWithMetadata'
+        "401":
+          description: Unauthorized (Token tidak ada/salah)
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+        "404":
+          description: Buku tidak ditemukan di rak
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Lihat Isi Rak Buku
+      tags:
+      - Library
     put:
       consumes:
       - application/json

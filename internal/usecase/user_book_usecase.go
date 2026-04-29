@@ -75,12 +75,12 @@ func (u *userBookUsecase) UpdateReadingStatus(ctx context.Context, userID, bookI
 		track.Rating = rating
 	}
 
-	err = u.userBookRepo.UpdateProgress(ctx, track)
+	err = u.userBookRepo.UpdateProgress(ctx, &track.UserBook)
 	if err != nil {
 		return nil, err
 	}
 
-	return track, nil
+	return &track.UserBook, nil
 }
 
 func (u *userBookUsecase) GetUserLibrary(ctx context.Context, userID string, status string, params domain.PaginationQuery) ([]*domain.UserBookWithMetadata, domain.PaginationMeta, error) {
@@ -99,4 +99,16 @@ func (u *userBookUsecase) GetUserLibrary(ctx context.Context, userID string, sta
 	}
 
 	return books, meta, nil
+}
+
+func (u *userBookUsecase) GetUserBookDetail(ctx context.Context, userID, bookID string) (*domain.UserBookWithMetadata, error) {
+	book, err := u.userBookRepo.GetByUserAndBookID(ctx, userID, bookID)
+	if err != nil {
+		return nil, err
+	}
+	if book == nil {
+		return nil, domain.ErrNotFound
+	}
+
+	return book, nil
 }
