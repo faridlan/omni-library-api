@@ -59,3 +59,23 @@ func (r *bookNoteRepository) GetByUserBookID(ctx context.Context, userBookID str
 
 	return notes, totalItems, nil
 }
+
+func (r *bookNoteRepository) GetByID(ctx context.Context, noteID string) (*domain.BookNote, error) {
+	var model BookNoteModel
+	err := r.db.WithContext(ctx).First(&model, "id = ?", noteID).Error
+	if err != nil {
+		return nil, err
+	}
+	return model.ToDomain(), nil
+}
+
+func (r *bookNoteRepository) Delete(ctx context.Context, noteID string) error {
+	result := r.db.WithContext(ctx).Delete(&BookNoteModel{}, "id = ?", noteID)
+	return result.Error
+}
+
+func (r *bookNoteRepository) Update(ctx context.Context, note *domain.BookNote) error {
+	model := NoteFromDomain(note)
+	result := r.db.WithContext(ctx).Model(&BookNoteModel{}).Where("id = ?", note.ID).Updates(model)
+	return result.Error
+}

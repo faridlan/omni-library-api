@@ -103,3 +103,78 @@ func (h *BookNoteHandler) GetNotes(c *fiber.Ctx) error {
 
 	return utils.SendSuccessPaginated(c, "Berhasil mengambil note buku", notes, meta)
 }
+
+// DeleteNote godoc
+// @Summary Hapus Catatan Buku
+// @Description Menghapus satu catatan buku spesifik
+// @Tags Book Notes
+// @Produce json
+// @Param user_book_id path string true "ID progres buku di rak"
+// @Param note_id path string true "ID catatan buku"
+// @Success 200 {object} utils.SuccessResponse[utils.EmptyObj] "Note buku berhasil dihapus"
+// @Failure 401 {object} utils.ErrorResponse "Unauthorized (Token tidak ada/salah)"
+// @Failure 404 {object} utils.ErrorResponse "Note buku tidak ditemukan"
+// @Failure 500 {object} utils.ErrorResponse "Internal Server Error"
+// @Security BearerAuth
+// @Router /api/library/{user_book_id}/notes/{note_id} [delete]
+func (h *BookNoteHandler) DeleteNote(c *fiber.Ctx) error {
+	noteID := c.Params("note_id")
+
+	if err := utils.ValidateUUID(noteID, "note_id"); err != nil {
+		return utils.SendError(c, fiber.StatusBadRequest, err.Error())
+	}
+
+	err := h.usecase.DeleteNote(c.Context(), noteID)
+	if err != nil {
+		return utils.HandleDomainError(c, err)
+	}
+
+	return utils.SendSuccess(c, fiber.StatusOK, "Note buku berhasil dihapus", nil)
+}
+
+// UpdateNote godoc
+// @Summary Perbarui Catatan Buku
+// @Description Memperbarui informasi satu catatan buku spesifik
+// @Tags Book Notes
+// @Produce json
+// @Param user_book_id path string true "ID progres buku di rak"
+// @Param note_id path string true "ID catatan buku"
+// @Success 200 {object} utils.SuccessResponse[domain.BookNote] "Note buku berhasil diperbarui"
+// @Failure 401 {object} utils.ErrorResponse "Unauthorized (Token tidak ada/salah)"
+// @Failure 404 {object} utils.ErrorResponse "Note buku tidak ditemukan"
+// @Failure 500 {object} utils.ErrorResponse "Internal Server Error"
+// @Security BearerAuth
+// @Param request body dto.UpdateNoteRequest true "Payload data update"
+// @Router /api/library/{user_book_id}/notes/{note_id} [put]
+func (h *BookNoteHandler) UpdateNote(c *fiber.Ctx) error {
+	noteID := c.Params("note_id")
+
+	if err := utils.ValidateUUID(noteID, "note_id"); err != nil {
+		return utils.SendError(c, fiber.StatusBadRequest, err.Error())
+	}
+
+	var req dto.UpdateNoteRequest
+	if err := c.BodyParser(&req); err != nil {
+		return utils.SendError(c, fiber.StatusBadRequest, "Format JSON salah")
+	}
+
+	if err := utils.ValidateStruct(&req); err != nil {
+		return utils.SendError(c, fiber.StatusBadRequest, err.Error())
+	}
+
+	req.ID = noteID // Pastikan ID catatan diambil dari URL path, bukan body
+
+	note := &domain.BookNote{
+		ID:            req.ID,
+		Quote:         req.Quote,
+		PageReference: req.PageReference,
+		Tags:          req.Tags,
+	}
+
+	updatedNote, err := h.usecase.UpdateNote(c.Context(), note)
+	if err != nil {
+		return utils.HandleDomainError(c, err)
+	}
+
+	return utils.SendSuccess(c, fiber.StatusOK, "Note buku berhasil diperbarui", updatedNote)
+}

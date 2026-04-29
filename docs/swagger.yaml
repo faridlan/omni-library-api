@@ -96,6 +96,28 @@ definitions:
       refresh_token:
         type: string
     type: object
+  github_com_faridlan_omni-library-api_internal_delivery_http_dto.UpdateNoteRequest:
+    properties:
+      id:
+        example: 123e4567-e89b-12d3-a456-426614174000
+        type: string
+      page_reference:
+        example: 42
+        type: integer
+      quote:
+        example: Bekerjalah seperti programmer pemalas...
+        type: string
+      tags:
+        example:
+        - Inspiratif
+        - Programming
+        items:
+          type: string
+        type: array
+    required:
+    - id
+    - quote
+    type: object
   github_com_faridlan_omni-library-api_internal_delivery_http_dto.UpdateProgressRequest:
     properties:
       current_page:
@@ -806,6 +828,87 @@ paths:
       security:
       - BearerAuth: []
       summary: Tambah Kutipan/Catatan Buku
+      tags:
+      - Book Notes
+  /api/library/{user_book_id}/notes/{note_id}:
+    delete:
+      description: Menghapus satu catatan buku spesifik
+      parameters:
+      - description: ID progres buku di rak
+        in: path
+        name: user_book_id
+        required: true
+        type: string
+      - description: ID catatan buku
+        in: path
+        name: note_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Note buku berhasil dihapus
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-github_com_faridlan_omni-library-api_internal_utils_EmptyObj'
+        "401":
+          description: Unauthorized (Token tidak ada/salah)
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+        "404":
+          description: Note buku tidak ditemukan
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Hapus Catatan Buku
+      tags:
+      - Book Notes
+    put:
+      description: Memperbarui informasi satu catatan buku spesifik
+      parameters:
+      - description: ID progres buku di rak
+        in: path
+        name: user_book_id
+        required: true
+        type: string
+      - description: ID catatan buku
+        in: path
+        name: note_id
+        required: true
+        type: string
+      - description: Payload data update
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_delivery_http_dto.UpdateNoteRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Note buku berhasil diperbarui
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-github_com_faridlan_omni-library-api_internal_domain_BookNote'
+        "401":
+          description: Unauthorized (Token tidak ada/salah)
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+        "404":
+          description: Note buku tidak ditemukan
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Perbarui Catatan Buku
       tags:
       - Book Notes
 securityDefinitions:

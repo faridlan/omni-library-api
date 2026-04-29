@@ -25,9 +25,14 @@ type BookNoteRepository interface {
 	Create(ctx context.Context, note *BookNote) error
 	// Mengambil semua catatan dari satu buku tertentu di rak
 	GetByUserBookID(ctx context.Context, userBookID string, params PaginationQuery) ([]*BookNote, int64, error)
+	GetByID(ctx context.Context, noteID string) (*BookNote, error)
+	Delete(ctx context.Context, noteID string) error
+	Update(ctx context.Context, note *BookNote) error
 }
 
 type BookNoteUsecase interface {
 	AddNote(ctx context.Context, note *BookNote) error
 	GetNotesForBook(ctx context.Context, userBookID string, params PaginationQuery) ([]*BookNote, PaginationMeta, error)
+	DeleteNote(ctx context.Context, noteID string) error
+	UpdateNote(ctx context.Context, note *BookNote) (*BookNote, error)
 }

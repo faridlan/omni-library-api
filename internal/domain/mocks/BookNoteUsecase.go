@@ -32,6 +32,24 @@ func (_m *BookNoteUsecase) AddNote(ctx context.Context, note *domain.BookNote) e
 	return r0
 }
 
+// DeleteNote provides a mock function with given fields: ctx, noteID
+func (_m *BookNoteUsecase) DeleteNote(ctx context.Context, noteID string) error {
+	ret := _m.Called(ctx, noteID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeleteNote")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, noteID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // GetNotesForBook provides a mock function with given fields: ctx, userBookID, params
 func (_m *BookNoteUsecase) GetNotesForBook(ctx context.Context, userBookID string, params domain.PaginationQuery) ([]*domain.BookNote, domain.PaginationMeta, error) {
 	ret := _m.Called(ctx, userBookID, params)
@@ -67,6 +85,36 @@ func (_m *BookNoteUsecase) GetNotesForBook(ctx context.Context, userBookID strin
 	}
 
 	return r0, r1, r2
+}
+
+// UpdateNote provides a mock function with given fields: ctx, note
+func (_m *BookNoteUsecase) UpdateNote(ctx context.Context, note *domain.BookNote) (*domain.BookNote, error) {
+	ret := _m.Called(ctx, note)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpdateNote")
+	}
+
+	var r0 *domain.BookNote
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.BookNote) (*domain.BookNote, error)); ok {
+		return rf(ctx, note)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.BookNote) *domain.BookNote); ok {
+		r0 = rf(ctx, note)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*domain.BookNote)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *domain.BookNote) error); ok {
+		r1 = rf(ctx, note)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // NewBookNoteUsecase creates a new instance of BookNoteUsecase. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.

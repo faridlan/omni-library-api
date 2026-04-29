@@ -740,6 +740,131 @@
                     }
                 }
             }
+        },
+        "/api/library/{user_book_id}/notes/{note_id}": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Memperbarui informasi satu catatan buku spesifik",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Book Notes"
+                ],
+                "summary": "Perbarui Catatan Buku",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID progres buku di rak",
+                        "name": "user_book_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID catatan buku",
+                        "name": "note_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Payload data update",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_delivery_http_dto.UpdateNoteRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Note buku berhasil diperbarui",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-github_com_faridlan_omni-library-api_internal_domain_BookNote"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized (Token tidak ada/salah)",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Note buku tidak ditemukan",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Menghapus satu catatan buku spesifik",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Book Notes"
+                ],
+                "summary": "Hapus Catatan Buku",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID progres buku di rak",
+                        "name": "user_book_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID catatan buku",
+                        "name": "note_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Note buku berhasil dihapus",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-github_com_faridlan_omni-library-api_internal_utils_EmptyObj"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized (Token tidak ada/salah)",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Note buku tidak ditemukan",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -882,6 +1007,37 @@
                 },
                 "refresh_token": {
                     "type": "string"
+                }
+            }
+        },
+        "github_com_faridlan_omni-library-api_internal_delivery_http_dto.UpdateNoteRequest": {
+            "type": "object",
+            "required": [
+                "id",
+                "quote"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "example": "123e4567-e89b-12d3-a456-426614174000"
+                },
+                "page_reference": {
+                    "type": "integer",
+                    "example": 42
+                },
+                "quote": {
+                    "type": "string",
+                    "example": "Bekerjalah seperti programmer pemalas..."
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "Inspiratif",
+                        "Programming"
+                    ]
                 }
             }
         },
