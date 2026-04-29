@@ -489,6 +489,28 @@ paths:
       summary: Hapus Buku (Admin Only)
       tags:
       - Books
+    get:
+      description: Mengambil detail buku berdasarkan ID yang diberikan
+      parameters:
+      - description: ID Buku
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Buku ditemukan
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-github_com_faridlan_omni-library-api_internal_domain_Book'
+        "404":
+          description: Buku tidak ditemukan
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+      summary: Ambil Buku Berdasarkan ID
+      tags:
+      - Books
     put:
       consumes:
       - application/json

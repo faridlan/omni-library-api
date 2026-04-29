@@ -80,6 +80,17 @@ func (u *bookUsecase) GetAllBooks(ctx context.Context, params domain.PaginationQ
 	return books, meta, nil
 }
 
+func (u *bookUsecase) GetBookByID(ctx context.Context, id string) (*domain.Book, error) {
+	book, err := u.bookRepo.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if book == nil {
+		return nil, domain.ErrNotFound
+	}
+	return book, nil
+}
+
 func (u *bookUsecase) CreateManual(ctx context.Context, book *domain.Book) (*domain.Book, error) {
 	// 1. Cek apakah ISBN sudah dipakai (Jika Admin mengisi ISBN)
 	if book.ISBN != "" {
