@@ -62,3 +62,39 @@ func (u *bookNoteUsecase) GetNotesForBook(ctx context.Context, userBookID string
 	return notes, meta, nil
 
 }
+
+func (u *bookNoteUsecase) DeleteNote(ctx context.Context, noteID string) error {
+
+	existing, err := u.noteRepo.GetByID(ctx, noteID)
+	if err != nil {
+		return err
+	}
+	if existing == nil {
+		return domain.ErrNotFound
+	}
+
+	return u.noteRepo.Delete(ctx, noteID)
+}
+
+func (u *bookNoteUsecase) UpdateNote(ctx context.Context, note *domain.BookNote) (*domain.BookNote, error) {
+
+	existing, err := u.noteRepo.GetByID(ctx, note.ID)
+	if err != nil {
+		return nil, err
+	}
+	if existing == nil {
+		return nil, domain.ErrNotFound
+	}
+
+	existing.Quote = note.Quote
+	existing.PageReference = note.PageReference
+	existing.Tags = note.Tags
+
+	err = u.noteRepo.Update(ctx, existing)
+	if err != nil {
+		return nil, err
+	}
+
+	return existing, nil
+
+}

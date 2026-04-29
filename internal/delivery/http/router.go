@@ -76,6 +76,8 @@ func SetupRoutes(app *fiber.App, authUC domain.AuthUsecase, bookUC domain.BookUs
 	notes := protected.Group("/library/:user_book_id/notes")
 	notes.Post("/", bookNoteHandler.AddNote)
 	notes.Get("/", bookNoteHandler.GetNotes)
+	notes.Delete("/:note_id", bookNoteHandler.DeleteNote)
+	notes.Put("/:note_id", bookNoteHandler.UpdateNote)
 
 	// ==========================================
 	// 🔴 KAWASAN ADMIN (Wajib Login + Role Admin)
