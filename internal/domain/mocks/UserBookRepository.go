@@ -50,6 +50,36 @@ func (_m *UserBookRepository) Delete(ctx context.Context, userID string, bookID 
 	return r0
 }
 
+// GetByBookID provides a mock function with given fields: ctx, userID, bookID
+func (_m *UserBookRepository) GetByBookID(ctx context.Context, userID string, bookID string) (*domain.UserBookWithMetadata, error) {
+	ret := _m.Called(ctx, userID, bookID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetByBookID")
+	}
+
+	var r0 *domain.UserBookWithMetadata
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*domain.UserBookWithMetadata, error)); ok {
+		return rf(ctx, userID, bookID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *domain.UserBookWithMetadata); ok {
+		r0 = rf(ctx, userID, bookID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*domain.UserBookWithMetadata)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, userID, bookID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetByID provides a mock function with given fields: ctx, id
 func (_m *UserBookRepository) GetByID(ctx context.Context, id string) (*domain.UserBook, error) {
 	ret := _m.Called(ctx, id)

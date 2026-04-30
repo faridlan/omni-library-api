@@ -39,6 +39,7 @@ type UserBookRepository interface {
 	GetByUserID(ctx context.Context, userID string, status string, params PaginationQuery) ([]*UserBookWithMetadata, int64, error)
 	GetByID(ctx context.Context, id string) (*UserBook, error)
 	Delete(ctx context.Context, userID, bookID string) error
+	GetByBookID(ctx context.Context, userID, bookID string) (*UserBookWithMetadata, error)
 }
 
 type UserBookUsecase interface {

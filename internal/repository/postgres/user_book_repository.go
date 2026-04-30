@@ -129,3 +129,24 @@ func (r *userBookRepository) Delete(ctx context.Context, userID, bookID string) 
 	result := r.db.WithContext(ctx).Table("user_books").Where("user_id = ? AND id = ?", userID, bookID).Delete(&UserBookModel{})
 	return result.Error
 }
+
+func (r *userBookRepository) GetByBookID(ctx context.Context, userID, bookID string) (*domain.UserBookWithMetadata, error) {
+	var model UserBookModel
+	result := r.db.WithContext(ctx).Table("user_books").
+		Where("user_id = ? AND book_id = ?", userID, bookID).
+		Preload("Book").
+		First(&model)
+
+	if result.Error != nil {
+		if result.Error == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
+		return nil, result.Error
+	}
+
+	bookResult := &domain.UserBookWithMetadata{
+		UserBook: *model.ToDomain(),
+		Book:     *model.Book.ToDomain(),
+	}
+	return bookResult, nil
+}
