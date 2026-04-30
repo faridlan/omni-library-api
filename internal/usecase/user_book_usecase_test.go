@@ -43,13 +43,17 @@ func TestTrackNewBook_BukuSudahAdaDiRak(t *testing.T) {
 	userID := "user-123"
 	bookID := "buku-valid-001"
 	dummyMasterBook := &domain.Book{ID: bookID}
-	existingShelf := &domain.UserBook{UserID: userID, BookID: bookID}
+	// existingShelf := &domain.UserBook{UserID: userID, BookID: bookID}
+	existingShelf := &domain.UserBookWithMetadata{
+		UserBook: domain.UserBook{
+			UserID: userID,
+			BookID: bookID}}
 
 	// Naskah A: Buku master ketemu
 	mockBookRepo.On("GetByID", mock.Anything, bookID).Return(dummyMasterBook, nil)
 
 	// Naskah B: Saat ngecek ke rak user, ternyata SUDAH ADA datanya!
-	mockUserBookRepo.On("GetByUserAndBookID", mock.Anything, userID, bookID).Return(existingShelf, nil)
+	mockUserBookRepo.On("GetByBookID", mock.Anything, userID, bookID).Return(existingShelf, nil)
 
 	// Action!
 	result, err := uc.TrackNewBook(context.Background(), userID, bookID)
@@ -76,7 +80,7 @@ func TestTrackNewBook_Sukses(t *testing.T) {
 	mockBookRepo.On("GetByID", mock.Anything, bookID).Return(dummyMasterBook, nil)
 
 	// Naskah B: Dicek ke rak user, datanya BELUM ADA (nil) -> Aman!
-	mockUserBookRepo.On("GetByUserAndBookID", mock.Anything, userID, bookID).Return(nil, nil)
+	mockUserBookRepo.On("GetByBookID", mock.Anything, userID, bookID).Return(nil, nil)
 
 	// Naskah C: Otak menyuruh save ke rak. Kita suruh Stuntman pura-pura sukses save.
 	// Kita pakai mock.AnythingOfType untuk ngakalin karena kita nggak tahu alamat pointer memorinya secara pasti.
@@ -128,12 +132,22 @@ func TestUpdateReadingStatus_Sukses(t *testing.T) {
 	bookID := "buku-valid-001"
 
 	// Anggap saja ini data lama sebelum di-update
-	existingTrack := &domain.UserBook{
-		UserID:      userID,
-		BookID:      bookID,
-		Status:      "TO_READ",
-		CurrentPage: 0,
-		Rating:      0,
+	// existingTrack := &domain.UserBook{
+	// 	UserID:      userID,
+	// 	BookID:      bookID,
+	// 	Status:      "TO_READ",
+	// 	CurrentPage: 0,
+	// 	Rating:      0,
+	// }
+
+	existingTrack := &domain.UserBookWithMetadata{
+		UserBook: domain.UserBook{
+			UserID:      userID,
+			BookID:      bookID,
+			Status:      "TO_READ",
+			CurrentPage: 0,
+			Rating:      0,
+		},
 	}
 
 	// NASKAH A: Saat dicek ke rak, Stuntman memberikan data lama di atas
