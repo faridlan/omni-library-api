@@ -32,18 +32,27 @@ func (r *userBookRepository) AddBookToShelf(ctx context.Context, ub *domain.User
 	return nil
 }
 
-func (r *userBookRepository) GetByUserAndBookID(ctx context.Context, userID, bookID string) (*domain.UserBook, error) {
+func (r *userBookRepository) GetByUserAndBookID(ctx context.Context, userID, bookID string) (*domain.UserBookWithMetadata, error) {
 	var model UserBookModel
-	result := r.db.WithContext(ctx).Table("user_books").
-		Where("user_id = ? AND book_id = ?", userID, bookID).First(&model)
+	baseQuery := r.db.WithContext(ctx).Table("user_books").
+		Where("user_id = ? AND id = ?", userID, bookID)
 
-	if result.Error != nil {
-		if result.Error == gorm.ErrRecordNotFound {
-			return nil, nil
-		}
-		return nil, result.Error
+	// 3. Ambil Data (Baru kita tambahkan Preload, Limit, dan Offset)
+	err := baseQuery.
+		Preload("Book"). // Pasang Preload di sini!
+		Order("created_at DESC").
+		First(&model).Error
+
+	if err != nil {
+		return nil, err
 	}
-	return model.ToDomain(), nil
+
+	bookResult := &domain.UserBookWithMetadata{
+		UserBook: *model.ToDomain(),
+		Book:     *model.Book.ToDomain(),
+	}
+
+	return bookResult, nil
 }
 
 func (r *userBookRepository) UpdateProgress(ctx context.Context, ub *domain.UserBook) error {
@@ -114,4 +123,30 @@ func (r *userBookRepository) GetByID(ctx context.Context, id string) (*domain.Us
 		return nil, result.Error
 	}
 	return model.ToDomain(), nil
+}
+
+func (r *userBookRepository) Delete(ctx context.Context, userID, bookID string) error {
+	result := r.db.WithContext(ctx).Table("user_books").Where("user_id = ? AND id = ?", userID, bookID).Delete(&UserBookModel{})
+	return result.Error
+}
+
+func (r *userBookRepository) GetByBookID(ctx context.Context, userID, bookID string) (*domain.UserBookWithMetadata, error) {
+	var model UserBookModel
+	result := r.db.WithContext(ctx).Table("user_books").
+		Where("user_id = ? AND book_id = ?", userID, bookID).
+		Preload("Book").
+		First(&model)
+
+	if result.Error != nil {
+		if result.Error == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
+		return nil, result.Error
+	}
+
+	bookResult := &domain.UserBookWithMetadata{
+		UserBook: *model.ToDomain(),
+		Book:     *model.Book.ToDomain(),
+	}
+	return bookResult, nil
 }

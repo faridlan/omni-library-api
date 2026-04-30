@@ -579,6 +579,56 @@ const docTemplate = `{
             }
         },
         "/api/library/{book_id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Menampilkan seluruh buku yang ada di rak personal user, lengkap dengan metadata bukunya. Bisa difilter berdasarkan status.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Library"
+                ],
+                "summary": "Lihat Isi Rak Buku",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID Buku",
+                        "name": "book_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Berhasil mengambil detail buku",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-github_com_faridlan_omni-library-api_internal_domain_UserBookWithMetadata"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized (Token tidak ada/salah)",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Buku tidak ditemukan di rak",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
+                        }
+                    }
+                }
+            },
             "put": {
                 "security": [
                     {
@@ -623,6 +673,62 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Format JSON salah",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized (Token tidak ada/salah)",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Buku tidak ditemukan di rak",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Menghapus buku dari rak personal user",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Library"
+                ],
+                "summary": "Hapus Buku dari Rak",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID Buku",
+                        "name": "book_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Buku berhasil dihapus dari rak",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-string"
+                        }
+                    },
+                    "400": {
+                        "description": "Format UUID salah",
                         "schema": {
                             "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
                         }
@@ -1052,13 +1158,11 @@ const docTemplate = `{
         "github_com_faridlan_omni-library-api_internal_delivery_http_dto.UpdateNoteRequest": {
             "type": "object",
             "required": [
-                "id",
                 "quote"
             ],
             "properties": {
                 "id": {
-                    "type": "string",
-                    "example": "123e4567-e89b-12d3-a456-426614174000"
+                    "type": "string"
                 },
                 "page_reference": {
                     "type": "integer",
@@ -1419,6 +1523,22 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-github_com_faridlan_omni-library-api_internal_domain_UserBookWithMetadata": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "description": "omitempty: jika nil, key \"data\" tidak ditampilkan (opsional)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_domain.UserBookWithMetadata"
+                        }
+                    ]
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
         "github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-github_com_faridlan_omni-library-api_internal_utils_EmptyObj": {
             "type": "object",
             "properties": {
@@ -1429,6 +1549,18 @@ const docTemplate = `{
                             "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.EmptyObj"
                         }
                     ]
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-string": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "description": "omitempty: jika nil, key \"data\" tidak ditampilkan (opsional)",
+                    "type": "string"
                 },
                 "message": {
                     "type": "string"

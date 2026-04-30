@@ -14,6 +14,54 @@ type UserBookUsecase struct {
 	mock.Mock
 }
 
+// DeleteBookFromShelf provides a mock function with given fields: ctx, userID, bookID
+func (_m *UserBookUsecase) DeleteBookFromShelf(ctx context.Context, userID string, bookID string) error {
+	ret := _m.Called(ctx, userID, bookID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeleteBookFromShelf")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+		r0 = rf(ctx, userID, bookID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// GetUserBookDetail provides a mock function with given fields: ctx, userID, bookID
+func (_m *UserBookUsecase) GetUserBookDetail(ctx context.Context, userID string, bookID string) (*domain.UserBookWithMetadata, error) {
+	ret := _m.Called(ctx, userID, bookID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetUserBookDetail")
+	}
+
+	var r0 *domain.UserBookWithMetadata
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*domain.UserBookWithMetadata, error)); ok {
+		return rf(ctx, userID, bookID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *domain.UserBookWithMetadata); ok {
+		r0 = rf(ctx, userID, bookID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*domain.UserBookWithMetadata)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, userID, bookID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetUserLibrary provides a mock function with given fields: ctx, userID, status, params
 func (_m *UserBookUsecase) GetUserLibrary(ctx context.Context, userID string, status string, params domain.PaginationQuery) ([]*domain.UserBookWithMetadata, domain.PaginationMeta, error) {
 	ret := _m.Called(ctx, userID, status, params)
