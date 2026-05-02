@@ -103,10 +103,15 @@ func main() {
 	// Daftarkan Handler
 	myHttp.SetupRoutes(app, authUsecase, bookUsecase, userBookUsecase, bookNoteUsecase)
 
+	port := os.Getenv("APP_PORT")
+	if port == "" {
+		port = "8080" // Default port jika tidak ada di environment variable
+	}
+
 	// Start Server
 	go func() {
-		slog.Info("Starting OmniLibrary API Server", slog.String("port", "8080"))
-		if err := app.Listen(":8080"); err != nil {
+		slog.Info("Starting OmniLibrary API Server", slog.String("port", port))
+		if err := app.Listen(":" + port); err != nil {
 			slog.Error("Server failed to start", slog.String("detail", err.Error()))
 		}
 	}()
