@@ -8,7 +8,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// Implementasi Repository
 type userBookRepository struct {
 	db *gorm.DB
 }
@@ -27,7 +26,7 @@ func (r *userBookRepository) AddBookToShelf(ctx context.Context, ub *domain.User
 	if result.Error != nil {
 		return result.Error
 	}
-	// Kembalikan ID yang di-generate Postgres ke domain
+
 	ub.ID = model.ID
 	return nil
 }
@@ -37,9 +36,8 @@ func (r *userBookRepository) GetByUserAndBookID(ctx context.Context, userID, boo
 	baseQuery := r.db.WithContext(ctx).Table("user_books").
 		Where("user_id = ? AND id = ?", userID, bookID)
 
-	// 3. Ambil Data (Baru kita tambahkan Preload, Limit, dan Offset)
 	err := baseQuery.
-		Preload("Book"). // Pasang Preload di sini!
+		Preload("Book").
 		Order("created_at DESC").
 		First(&model).Error
 
@@ -56,7 +54,7 @@ func (r *userBookRepository) GetByUserAndBookID(ctx context.Context, userID, boo
 }
 
 func (r *userBookRepository) UpdateProgress(ctx context.Context, ub *domain.UserBook) error {
-	// Update hanya field yang relevan berdasarkan ID
+
 	updateData := map[string]any{
 		"status":       ub.Status,
 		"current_page": ub.CurrentPage,
@@ -78,21 +76,18 @@ func (r *userBookRepository) GetByUserID(ctx context.Context, userID string, sta
 	var dbModels []UserBookModel
 	var totalItems int64
 
-	// 1. Buat Base Query (Tanpa Preload Dulu!)
 	baseQuery := r.db.WithContext(ctx).Model(&UserBookModel{}).Where("user_id = ?", userID)
 
 	if status != "" {
 		baseQuery = baseQuery.Where("status = ?", status)
 	}
 
-	// 2. Hitung Total Data (Lebih cepat karena tanpa JOIN)
 	if err := baseQuery.Count(&totalItems).Error; err != nil {
 		return nil, 0, err
 	}
 
-	// 3. Ambil Data (Baru kita tambahkan Preload, Limit, dan Offset)
 	err := baseQuery.
-		Preload("Book"). // Pasang Preload di sini!
+		Preload("Book").
 		Limit(params.Limit).
 		Offset(params.GetOffset()).
 		Order("created_at DESC").

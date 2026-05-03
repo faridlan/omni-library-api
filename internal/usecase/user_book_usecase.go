@@ -30,7 +30,6 @@ func (u *userBookUsecase) TrackNewBook(ctx context.Context, userID, bookID strin
 		return nil, domain.ErrNotFound
 	}
 
-	// ATURAN 1: Cek apakah buku sudah ada di rak user ini
 	existing, err := u.userBookRepo.GetByBookID(ctx, userID, bookID)
 	if err != nil {
 		return nil, err
@@ -39,11 +38,10 @@ func (u *userBookUsecase) TrackNewBook(ctx context.Context, userID, bookID strin
 		return nil, domain.ErrConflict
 	}
 
-	// ATURAN 2: Jika belum ada, masukkan sebagai buku baru dengan status default
 	newTrack := &domain.UserBook{
 		UserID: userID,
 		BookID: bookID,
-		Status: "TO_READ", // Status awal selalu "Akan Dibaca"
+		Status: "TO_READ",
 	}
 
 	err = u.userBookRepo.AddBookToShelf(ctx, newTrack)
@@ -55,7 +53,7 @@ func (u *userBookUsecase) TrackNewBook(ctx context.Context, userID, bookID strin
 }
 
 func (u *userBookUsecase) UpdateReadingStatus(ctx context.Context, userID, bookID, status string, page, rating int) (*domain.UserBook, error) {
-	// ATURAN 1: Pastikan bukunya ada di rak dia
+
 	track, err := u.userBookRepo.GetByUserAndBookID(ctx, userID, bookID)
 	if err != nil {
 		return nil, err
@@ -64,7 +62,6 @@ func (u *userBookUsecase) UpdateReadingStatus(ctx context.Context, userID, bookI
 		return nil, domain.ErrNotFound
 	}
 
-	// ATURAN 2: Update data yang boleh diubah
 	if status != "" {
 		track.Status = status
 	}

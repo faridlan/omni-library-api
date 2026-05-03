@@ -23,13 +23,10 @@ func TestRegister_EmailSudahAda(t *testing.T) {
 
 	existingUser := &domain.User{Email: "test@example.com"}
 
-	// Naskah: Saat dicek, email ini ternyata sudah ada di database
 	mockAuthRepo.On("GetByEmail", mock.Anything, "test@example.com").Return(existingUser, nil)
 
-	// Action!
 	user, err := uc.Register(context.Background(), "Faridlan", "test@example.com", "password123")
 
-	// Validasi: Harus gagal dan mengembalikan ErrConflict
 	assert.ErrorIs(t, err, domain.ErrConflict)
 	assert.Nil(t, user)
 	mockUserRepo.AssertNotCalled(t, "Create", mock.Anything, mock.Anything)
@@ -71,10 +68,8 @@ func TestLogin_EmailTidakDitemukan(t *testing.T) {
 	mockAuthRepo := new(mocks.AuthRepository)
 	uc := usecase.NewAuthUsecase(mockUserRepo, mockAuthRepo)
 
-	// Naskah: Email tidak ada di DB
 	mockAuthRepo.On("GetByEmail", mock.Anything, "salah@example.com").Return(nil, nil)
 
-	// Action!
 	token, _, err := uc.Login(context.Background(), "salah@example.com", "password123")
 
 	assert.ErrorIs(t, err, domain.ErrNotFound)
@@ -86,18 +81,15 @@ func TestLogin_PasswordSalah(t *testing.T) {
 	mockAuthRepo := new(mocks.AuthRepository)
 	uc := usecase.NewAuthUsecase(mockUserRepo, mockAuthRepo)
 
-	// Kita buat password asli yang di-hash untuk ditaruh di DB bohongan
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("password_asli"), bcrypt.DefaultCost)
 	dbUser := &domain.User{
 		ID:       "user-123",
 		Email:    "test@example.com",
-		Password: string(hashedPassword), // Ingat, DB selalu menyimpan hash!
+		Password: string(hashedPassword),
 	}
 
-	// Naskah: Email ketemu
 	mockAuthRepo.On("GetByEmail", mock.Anything, "test@example.com").Return(dbUser, nil)
 
-	// Action: Tapi user memasukkan password yang SALAH
 	token, _, err := uc.Login(context.Background(), "test@example.com", "password_ngawur")
 
 	assert.ErrorIs(t, err, domain.ErrBadParamInput)
@@ -109,7 +101,6 @@ func TestLogin_Sukses(t *testing.T) {
 	mockAuthRepo := new(mocks.AuthRepository)
 	uc := usecase.NewAuthUsecase(mockUserRepo, mockAuthRepo)
 
-	// Kita buat password asli yang di-hash
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("rahasia123"), bcrypt.DefaultCost)
 	dbUser := &domain.User{
 		ID:       "user-123",
@@ -118,19 +109,16 @@ func TestLogin_Sukses(t *testing.T) {
 		Password: string(hashedPassword),
 	}
 
-	// Naskah: Email ketemu
 	mockAuthRepo.On("GetByEmail", mock.Anything, "test@example.com").Return(dbUser, nil)
 
 	mockAuthRepo.On("SaveRefreshToken", mock.Anything, mock.AnythingOfType("*domain.RefreshToken")).Return(nil)
 
-	// Action: User memasukkan password yang BENAR ("rahasia123")
 	token, refreshToken, err := uc.Login(context.Background(), "test@example.com", "rahasia123")
 
 	assert.NoError(t, err)
-	assert.NotEmpty(t, token) // Pastikan token berhasil dibuat dan tidak kosong
+	assert.NotEmpty(t, token)
 	assert.NotEmpty(t, refreshToken)
 
-	// Token JWT biasanya panjang, kita cek saja kalau panjangnya lebih dari 50 karakter
 	assert.True(t, len(token) > 50)
 	assert.True(t, len(refreshToken) > 50)
 }

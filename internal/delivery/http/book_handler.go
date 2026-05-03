@@ -36,12 +36,9 @@ func (h *BookHandler) FetchAndSave(c *fiber.Ctx) error {
 
 	var req dto.FetchBookRequest
 
-	// 1. Tangkap JSON
 	if err := c.BodyParser(&req); err != nil {
 		return utils.SendError(c, fiber.StatusBadRequest, "Format JSON salah")
 	}
-
-	// 2. VALIDASI OTOMATIS! (Membaca tag validate:"required" di DTO)
 	if err := utils.ValidateStruct(&req); err != nil {
 		return utils.SendError(c, fiber.StatusBadRequest, err.Error())
 	}
@@ -65,17 +62,15 @@ func (h *BookHandler) FetchAndSave(c *fiber.Ctx) error {
 // @Failure 500 {object} utils.ErrorResponse "Internal Server Error"
 // @Router /api/books [get]
 func (h *BookHandler) GetAll(c *fiber.Ctx) error {
-	// 1. Tangkap parameter dari URL (berikan default value jika user tidak mengirimnya)
+
 	page := c.QueryInt("page", 1)
 	limit := c.QueryInt("limit", 10)
 
-	// 2. Bungkus ke dalam Struct PaginationQuery
 	params := domain.PaginationQuery{
 		Page:  page,
 		Limit: limit,
 	}
 
-	// 3. Panggil Usecase
 	books, meta, err := h.bookUsecase.GetAllBooks(c.Context(), params)
 	if err != nil {
 		return utils.SendError(c, fiber.StatusInternalServerError, "Gagal mengambil data buku", err.Error())
@@ -85,7 +80,6 @@ func (h *BookHandler) GetAll(c *fiber.Ctx) error {
 		books = make([]*domain.Book, 0)
 	}
 
-	// 4. Kembalikan Response Menggunakan Format Sukses yang Baru!
 	return utils.SendSuccessPaginated(c, "Berhasil mengambil katalog buku", books, meta)
 }
 
@@ -125,7 +119,6 @@ func (h *BookHandler) GetBookByID(c *fiber.Ctx) error {
 // @Param request body dto.BookRequest true "Payload data buku"
 // @Router /api/books/manual [post]
 func (h *BookHandler) CreateManual(c *fiber.Ctx) error {
-	// Nanti kita panggil h.bookUsecase.CreateManual(...) di sini
 	var req dto.BookRequest
 	if err := c.BodyParser(&req); err != nil {
 		return utils.SendError(c, fiber.StatusBadRequest, "Format JSON salah")
@@ -144,7 +137,6 @@ func (h *BookHandler) CreateManual(c *fiber.Ctx) error {
 		pubDate = parsed
 	}
 
-	// Ubah DTO menjadi Domain
 	newBook := &domain.Book{
 		ISBN:          req.ISBN,
 		Title:         req.Title,

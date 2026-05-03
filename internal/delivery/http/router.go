@@ -1,55 +1,35 @@
 package http
 
 import (
+	"github.com/ansrivas/fiberprometheus/v2"
 	"github.com/faridlan/omni-library-api/internal/delivery/http/middleware"
 	"github.com/faridlan/omni-library-api/internal/domain"
 	"github.com/gofiber/fiber/v2"
-
-	// 1. Import library Prometheus untuk Fiber
-	"github.com/ansrivas/fiberprometheus/v2"
 )
 
-// SetupRoutes adalah Peta Induk (Centralized Router) untuk seluruh aplikasi
 func SetupRoutes(app *fiber.App, authUC domain.AuthUsecase, bookUC domain.BookUsecase, userBookUC domain.UserBookUsecase, noteUC domain.BookNoteUsecase) {
 
-	// ==========================================
-	// 📊 PROMETHEUS METRICS (Observability)
-	// ==========================================
-	// Inisialisasi Prometheus dengan nama aplikasi kita
 	prometheus := fiberprometheus.New("omni_api")
 
-	// Daftarkan endpoint rahasia di /metrics (Bisa diakses tanpa Token JWT)
 	prometheus.RegisterAt(app, "/metrics")
 
-	// Pasang middleware di root app agar mencatat SEMUA traffic yang lewat
 	app.Use(prometheus.Middleware)
 
-	// ==========================================
-	// Grup Utama
-	// ==========================================
 	api := app.Group("/api")
 
-	// 1. Inisialisasi Semua Handler
 	authHandler := NewAuthHandler(api, authUC)
 	bookHandler := NewBookHandler(api, bookUC)
 	userBookHandler := NewUserBookHandler(api, userBookUC)
 	bookNoteHandler := NewBookNoteHandler(api, noteUC)
 
-	// ==========================================
-	// 🟢 KAWASAN PUBLIK (Tanpa Satpam)
-	// ==========================================
-
-	// Auth
 	auth := api.Group("/auth")
 	auth.Post("/register", authHandler.Register)
 	auth.Post("/login", authHandler.Login)
 	auth.Post("/refresh", authHandler.Refresh)
 
-	// Katalog Buku
 	api.Get("/books", bookHandler.GetAll)
 	api.Get("/books/:id", bookHandler.GetBookByID)
 
-	// Endpoint Tracer Bullet untuk mengetes CI/CD
 	api.Get("/api/health", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{
 			"status":  "success",
@@ -58,15 +38,10 @@ func SetupRoutes(app *fiber.App, authUC domain.AuthUsecase, bookUC domain.BookUs
 		})
 	})
 
-	// ==========================================
-	// 🟡 KAWASAN VIP (Wajib Login / Token JWT)
-	// ==========================================
 	protected := api.Group("/", middleware.Protected())
 
-	// Aksi Buku (User)
 	protected.Post("/books/fetch", bookHandler.FetchAndSave)
 
-	// Rak Buku Personal (Library)
 	lib := protected.Group("/library")
 	lib.Post("/", userBookHandler.AddBook)
 	lib.Get("/", userBookHandler.GetMyLibrary)
@@ -74,17 +49,13 @@ func SetupRoutes(app *fiber.App, authUC domain.AuthUsecase, bookUC domain.BookUs
 	lib.Delete("/:book_id", userBookHandler.DeleteBookFromShelf)
 	lib.Get("/:book_id", userBookHandler.GetUserBookDetail)
 
-	// Catatan Buku (Notes)
 	notes := protected.Group("/library/:user_book_id/notes")
 	notes.Post("/", bookNoteHandler.AddNote)
 	notes.Get("/", bookNoteHandler.GetNotes)
 	notes.Delete("/:note_id", bookNoteHandler.DeleteNote)
 	notes.Put("/:note_id", bookNoteHandler.UpdateNote)
 
-	// ==========================================
-	// 🔴 KAWASAN ADMIN (Wajib Login + Role Admin)
-	// ==========================================
-	admin := protected.Group("/books", middleware.AdminOnly()) // Melanjutkan dari grup protected
+	admin := protected.Group("/books", middleware.AdminOnly())
 
 	admin.Post("/manual", bookHandler.CreateManual)
 	admin.Put("/:id", bookHandler.UpdateBook)

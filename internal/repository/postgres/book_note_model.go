@@ -7,7 +7,6 @@ import (
 	"github.com/lib/pq"
 )
 
-// DAO Khusus Database
 type BookNoteModel struct {
 	ID            string `gorm:"primaryKey;type:uuid;default:uuid_generate_v4()"`
 	UserBookID    string `gorm:"type:uuid;not null"`
@@ -18,12 +17,10 @@ type BookNoteModel struct {
 	UpdatedAt     time.Time
 }
 
-// Cegah GORM menebak nama tabel jadi "book_note_models"
 func (BookNoteModel) TableName() string {
 	return "book_notes"
 }
 
-// Konversi bolak-balik
 func (m *BookNoteModel) ToDomain() *domain.BookNote {
 	return &domain.BookNote{
 		ID:            m.ID,
@@ -42,7 +39,7 @@ func NoteFromDomain(d *domain.BookNote) *BookNoteModel {
 		UserBookID:    d.UserBookID,
 		Quote:         d.Quote,
 		PageReference: d.PageReference,
-		Tags:          pq.StringArray(d.Tags), // Mapping ke array Postgres
+		Tags:          pq.StringArray(d.Tags),
 		CreatedAt:     d.CreatedAt,
 		UpdatedAt:     d.UpdatedAt,
 	}

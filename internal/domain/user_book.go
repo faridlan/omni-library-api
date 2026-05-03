@@ -5,14 +5,11 @@ import (
 	"time"
 )
 
-// ==========================================
-// 1. ENTITY
-// ==========================================
 type UserBook struct {
 	ID          string    `json:"id"`
 	UserID      string    `json:"user_id"`
 	BookID      string    `json:"book_id"`
-	Status      string    `json:"status"` // 'TO_READ', 'READING', 'FINISHED'
+	Status      string    `json:"status"`
 	CurrentPage int       `json:"current_page"`
 	Rating      int       `json:"rating"`
 	CreatedAt   time.Time `json:"created_at"`
@@ -21,20 +18,12 @@ type UserBook struct {
 
 type UserBookWithMetadata struct {
 	UserBook
-	Book Book `json:"book"` // Informasi detail buku
+	Book Book `json:"book"`
 }
 
-// ==========================================
-// 2. INTERFACES
-// ==========================================
 type UserBookRepository interface {
-	// Menambahkan buku ke rak pribadi
 	AddBookToShelf(ctx context.Context, ub *UserBook) error
-
-	// Mengupdate progress bacaan (halaman atau status)
 	UpdateProgress(ctx context.Context, ub *UserBook) error
-
-	// Mengecek apakah buku sudah ada di rak user
 	GetByUserAndBookID(ctx context.Context, userID, bookID string) (*UserBookWithMetadata, error)
 	GetByUserID(ctx context.Context, userID string, status string, params PaginationQuery) ([]*UserBookWithMetadata, int64, error)
 	GetByID(ctx context.Context, id string) (*UserBook, error)
@@ -43,10 +32,7 @@ type UserBookRepository interface {
 }
 
 type UserBookUsecase interface {
-	// Fitur: User ingin memasukkan buku ke raknya (default status: TO_READ)
 	TrackNewBook(ctx context.Context, userID, bookID string) (*UserBook, error)
-
-	// Fitur: User ingin mengupdate dia sampai halaman berapa / kasih rating
 	UpdateReadingStatus(ctx context.Context, userID, bookID, status string, page, rating int) (*UserBook, error)
 	GetUserLibrary(ctx context.Context, userID string, status string, params PaginationQuery) ([]*UserBookWithMetadata, PaginationMeta, error)
 	GetUserBookDetail(ctx context.Context, userID, bookID string) (*UserBookWithMetadata, error)

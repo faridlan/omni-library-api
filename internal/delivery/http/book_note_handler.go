@@ -38,7 +38,6 @@ func (h *BookNoteHandler) AddNote(c *fiber.Ctx) error {
 		return utils.SendError(c, fiber.StatusBadRequest, err.Error())
 	}
 
-	// Gunakan DTO yang baru dibuat
 	var req dto.AddNoteRequest
 	if err := c.BodyParser(&req); err != nil {
 		return utils.SendError(c, fiber.StatusBadRequest, "Format JSON salah")
@@ -96,7 +95,6 @@ func (h *BookNoteHandler) GetNotes(c *fiber.Ctx) error {
 		return utils.HandleDomainError(c, err)
 	}
 
-	// Best practice: Cegah error null di Frontend jika belum ada notes sama sekali
 	if notes == nil {
 		notes = make([]*domain.BookNote, 0)
 	}
@@ -162,7 +160,7 @@ func (h *BookNoteHandler) UpdateNote(c *fiber.Ctx) error {
 		return utils.SendError(c, fiber.StatusBadRequest, err.Error())
 	}
 
-	req.ID = noteID // Pastikan ID catatan diambil dari URL path, bukan body
+	req.ID = noteID
 
 	note := &domain.BookNote{
 		ID:            req.ID,

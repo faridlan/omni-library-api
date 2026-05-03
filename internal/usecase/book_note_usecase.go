@@ -30,19 +30,17 @@ func (u *bookNoteUsecase) AddNote(ctx context.Context, note *domain.BookNote) er
 		return domain.ErrNotFound
 	}
 
-	// Lanjut simpan ke database
 	return u.noteRepo.Create(ctx, note)
 }
 
 func (u *bookNoteUsecase) GetNotesForBook(ctx context.Context, userBookID string, params domain.PaginationQuery) ([]*domain.BookNote, domain.PaginationMeta, error) {
-	// Ambil semua catatan berdasarkan ID buku di rak user
 
 	userBook, err := u.userBookRepo.GetByID(ctx, userBookID)
 	if err != nil {
 		return nil, domain.PaginationMeta{}, err
 	}
 	if userBook == nil {
-		return nil, domain.PaginationMeta{}, domain.ErrNotFound // Berhenti di sini!
+		return nil, domain.PaginationMeta{}, domain.ErrNotFound
 	}
 
 	notes, totalItems, err := u.noteRepo.GetByUserBookID(ctx, userBookID, params)

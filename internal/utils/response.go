@@ -21,41 +21,33 @@ type PaginatedResponse[T any] struct {
 
 type SuccessResponse[T any] struct {
 	Message string `json:"message"`
-	Data    T      `json:"data,omitempty"` // omitempty: jika nil, key "data" tidak ditampilkan (opsional)
+	Data    T      `json:"data,omitempty"`
 }
 
 type EmptyObj struct{}
 
-// SendError adalah helper agar Handler kita makin tipis
 func SendError(c *fiber.Ctx, statusCode int, message string, detail ...string) error {
 	resp := ErrorResponse{
 		Error: message,
 	}
 
-	// ====================================================================
-	// FILTER KEAMANAN & STRUCTURED LOGGING
-	// ====================================================================
 	if statusCode >= fiber.StatusInternalServerError {
 
-		// 1. Siapkan detail error asli (jika ada)
 		var errDetail string
 		if len(detail) > 0 && detail[0] != "" {
-			errDetail = detail[0] // Isi variabelnya di sini
+			errDetail = detail[0]
 		}
 
-		// 2. LOGGING: Panggil slog.Error SATU KALI saja
 		slog.Error("CRITICAL SERVER ERROR",
 			slog.Int("status_code", statusCode),
-			slog.String("path", c.Path()),     // Catat URL mana yang error
-			slog.String("method", c.Method()), // Catat methodnya (POST/GET)
+			slog.String("path", c.Path()),
+			slog.String("method", c.Method()),
 			slog.String("error_message", message),
-			slog.String("sql_detail", errDetail), // Otomatis terisi atau kosong
+			slog.String("sql_detail", errDetail),
 		)
 
-		// 3. MASKING: Pastikan detail dikosongkan agar tidak masuk ke JSON Response
 		resp.Detail = ""
 	} else {
-		// Untuk error 4xx (Client Error), aman untuk menampilkan detail ke user
 		if len(detail) > 0 && detail[0] != "" {
 			resp.Detail = detail[0]
 		}
@@ -64,7 +56,6 @@ func SendError(c *fiber.Ctx, statusCode int, message string, detail ...string) e
 	return c.Status(statusCode).JSON(resp)
 }
 
-// HandleDomainError menerjemahkan error dari Domain menjadi HTTP Status Code yang tepat
 func HandleDomainError(c *fiber.Ctx, err error) error {
 	switch {
 	case errors.Is(err, domain.ErrNotFound):
@@ -80,9 +71,6 @@ func HandleDomainError(c *fiber.Ctx, err error) error {
 		return SendError(c, fiber.StatusTooManyRequests, err.Error())
 
 	default:
-		// Kode aslimu TETAP DIPERTAHANKAN!
-		// err.Error() tetap dikirimkan ke SendError.
-		// Namun sekarang SendError akan mencetaknya ke terminal dan mencegahnya masuk ke JSON.
 		return SendError(c, fiber.StatusInternalServerError, domain.ErrInternalServerError.Error(), err.Error())
 	}
 }

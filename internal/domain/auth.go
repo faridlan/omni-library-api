@@ -21,8 +21,6 @@ type AuthRepository interface {
 	GetRefreshToken(ctx context.Context, token string) (*RefreshToken, error)
 	DeleteRefreshToken(ctx context.Context, token string) error
 }
-
-// AuthUsecase adalah kontrak untuk otak yang mengurus pendaftaran dan login
 type AuthUsecase interface {
 	Register(ctx context.Context, name, email, password string) (*User, error)
 	Login(ctx context.Context, email string, password string) (string, string, error)
