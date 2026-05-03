@@ -3,7 +3,6 @@ package usecase
 import (
 	"context"
 	"errors"
-	"fmt"
 	"os"
 	"strconv"
 	"time"
@@ -78,12 +77,12 @@ func (u *authUsecase) Login(ctx context.Context, email, password string) (string
 		return "", "", err
 	}
 	if user == nil {
-		return "", "", domain.ErrNotFound
+		return "", "", domain.NewError(domain.ErrNotFound, "User dengan ID tersebut tidak ditemukan")
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
 	if err != nil {
-		return "", "", domain.ErrBadParamInput
+		return "", "", domain.NewError(domain.ErrBadParamInput, "Email atau password salah")
 	}
 
 	accessClaims := jwt.MapClaims{
@@ -127,19 +126,19 @@ func (u *authUsecase) Refresh(ctx context.Context, tokenString string) (string, 
 		return "", err
 	}
 	if rt == nil {
-		return "", domain.ErrBadParamInput
+		return "", domain.NewError(domain.ErrBadParamInput, "Refresh token tidak valid atau sudah kadaluarsa")
 	}
 
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("metode enkripsi tidak valid")
+			return nil, errors.New("metode enkripsi tidak valid")
 		}
 		return []byte(u.jwtSecret), nil
 	})
 
 	if err != nil || !token.Valid {
 		_ = u.authRepo.DeleteRefreshToken(ctx, tokenString)
-		return "", domain.ErrBadParamInput
+		return "", err
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
@@ -150,7 +149,7 @@ func (u *authUsecase) Refresh(ctx context.Context, tokenString string) (string, 
 
 	user, err := u.authRepo.GetByID(ctx, userID)
 	if err != nil || user == nil {
-		return "", domain.ErrNotFound
+		return "", domain.NewError(domain.ErrNotFound, "User dengan ID tersebut tidak ditemukan")
 	}
 
 	accessClaims := jwt.MapClaims{

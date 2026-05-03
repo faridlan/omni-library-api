@@ -27,7 +27,7 @@ func (u *userBookUsecase) TrackNewBook(ctx context.Context, userID, bookID strin
 	}
 
 	if masterBook == nil {
-		return nil, domain.ErrNotFound
+		return nil, domain.NewError(domain.ErrNotFound, "Book dengan ID tersebut tidak ditemukan")
 	}
 
 	existing, err := u.userBookRepo.GetByBookID(ctx, userID, bookID)
@@ -35,7 +35,7 @@ func (u *userBookUsecase) TrackNewBook(ctx context.Context, userID, bookID strin
 		return nil, err
 	}
 	if existing != nil {
-		return nil, domain.ErrConflict
+		return nil, domain.NewError(domain.ErrConflict, "Buku sudah ada di rak pengguna")
 	}
 
 	newTrack := &domain.UserBook{
@@ -59,7 +59,7 @@ func (u *userBookUsecase) UpdateReadingStatus(ctx context.Context, userID, bookI
 		return nil, err
 	}
 	if track == nil {
-		return nil, domain.ErrNotFound
+		return nil, domain.NewError(domain.ErrNotFound, "Book dengan ID tersebut tidak ditemukan")
 	}
 
 	if status != "" {
@@ -104,7 +104,7 @@ func (u *userBookUsecase) GetUserBookDetail(ctx context.Context, userID, bookID 
 		return nil, err
 	}
 	if book == nil {
-		return nil, domain.ErrNotFound
+		return nil, domain.NewError(domain.ErrNotFound, "Book dengan ID tersebut tidak ditemukan")
 	}
 
 	return book, nil
@@ -116,7 +116,7 @@ func (u *userBookUsecase) DeleteBookFromShelf(ctx context.Context, userID, bookI
 		return err
 	}
 	if existing == nil {
-		return domain.ErrNotFound
+		return domain.NewError(domain.ErrNotFound, "Book dengan ID tersebut tidak ditemukan")
 	}
 
 	return u.userBookRepo.Delete(ctx, userID, bookID)
