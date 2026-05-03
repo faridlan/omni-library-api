@@ -65,10 +65,8 @@ func (f *googleBooksFetcher) FetchByISBN(ctx context.Context, isbn string) (*dom
 
 	item := apiResp.Items[0].VolumeInfo
 
-	// Parsing tanggal sederhana
 	pubDate, _ := time.Parse("2006-01-02", item.PublishedDate)
 	if item.PublishedDate != "" && pubDate.IsZero() {
-		// Jika format hanya tahun (YYYY)
 		pubDate, _ = time.Parse("2006", item.PublishedDate)
 	}
 

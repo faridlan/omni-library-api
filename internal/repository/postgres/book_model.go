@@ -7,8 +7,6 @@ import (
 	"github.com/lib/pq"
 )
 
-// BookModel adalah representasi murni dari tabel 'books' di PostgreSQL.
-// Kita menggunakan pq.StringArray agar GORM bisa menyimpannya sebagai TEXT[].
 type BookModel struct {
 	ID            string `gorm:"primaryKey;type:uuid;default:uuid_generate_v4()"`
 	ISBN          string `gorm:"unique"`
@@ -32,7 +30,7 @@ func (m *BookModel) ToDomain() *domain.Book {
 		ID:            m.ID,
 		ISBN:          m.ISBN,
 		Title:         m.Title,
-		Authors:       m.Authors, // pq.StringArray pada dasarnya adalah []string
+		Authors:       m.Authors,
 		PublishedDate: m.PublishedDate,
 		Description:   m.Description,
 		PageCount:     m.PageCount,
@@ -42,13 +40,12 @@ func (m *BookModel) ToDomain() *domain.Book {
 	}
 }
 
-// FromDomain mengonversi dari Model Domain menjadi Model Database
 func FromDomain(d *domain.Book) *BookModel {
 	return &BookModel{
 		ID:            d.ID,
 		ISBN:          d.ISBN,
 		Title:         d.Title,
-		Authors:       pq.StringArray(d.Authors), // Konversi []string Golang ke tipe array Postgres
+		Authors:       pq.StringArray(d.Authors),
 		PublishedDate: d.PublishedDate,
 		Description:   d.Description,
 		PageCount:     d.PageCount,

@@ -7,7 +7,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// Implementasi Repository
 type bookNoteRepository struct {
 	db *gorm.DB
 }
@@ -32,15 +31,12 @@ func (r *bookNoteRepository) GetByUserBookID(ctx context.Context, userBookID str
 	var models []BookNoteModel
 	var totalItems int64
 
-	// 1. Buat Base Query (Kondisi Utama)
 	baseQuery := r.db.WithContext(ctx).Model(&BookNoteModel{}).Where("user_book_id = ?", userBookID)
 
-	// 2. Hitung Total (Berdasarkan kondisi di atas)
 	if err := baseQuery.Count(&totalItems).Error; err != nil {
 		return nil, 0, err
 	}
 
-	// 3. Ambil Data (Kondisi WHERE sudah menempel di baseQuery)
 	err := baseQuery.
 		Limit(params.Limit).
 		Offset(params.GetOffset()).

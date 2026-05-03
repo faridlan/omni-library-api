@@ -2,7 +2,6 @@ package domain
 
 import "errors"
 
-// Daftar Custom Exception (Error standar aplikasi kita)
 var (
 	ErrInternalServerError = errors.New("terjadi kesalahan pada server")
 	ErrNotFound            = errors.New("data tidak ditemukan")

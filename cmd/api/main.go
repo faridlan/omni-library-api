@@ -38,8 +38,6 @@ func main() {
 	if err != nil {
 		slog.Warn("File .env tidak ditemukan, menggunakan environment variable dari sistem")
 	}
-
-	// Ambil nilai dengan os.Getenv
 	dbUser := os.Getenv("DB_USER")
 	dbPassword := os.Getenv("DB_PASSWORD")
 	dbHost := os.Getenv("DB_HOST")
@@ -69,7 +67,6 @@ func main() {
 
 	dbURL := os.Getenv("DB_URL")
 
-	// 1. Jalankan Migrasi Otomatis!
 	config.RunDBMigration(dbURL)
 
 	swaggerHost := os.Getenv("SWAGGER_HOST")
@@ -77,12 +74,11 @@ func main() {
 		docs.SwaggerInfo.Host = swaggerHost
 	}
 
-	// Setup Fiber & Route
 	app := fiber.New()
 
 	frontendURL := os.Getenv("FRONTEND_URL")
 	if frontendURL == "" {
-		frontendURL = "*" // Fallback untuk kemudahan di lokal
+		frontendURL = "*"
 	}
 
 	app.Use(cors.New(cors.Config{
@@ -95,7 +91,7 @@ func main() {
 	app.Use(logger.New(logger.Config{
 		Format:     "[${time}] ${status} - ${latency} ${method} ${path}\n",
 		TimeFormat: "2006-01-02 15:04:05",
-		TimeZone:   "Asia/Jakarta", // Sesuaikan dengan zona waktumu
+		TimeZone:   "Asia/Jakarta",
 	}))
 
 	app.Get("/swagger/*", swagger.HandlerDefault)
@@ -105,10 +101,9 @@ func main() {
 
 	port := os.Getenv("APP_PORT")
 	if port == "" {
-		port = "8080" // Default port jika tidak ada di environment variable
+		port = "8080"
 	}
 
-	// Start Server
 	go func() {
 		slog.Info("Starting OmniLibrary API Server", slog.String("port", port))
 		if err := app.Listen(":" + port); err != nil {
@@ -116,17 +111,13 @@ func main() {
 		}
 	}()
 
-	// 2. Buat "Jebakan" Sinyal (Menunggu CTRL+C atau instruksi Docker Stop)
 	quit := make(chan os.Signal, 1)
-	// SIGINT = CTRL+C, SIGTERM = Sinyal kill dari Docker/Linux
 	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
 
-	<-quit // Main Thread akan BERHENTI di sini menunggu sinyal masuk ke channel
+	<-quit
 
-	// 3. Menutup Warung dengan Sopan (Graceful Shutdown)
 	slog.Info("Menerima sinyal mati, mematikan server dengan sopan...")
 
-	// Fiber akan menolak request baru, tapi menunggu request yang sedang berjalan selesai
 	if err := app.Shutdown(); err != nil {
 		slog.Error("Server dipaksa mati karena error", slog.String("detail", err.Error()))
 	}
