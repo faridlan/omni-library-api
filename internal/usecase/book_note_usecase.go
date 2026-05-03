@@ -27,7 +27,7 @@ func (u *bookNoteUsecase) AddNote(ctx context.Context, note *domain.BookNote) er
 	}
 
 	if userBook == nil {
-		return domain.ErrNotFound
+		return domain.NewError(domain.ErrNotFound, "Book dengan ID tersebut tidak ditemukan")
 	}
 
 	return u.noteRepo.Create(ctx, note)
@@ -40,7 +40,7 @@ func (u *bookNoteUsecase) GetNotesForBook(ctx context.Context, userBookID string
 		return nil, domain.PaginationMeta{}, err
 	}
 	if userBook == nil {
-		return nil, domain.PaginationMeta{}, domain.ErrNotFound
+		return nil, domain.PaginationMeta{}, domain.NewError(domain.ErrNotFound, "Book dengan ID tersebut tidak ditemukan")
 	}
 
 	notes, totalItems, err := u.noteRepo.GetByUserBookID(ctx, userBookID, params)
@@ -68,7 +68,7 @@ func (u *bookNoteUsecase) DeleteNote(ctx context.Context, noteID string) error {
 		return err
 	}
 	if existing == nil {
-		return domain.ErrNotFound
+		return domain.NewError(domain.ErrNotFound, "Note dengan ID tersebut tidak ditemukan")
 	}
 
 	return u.noteRepo.Delete(ctx, noteID)
@@ -81,7 +81,7 @@ func (u *bookNoteUsecase) UpdateNote(ctx context.Context, note *domain.BookNote)
 		return nil, err
 	}
 	if existing == nil {
-		return nil, domain.ErrNotFound
+		return nil, domain.NewError(domain.ErrNotFound, "Note dengan ID tersebut tidak ditemukan")
 	}
 
 	existing.Quote = note.Quote

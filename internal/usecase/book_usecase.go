@@ -27,7 +27,7 @@ func (u *bookUsecase) FetchAndSaveMetadata(ctx context.Context, isbn string) (*d
 	}
 
 	if existingBook != nil {
-		return existingBook, nil
+		return nil, domain.NewError(domain.ErrConflict, "Buku dengan ISBN tersebut sudah ada")
 	}
 
 	newBook, err := u.fetcher.FetchByISBN(ctx, isbn)
@@ -36,7 +36,7 @@ func (u *bookUsecase) FetchAndSaveMetadata(ctx context.Context, isbn string) (*d
 	}
 
 	if newBook == nil {
-		return nil, domain.ErrNotFound
+		return nil, domain.NewError(domain.ErrNotFound, "Buku dengan ISBN tersebut tidak ditemukan")
 	}
 
 	err = u.bookRepo.Create(ctx, newBook)
@@ -72,7 +72,7 @@ func (u *bookUsecase) GetBookByID(ctx context.Context, id string) (*domain.Book,
 		return nil, err
 	}
 	if book == nil {
-		return nil, domain.ErrNotFound
+		return nil, domain.NewError(domain.ErrNotFound, "Book dengan ID tersebut tidak ditemukan")
 	}
 	return book, nil
 }
@@ -82,7 +82,7 @@ func (u *bookUsecase) CreateManual(ctx context.Context, book *domain.Book) (*dom
 	if book.ISBN != "" {
 		existing, _ := u.bookRepo.GetByISBN(ctx, book.ISBN)
 		if existing != nil {
-			return nil, domain.ErrConflict
+			return nil, domain.NewError(domain.ErrConflict, "Buku dengan ISBN tersebut sudah ada")
 		}
 	}
 
@@ -101,7 +101,7 @@ func (u *bookUsecase) UpdateBook(ctx context.Context, id string, req *domain.Boo
 		return nil, err
 	}
 	if existing == nil {
-		return nil, domain.ErrNotFound
+		return nil, domain.NewError(domain.ErrNotFound, "Book dengan ID tersebut tidak ditemukan")
 	}
 
 	existing.Title = req.Title
@@ -127,7 +127,7 @@ func (u *bookUsecase) DeleteBook(ctx context.Context, id string) error {
 		return err
 	}
 	if existing == nil {
-		return domain.ErrNotFound
+		return domain.NewError(domain.ErrNotFound, "Book dengan ID tersebut tidak ditemukan")
 	}
 
 	return u.bookRepo.Delete(ctx, id)
