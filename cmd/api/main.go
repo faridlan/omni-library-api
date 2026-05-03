@@ -65,6 +65,9 @@ func main() {
 	bookNoteRepo := postgres.NewBookNoteRepository(db)
 	bookNoteUsecase := usecase.NewBookNoteUsecase(bookNoteRepo, userBookRepo)
 
+	// Fitur User Profile
+	userUsecase := usecase.NewUserUsecase(userRepo)
+
 	dbURL := os.Getenv("DB_URL")
 
 	config.RunDBMigration(dbURL)
@@ -97,7 +100,7 @@ func main() {
 	app.Get("/swagger/*", swagger.HandlerDefault)
 
 	// Daftarkan Handler
-	myHttp.SetupRoutes(app, authUsecase, bookUsecase, userBookUsecase, bookNoteUsecase)
+	myHttp.SetupRoutes(app, authUsecase, bookUsecase, userBookUsecase, bookNoteUsecase, userUsecase)
 
 	port := os.Getenv("APP_PORT")
 	if port == "" {

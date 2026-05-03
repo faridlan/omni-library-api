@@ -7,7 +7,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func SetupRoutes(app *fiber.App, authUC domain.AuthUsecase, bookUC domain.BookUsecase, userBookUC domain.UserBookUsecase, noteUC domain.BookNoteUsecase) {
+func SetupRoutes(app *fiber.App, authUC domain.AuthUsecase, bookUC domain.BookUsecase, userBookUC domain.UserBookUsecase, noteUC domain.BookNoteUsecase, userUC domain.UserUsecase) {
 
 	prometheus := fiberprometheus.New("omni_api")
 
@@ -21,7 +21,9 @@ func SetupRoutes(app *fiber.App, authUC domain.AuthUsecase, bookUC domain.BookUs
 	bookHandler := NewBookHandler(api, bookUC)
 	userBookHandler := NewUserBookHandler(api, userBookUC)
 	bookNoteHandler := NewBookNoteHandler(api, noteUC)
+	userHandler := NewUserHandler(api, userUC)
 
+	// Public routes
 	auth := api.Group("/auth")
 	auth.Post("/register", authHandler.Register)
 	auth.Post("/login", authHandler.Login)
@@ -38,6 +40,7 @@ func SetupRoutes(app *fiber.App, authUC domain.AuthUsecase, bookUC domain.BookUs
 		})
 	})
 
+	// Protected routes
 	protected := api.Group("/", middleware.Protected())
 
 	protected.Post("/books/fetch", bookHandler.FetchAndSave)
@@ -55,6 +58,12 @@ func SetupRoutes(app *fiber.App, authUC domain.AuthUsecase, bookUC domain.BookUs
 	notes.Delete("/:note_id", bookNoteHandler.DeleteNote)
 	notes.Put("/:note_id", bookNoteHandler.UpdateNote)
 
+	userGroup := protected.Group("/users")
+	userGroup.Get("/me", userHandler.GetProfile)
+	userGroup.Put("/me", userHandler.UpdateProfile)
+	userGroup.Put("/me/password", userHandler.UpdatePassword)
+
+	// Admin routes
 	admin := protected.Group("/books", middleware.AdminOnly())
 
 	admin.Post("/manual", bookHandler.CreateManual)
