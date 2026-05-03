@@ -32,3 +32,35 @@ func (r *userRepository) Create(ctx context.Context, user *domain.User) error {
 
 	return nil
 }
+
+func (r *userRepository) FindByEmail(ctx context.Context, email string) (*domain.User, error) {
+	var model UserModel
+	result := r.db.WithContext(ctx).Where("email = ?", email).First(&model)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return model.ToDomain(), nil
+}
+
+func (r *userRepository) FindByID(ctx context.Context, id string) (*domain.User, error) {
+	var model UserModel
+	result := r.db.WithContext(ctx).Where("id = ?", id).First(&model)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return model.ToDomain(), nil
+}
+
+func (r *userRepository) Update(ctx context.Context, user *domain.User) error {
+	model := FromUserDomain(user)
+
+	result := r.db.WithContext(ctx).Save(model)
+	if result.Error != nil {
+		return result.Error
+	}
+
+	user.UpdatedAt = model.UpdatedAt
+	return nil
+}

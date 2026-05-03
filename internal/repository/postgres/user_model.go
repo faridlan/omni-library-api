@@ -8,13 +8,13 @@ import (
 )
 
 type UserModel struct {
-	ID           string `gorm:"type:uuid;primary_key"`
-	Name         string `gorm:"type:varchar(255);not null"`
-	Email        string `gorm:"type:varchar(255);uniqueIndex;not null"`
-	PasswordHash string `gorm:"column:password_hash;type:varchar(255);not null"`
-	Role         string `gorm:"type:varchar(50);not null;default:'user'"`
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
+	ID           string    `gorm:"type:uuid;primary_key"`
+	Name         string    `gorm:"type:varchar(255);not null"`
+	Email        string    `gorm:"type:varchar(255);uniqueIndex;not null"`
+	PasswordHash string    `gorm:"column:password_hash;type:varchar(255);not null"`
+	Role         string    `gorm:"type:varchar(50);not null;default:'user'"`
+	CreatedAt    time.Time `gorm:"autoCreateTime"`
+	UpdatedAt    time.Time `gorm:"autoUpdateTime"`
 }
 
 func (UserModel) TableName() string {
