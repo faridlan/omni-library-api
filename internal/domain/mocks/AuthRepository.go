@@ -32,66 +32,6 @@ func (_m *AuthRepository) DeleteRefreshToken(ctx context.Context, token string) 
 	return r0
 }
 
-// GetByEmail provides a mock function with given fields: ctx, email
-func (_m *AuthRepository) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
-	ret := _m.Called(ctx, email)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetByEmail")
-	}
-
-	var r0 *domain.User
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (*domain.User, error)); ok {
-		return rf(ctx, email)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) *domain.User); ok {
-		r0 = rf(ctx, email)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*domain.User)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, email)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// GetByID provides a mock function with given fields: ctx, id
-func (_m *AuthRepository) GetByID(ctx context.Context, id string) (*domain.User, error) {
-	ret := _m.Called(ctx, id)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetByID")
-	}
-
-	var r0 *domain.User
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (*domain.User, error)); ok {
-		return rf(ctx, id)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) *domain.User); ok {
-		r0 = rf(ctx, id)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*domain.User)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, id)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // GetRefreshToken provides a mock function with given fields: ctx, token
 func (_m *AuthRepository) GetRefreshToken(ctx context.Context, token string) (*domain.RefreshToken, error) {
 	ret := _m.Called(ctx, token)

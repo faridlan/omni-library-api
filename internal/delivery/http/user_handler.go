@@ -72,7 +72,16 @@ func (h *UserHandler) UpdateProfile(c *fiber.Ctx) error {
 		return utils.SendError(c, fiber.StatusBadRequest, "Format input tidak valid")
 	}
 
-	user, err := h.userUsecase.UpdateProfile(c.Context(), userID, &req)
+	if err := utils.ValidateStruct(&req); err != nil {
+		return utils.SendError(c, fiber.StatusBadRequest, err.Error())
+	}
+
+	reqInput := domain.UpdateProfileInput{
+		ID:   userID,
+		Name: req.Name,
+	}
+
+	user, err := h.userUsecase.UpdateProfile(c.Context(), reqInput)
 	if err != nil {
 		return utils.HandleDomainError(c, err)
 	}
@@ -97,7 +106,7 @@ func (h *UserHandler) UpdateProfile(c *fiber.Ctx) error {
 // @Produce      json
 // @Security     BearerAuth
 // @Param        request body dto.UpdatePasswordRequest true "Data kata sandi lama dan baru"
-// @Success      200  {object}  utils.SuccessResponse[dto.UserProfileResponse] "Password berhasil diperbarui"
+// @Success      200  {object}  utils.SuccessResponse[interface{}] "Password berhasil diperbarui"
 // @Failure      400  {object}  utils.ErrorResponse "Bad Request (Validasi gagal / Password lama salah)"
 // @Failure      401  {object}  utils.ErrorResponse "Unauthorized"
 // @Failure      404  {object}  utils.ErrorResponse "User tidak ditemukan"
@@ -112,7 +121,17 @@ func (h *UserHandler) UpdatePassword(c *fiber.Ctx) error {
 		return utils.SendError(c, fiber.StatusBadRequest, "Format input tidak valid")
 	}
 
-	err := h.userUsecase.UpdatePassword(c.Context(), userID, &req)
+	if err := utils.ValidateStruct(&req); err != nil {
+		return utils.SendError(c, fiber.StatusBadRequest, err.Error())
+	}
+
+	reqInput := domain.UpdatePasswordInput{
+		ID:          userID,
+		OldPassword: req.OldPassword,
+		NewPassword: req.NewPassword,
+	}
+
+	err := h.userUsecase.UpdatePassword(c.Context(), reqInput)
 	if err != nil {
 		return utils.HandleDomainError(c, err)
 	}

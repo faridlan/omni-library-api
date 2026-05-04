@@ -28,8 +28,6 @@ func NewAuthHandler(router fiber.Router, uc domain.AuthUsecase) *AuthHandler {
 // @Success 201 {object} utils.SuccessResponse[dto.UserResponse] "User berhasil dibuat"
 // @Failure 400 {object} utils.ErrorResponse "Format JSON salah atau validasi gagal"
 // @Failure 409 {object} utils.ErrorResponse "Email sudah terdaftar (Conflict)"
-// @Failure 400 {object} utils.ErrorResponse "Format JSON salah atau validasi gagal"
-// @Failure 409 {object} utils.ErrorResponse "Email sudah terdaftar (Conflict)"
 // @Failure 500 {object} utils.ErrorResponse "Internal Server Error"
 // @Router /api/auth/register [post]
 func (h *AuthHandler) Register(c *fiber.Ctx) error {
@@ -43,7 +41,13 @@ func (h *AuthHandler) Register(c *fiber.Ctx) error {
 		return utils.SendError(c, fiber.StatusBadRequest, err.Error())
 	}
 
-	user, err := h.authUsecase.Register(c.Context(), req.Name, req.Email, req.Password)
+	reqInput := domain.RegisterInput{
+		Name:     req.Name,
+		Email:    req.Email,
+		Password: req.Password,
+	}
+
+	user, err := h.authUsecase.Register(c.Context(), reqInput)
 	if err != nil {
 		return utils.HandleDomainError(c, err)
 	}
@@ -56,7 +60,7 @@ func (h *AuthHandler) Register(c *fiber.Ctx) error {
 		CreatedAt: user.CreatedAt.Format("2006-01-02 15:04:05"),
 	}
 
-	return utils.SendSuccess(c, fiber.StatusOK, "User berhasil dibuat", res)
+	return utils.SendSuccess(c, fiber.StatusCreated, "User berhasil dibuat", res)
 }
 
 // Login godoc
@@ -83,7 +87,12 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 		return utils.SendError(c, fiber.StatusBadRequest, err.Error())
 	}
 
-	accessToken, refreshToken, err := h.authUsecase.Login(c.Context(), req.Email, req.Password)
+	reqInput := domain.LoginInput{
+		Email:    req.Email,
+		Password: req.Password,
+	}
+
+	accessToken, refreshToken, err := h.authUsecase.Login(c.Context(), reqInput)
 	if err != nil {
 		return utils.HandleDomainError(c, err)
 	}
