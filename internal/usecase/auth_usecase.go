@@ -45,20 +45,20 @@ func NewAuthUsecase(ur domain.UserRepository, ar domain.AuthRepository) domain.A
 	}
 }
 
-func (u *authUsecase) Register(ctx context.Context, name, email, password string) (*domain.User, error) {
-	existingUser, _ := u.authRepo.GetByEmail(ctx, email)
+func (u *authUsecase) Register(ctx context.Context, input domain.RegisterInput) (*domain.User, error) {
+	existingUser, _ := u.userRepo.FindByEmail(ctx, input.Email)
 	if existingUser != nil {
 		return nil, domain.ErrConflict
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return nil, errors.New("gagal mengenkripsi password")
+		return nil, domain.ErrInternalServerError
 	}
 
 	newUser := &domain.User{
-		Name:     name,
-		Email:    email,
+		Name:     input.Name,
+		Email:    input.Email,
 		Password: string(hashedPassword),
 		Role:     "user",
 	}
@@ -71,8 +71,8 @@ func (u *authUsecase) Register(ctx context.Context, name, email, password string
 	return newUser, nil
 }
 
-func (u *authUsecase) Login(ctx context.Context, email, password string) (string, string, error) {
-	user, err := u.authRepo.GetByEmail(ctx, email)
+func (u *authUsecase) Login(ctx context.Context, input domain.LoginInput) (string, string, error) {
+	user, err := u.userRepo.FindByEmail(ctx, input.Email)
 	if err != nil {
 		return "", "", err
 	}
@@ -80,7 +80,7 @@ func (u *authUsecase) Login(ctx context.Context, email, password string) (string
 		return "", "", domain.NewError(domain.ErrNotFound, "User dengan ID tersebut tidak ditemukan")
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(input.Password))
 	if err != nil {
 		return "", "", domain.NewError(domain.ErrBadParamInput, "Email atau password salah")
 	}
@@ -93,7 +93,7 @@ func (u *authUsecase) Login(ctx context.Context, email, password string) (string
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims)
 	signedAccessToken, err := accessToken.SignedString([]byte(u.jwtSecret))
 	if err != nil {
-		return "", "", errors.New("gagal menerbitkan access token")
+		return "", "", domain.ErrInternalServerError
 	}
 
 	expTime := time.Now().Add(time.Hour * 24 * time.Duration(u.refreshExpDay))
@@ -104,7 +104,7 @@ func (u *authUsecase) Login(ctx context.Context, email, password string) (string
 	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims)
 	signedRefreshToken, err := refreshToken.SignedString([]byte(u.jwtSecret))
 	if err != nil {
-		return "", "", errors.New("gagal menerbitkan refresh token")
+		return "", "", domain.NewError(domain.ErrUnauthorized, "gagal menerbitkan refresh token")
 	}
 
 	rtData := &domain.RefreshToken{
@@ -114,7 +114,7 @@ func (u *authUsecase) Login(ctx context.Context, email, password string) (string
 	}
 	err = u.authRepo.SaveRefreshToken(ctx, rtData)
 	if err != nil {
-		return "", "", errors.New("gagal menyimpan sesi login")
+		return "", "", domain.ErrInternalServerError
 	}
 
 	return signedAccessToken, signedRefreshToken, nil
@@ -147,7 +147,7 @@ func (u *authUsecase) Refresh(ctx context.Context, tokenString string) (string, 
 	}
 	userID := claims["user_id"].(string)
 
-	user, err := u.authRepo.GetByID(ctx, userID)
+	user, err := u.userRepo.FindByID(ctx, userID)
 	if err != nil || user == nil {
 		return "", domain.NewError(domain.ErrNotFound, "User dengan ID tersebut tidak ditemukan")
 	}

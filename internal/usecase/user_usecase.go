@@ -2,10 +2,9 @@ package usecase
 
 import (
 	"context"
+	"errors"
 
-	"github.com/faridlan/omni-library-api/internal/delivery/http/dto"
 	"github.com/faridlan/omni-library-api/internal/domain"
-	"github.com/faridlan/omni-library-api/internal/utils"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -21,54 +20,56 @@ func NewUserUsecase(userRepo domain.UserRepository) domain.UserUsecase {
 
 func (u *userUsecase) GetProfile(ctx context.Context, userID string) (*domain.User, error) {
 	user, err := u.userRepo.FindByID(ctx, userID)
+
 	if err != nil {
-		return nil, domain.NewError(domain.ErrNotFound, "User dengan ID tersebut tidak ditemukan")
+		if errors.Is(err, domain.ErrNotFound) {
+			return nil, domain.NewError(domain.ErrNotFound, "User dengan ID tersebut tidak ditemukan")
+		}
+		return nil, err
 	}
 	return user, nil
 }
 
-func (u *userUsecase) UpdateProfile(ctx context.Context, userID string, req *dto.UpdateProfileRequest) (*domain.User, error) {
-	if err := utils.ValidateStruct(req); err != nil {
+func (u *userUsecase) UpdateProfile(ctx context.Context, input domain.UpdateProfileInput) (*domain.User, error) {
+	user, err := u.userRepo.FindByID(ctx, input.ID)
+	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			return nil, domain.NewError(domain.ErrNotFound, "User dengan ID tersebut tidak ditemukan")
+		}
 		return nil, err
 	}
 
-	user, err := u.userRepo.FindByID(ctx, userID)
-	if err != nil {
-		return nil, domain.NewError(domain.ErrNotFound, "User dengan ID tersebut tidak ditemukan")
-	}
-
-	user.Name = req.Name
+	user.Name = input.Name
 
 	if err := u.userRepo.Update(ctx, user); err != nil {
-		return nil, domain.NewError(domain.ErrBadParamInput, "Gagal memperbarui profil")
+		return nil, err
 	}
 
 	return user, nil
 }
 
-func (u *userUsecase) UpdatePassword(ctx context.Context, userID string, req *dto.UpdatePasswordRequest) error {
+func (u *userUsecase) UpdatePassword(ctx context.Context, input domain.UpdatePasswordInput) error {
 
-	if err := utils.ValidateStruct(req); err != nil {
-		return domain.ErrBadParamInput
-	}
-
-	user, err := u.userRepo.FindByID(ctx, userID)
+	user, err := u.userRepo.FindByID(ctx, input.ID)
 	if err != nil {
-		return domain.ErrNotFound
+		if errors.Is(err, domain.ErrNotFound) {
+			return domain.NewError(domain.ErrNotFound, "User dengan ID tersebut tidak ditemukan")
+		}
+		return err
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.OldPassword))
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(input.OldPassword))
 	if err != nil {
 		return domain.NewError(domain.ErrBadParamInput, "Password lama salah")
 	}
 
-	if req.OldPassword == req.NewPassword {
+	if input.OldPassword == input.NewPassword {
 		return domain.NewError(domain.ErrBadParamInput, "Password baru tidak boleh sama dengan password lama")
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.NewPassword), bcrypt.DefaultCost)
 	if err != nil {
-		return domain.NewError(domain.ErrBadParamInput, "Gagal memproses password baru")
+		return domain.ErrInternalServerError
 	}
 
 	user.Password = string(hashedPassword)

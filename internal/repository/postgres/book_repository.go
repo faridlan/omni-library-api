@@ -35,12 +35,10 @@ func (r *bookRepository) Create(ctx context.Context, book *domain.Book) error {
 func (r *bookRepository) GetByISBN(ctx context.Context, isbn string) (*domain.Book, error) {
 	var dbModel BookModel
 
-	result := r.db.WithContext(ctx).Table("books").Where("isbn = ?", isbn).First(&dbModel)
-	if result.Error != nil {
-		if result.Error == gorm.ErrRecordNotFound {
-			return nil, nil
-		}
-		return nil, result.Error
+	err := r.db.WithContext(ctx).Table("books").Where("isbn = ?", isbn).First(&dbModel).Error
+
+	if err != nil {
+		return nil, TranslateError(err)
 	}
 
 	return dbModel.ToDomain(), nil
@@ -76,13 +74,11 @@ func (r *bookRepository) GetAll(ctx context.Context, params domain.PaginationQue
 
 func (r *bookRepository) GetByID(ctx context.Context, id string) (*domain.Book, error) {
 	var model BookModel
-	result := r.db.WithContext(ctx).Where("id = ?", id).First(&model)
 
-	if result.Error != nil {
-		if result.Error == gorm.ErrRecordNotFound {
-			return nil, nil
-		}
-		return nil, result.Error
+	err := r.db.WithContext(ctx).Where("id = ?", id).First(&model).Error
+
+	if err != nil {
+		return nil, TranslateError(err)
 	}
 
 	return model.ToDomain(), nil

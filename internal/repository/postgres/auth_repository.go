@@ -16,37 +16,6 @@ func NewAuthRepository(db *gorm.DB) domain.AuthRepository {
 	return &authRepository{db: db}
 }
 
-func (r *authRepository) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
-	var model UserModel
-
-	result := r.db.WithContext(ctx).Where("email = ?", email).First(&model)
-
-	if result.Error != nil {
-		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return nil, nil
-		}
-
-		return nil, result.Error
-	}
-
-	return model.ToDomain(), nil
-}
-
-func (r *authRepository) GetByID(ctx context.Context, id string) (*domain.User, error) {
-	var model UserModel
-
-	result := r.db.WithContext(ctx).Where("id = ?", id).First(&model)
-
-	if result.Error != nil {
-		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return nil, nil
-		}
-		return nil, result.Error
-	}
-
-	return model.ToDomain(), nil
-}
-
 func (r *authRepository) SaveRefreshToken(ctx context.Context, rt *domain.RefreshToken) error {
 	model := RefreshTokenModel{
 		UserID:    rt.UserID,

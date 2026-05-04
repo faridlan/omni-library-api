@@ -21,7 +21,6 @@ func (UserModel) TableName() string {
 	return "users"
 }
 
-// 1. Model GORM untuk pemetaan ke tabel 'refresh_tokens'
 type RefreshTokenModel struct {
 	ID        string    `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	UserID    string    `gorm:"type:uuid;not null"`

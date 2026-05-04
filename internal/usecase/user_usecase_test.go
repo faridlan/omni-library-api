@@ -5,7 +5,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/faridlan/omni-library-api/internal/delivery/http/dto"
 	"github.com/faridlan/omni-library-api/internal/domain"
 	"github.com/faridlan/omni-library-api/internal/domain/mocks"
 	"github.com/faridlan/omni-library-api/internal/usecase"
@@ -14,12 +13,16 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// Helper untuk setup Usecase dan Mocks
 func setupUserUsecase() (*mocks.UserRepository, domain.UserUsecase) {
-	mockRepo := new(mocks.UserRepository)
-	userUsecase := usecase.NewUserUsecase(mockRepo)
-	return mockRepo, userUsecase
+	mockUserRepo := new(mocks.UserRepository)
+	userUsecase := usecase.NewUserUsecase(mockUserRepo)
+	return mockUserRepo, userUsecase
 }
 
+// ==========================================
+// TEST GET PROFILE
+// ==========================================
 func TestGetProfile(t *testing.T) {
 	mockRepo, userUsecase := setupUserUsecase()
 	userID := "user-123"
@@ -42,31 +45,49 @@ func TestGetProfile(t *testing.T) {
 	})
 
 	t.Run("Failed - User Not Found", func(t *testing.T) {
-		mockRepo.On("FindByID", mock.Anything, userID).Return(nil, errors.New("db error")).Once()
+		mockRepo.On("FindByID", mock.Anything, userID).Return(nil, domain.ErrNotFound).Once()
 
 		user, err := userUsecase.GetProfile(context.Background(), userID)
 
 		assert.Error(t, err)
 		assert.Nil(t, user)
-		assert.Equal(t, "data tidak ditemukan", err.Error())
+		assert.Contains(t, err.Error(), "User dengan ID tersebut tidak ditemukan")
+		assert.ErrorIs(t, err, domain.ErrNotFound) // Memastikan Unwrap() berjalan dengan baik
+		mockRepo.AssertExpectations(t)
+	})
+
+	t.Run("Failed - Database Error", func(t *testing.T) {
+		dbError := errors.New("database connection lost")
+		mockRepo.On("FindByID", mock.Anything, userID).Return(nil, dbError).Once()
+
+		user, err := userUsecase.GetProfile(context.Background(), userID)
+
+		assert.Error(t, err)
+		assert.Nil(t, user)
+		assert.Equal(t, dbError, err)
 		mockRepo.AssertExpectations(t)
 	})
 }
 
+// ==========================================
+// TEST UPDATE PROFILE
+// ==========================================
 func TestUpdateProfile(t *testing.T) {
 	mockRepo, userUsecase := setupUserUsecase()
-	userID := "user-123"
 
 	t.Run("Success", func(t *testing.T) {
-		req := &dto.UpdateProfileRequest{Name: "Faridlan Updated"}
-		mockUser := &domain.User{ID: userID, Name: "Faridlan Lama"}
+		input := domain.UpdateProfileInput{
+			ID:   "user-123",
+			Name: "Faridlan Updated",
+		}
+		mockUser := &domain.User{ID: input.ID, Name: "Faridlan Lama"}
 
-		mockRepo.On("FindByID", mock.Anything, userID).Return(mockUser, nil).Once()
+		mockRepo.On("FindByID", mock.Anything, input.ID).Return(mockUser, nil).Once()
 		mockRepo.On("Update", mock.Anything, mock.MatchedBy(func(u *domain.User) bool {
-			return u.Name == "Faridlan Updated"
+			return u.Name == input.Name // Memastikan Name benar-benar diubah sebelum disave
 		})).Return(nil).Once()
 
-		user, err := userUsecase.UpdateProfile(context.Background(), userID, req)
+		user, err := userUsecase.UpdateProfile(context.Background(), input)
 
 		assert.NoError(t, err)
 		assert.NotNil(t, user)
@@ -75,91 +96,113 @@ func TestUpdateProfile(t *testing.T) {
 	})
 
 	t.Run("Failed - User Not Found", func(t *testing.T) {
-		req := &dto.UpdateProfileRequest{Name: "Faridlan Updated"}
+		input := domain.UpdateProfileInput{ID: "user-123", Name: "Faridlan Updated"}
 
-		mockRepo.On("FindByID", mock.Anything, userID).Return(nil, errors.New("db error")).Once()
+		mockRepo.On("FindByID", mock.Anything, input.ID).Return(nil, domain.ErrNotFound).Once()
 
-		user, err := userUsecase.UpdateProfile(context.Background(), userID, req)
+		user, err := userUsecase.UpdateProfile(context.Background(), input)
 
 		assert.Error(t, err)
 		assert.Nil(t, user)
-		assert.Equal(t, "data tidak ditemukan", err.Error())
+		assert.Contains(t, err.Error(), "User dengan ID tersebut tidak ditemukan")
+		mockRepo.AssertExpectations(t)
+	})
+
+	t.Run("Failed - Update DB Error", func(t *testing.T) {
+		input := domain.UpdateProfileInput{ID: "user-123", Name: "Faridlan Updated"}
+		mockUser := &domain.User{ID: input.ID, Name: "Faridlan Lama"}
+		dbError := errors.New("failed to save")
+
+		mockRepo.On("FindByID", mock.Anything, input.ID).Return(mockUser, nil).Once()
+		mockRepo.On("Update", mock.Anything, mock.AnythingOfType("*domain.User")).Return(dbError).Once()
+
+		user, err := userUsecase.UpdateProfile(context.Background(), input)
+
+		assert.Error(t, err)
+		assert.Nil(t, user)
+		assert.Equal(t, dbError, err)
 		mockRepo.AssertExpectations(t)
 	})
 }
 
+// ==========================================
+// TEST UPDATE PASSWORD
+// ==========================================
 func TestUpdatePassword(t *testing.T) {
 	mockRepo, userUsecase := setupUserUsecase()
-	userID := "user-123"
 
-	// Bikin hash password asli untuk testing
+	// Hash password asli agar `bcrypt.Compare` di usecase bisa berjalan sukses
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("passwordLama123"), bcrypt.DefaultCost)
 
 	t.Run("Success", func(t *testing.T) {
-		req := &dto.UpdatePasswordRequest{
-			OldPassword:     "passwordLama123",
-			NewPassword:     "passwordBaru123",
-			ConfirmPassword: "passwordBaru123",
+		input := domain.UpdatePasswordInput{
+			ID:          "user-123",
+			OldPassword: "passwordLama123",
+			NewPassword: "passwordBaru123",
 		}
 
-		mockUser := &domain.User{ID: userID, Password: string(hashedPassword)}
+		mockUser := &domain.User{ID: input.ID, Password: string(hashedPassword)}
 
-		mockRepo.On("FindByID", mock.Anything, userID).Return(mockUser, nil).Once()
+		mockRepo.On("FindByID", mock.Anything, input.ID).Return(mockUser, nil).Once()
 		mockRepo.On("Update", mock.Anything, mock.AnythingOfType("*domain.User")).Return(nil).Once()
 
-		err := userUsecase.UpdatePassword(context.Background(), userID, req)
+		err := userUsecase.UpdatePassword(context.Background(), input)
 
 		assert.NoError(t, err)
 		mockRepo.AssertExpectations(t)
 	})
 
-	t.Run("Failed - Old Password Wrong", func(t *testing.T) {
-		req := &dto.UpdatePasswordRequest{
-			OldPassword:     "passwordSalah",
-			NewPassword:     "passwordBaru123",
-			ConfirmPassword: "passwordBaru123",
+	t.Run("Failed - User Not Found", func(t *testing.T) {
+		input := domain.UpdatePasswordInput{
+			ID:          "user-123",
+			OldPassword: "passwordLama123",
+			NewPassword: "passwordBaru123",
 		}
 
-		mockUser := &domain.User{ID: userID, Password: string(hashedPassword)}
+		mockRepo.On("FindByID", mock.Anything, input.ID).Return(nil, domain.ErrNotFound).Once()
 
-		mockRepo.On("FindByID", mock.Anything, userID).Return(mockUser, nil).Once()
-
-		err := userUsecase.UpdatePassword(context.Background(), userID, req)
+		err := userUsecase.UpdatePassword(context.Background(), input)
 
 		assert.Error(t, err)
-		assert.Equal(t, "parameter atau format data tidak valid", err.Error())
+		assert.Contains(t, err.Error(), "User dengan ID tersebut tidak ditemukan")
+		mockRepo.AssertExpectations(t)
+	})
+
+	t.Run("Failed - Wrong Old Password", func(t *testing.T) {
+		input := domain.UpdatePasswordInput{
+			ID:          "user-123",
+			OldPassword: "passwordSalah", // <-- Sengaja disalahkan
+			NewPassword: "passwordBaru123",
+		}
+
+		mockUser := &domain.User{ID: input.ID, Password: string(hashedPassword)}
+
+		mockRepo.On("FindByID", mock.Anything, input.ID).Return(mockUser, nil).Once()
+
+		err := userUsecase.UpdatePassword(context.Background(), input)
+
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "Password lama salah")
+		assert.ErrorIs(t, err, domain.ErrBadParamInput)
 		mockRepo.AssertExpectations(t)
 	})
 
 	t.Run("Failed - New Password Same as Old", func(t *testing.T) {
-		req := &dto.UpdatePasswordRequest{
-			OldPassword:     "passwordLama123",
-			NewPassword:     "passwordLama123", // Sama dengan yang lama
-			ConfirmPassword: "passwordLama123",
+		input := domain.UpdatePasswordInput{
+			ID:          "user-123",
+			OldPassword: "passwordLama123",
+			NewPassword: "passwordLama123", // <-- Sama dengan yang lama
 		}
 
-		mockUser := &domain.User{ID: userID, Password: string(hashedPassword)}
+		mockUser := &domain.User{ID: input.ID, Password: string(hashedPassword)}
 
-		mockRepo.On("FindByID", mock.Anything, userID).Return(mockUser, nil).Once()
+		mockRepo.On("FindByID", mock.Anything, input.ID).Return(mockUser, nil).Once()
 
-		err := userUsecase.UpdatePassword(context.Background(), userID, req)
+		err := userUsecase.UpdatePassword(context.Background(), input)
 
 		assert.Error(t, err)
-		assert.Equal(t, "parameter atau format data tidak valid", err.Error())
+		assert.Contains(t, err.Error(), "Password baru tidak boleh sama dengan password lama")
+		assert.ErrorIs(t, err, domain.ErrBadParamInput)
 		mockRepo.AssertExpectations(t)
-	})
-
-	t.Run("Failed - Validation Error (Confirm Mismatch)", func(t *testing.T) {
-		req := &dto.UpdatePasswordRequest{
-			OldPassword:     "passwordLama123",
-			NewPassword:     "passwordBaru123",
-			ConfirmPassword: "bedaPassword", // Tidak sama
-		}
-
-		// Karena validasi struct (utils.ValidateStruct) berjalan di awal, FindByID tidak akan pernah dipanggil
-		err := userUsecase.UpdatePassword(context.Background(), userID, req)
-
-		assert.Error(t, err)
-		// Pesan error di sini tergantung implementasi utils.ValidateStruct-mu
 	})
 }

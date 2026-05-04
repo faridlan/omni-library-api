@@ -35,9 +35,10 @@ func (r *userRepository) Create(ctx context.Context, user *domain.User) error {
 
 func (r *userRepository) FindByEmail(ctx context.Context, email string) (*domain.User, error) {
 	var model UserModel
-	result := r.db.WithContext(ctx).Where("email = ?", email).First(&model)
-	if result.Error != nil {
-		return nil, result.Error
+	err := r.db.WithContext(ctx).Where("email = ?", email).First(&model).Error
+
+	if err != nil {
+		return nil, TranslateError(err)
 	}
 
 	return model.ToDomain(), nil
@@ -45,9 +46,10 @@ func (r *userRepository) FindByEmail(ctx context.Context, email string) (*domain
 
 func (r *userRepository) FindByID(ctx context.Context, id string) (*domain.User, error) {
 	var model UserModel
-	result := r.db.WithContext(ctx).Where("id = ?", id).First(&model)
-	if result.Error != nil {
-		return nil, result.Error
+	err := r.db.WithContext(ctx).Where("id = ?", id).First(&model).Error
+
+	if err != nil {
+		return nil, TranslateError(err)
 	}
 
 	return model.ToDomain(), nil
@@ -56,9 +58,9 @@ func (r *userRepository) FindByID(ctx context.Context, id string) (*domain.User,
 func (r *userRepository) Update(ctx context.Context, user *domain.User) error {
 	model := FromUserDomain(user)
 
-	result := r.db.WithContext(ctx).Save(model)
-	if result.Error != nil {
-		return result.Error
+	err := r.db.WithContext(ctx).Save(model).Error
+	if err != nil {
+		return err
 	}
 
 	user.UpdatedAt = model.UpdatedAt

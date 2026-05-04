@@ -5,9 +5,7 @@ package mocks
 import (
 	context "context"
 
-	dto "github.com/faridlan/omni-library-api/internal/delivery/http/dto"
 	domain "github.com/faridlan/omni-library-api/internal/domain"
-
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -46,17 +44,17 @@ func (_m *UserUsecase) GetProfile(ctx context.Context, userID string) (*domain.U
 	return r0, r1
 }
 
-// UpdatePassword provides a mock function with given fields: ctx, userID, req
-func (_m *UserUsecase) UpdatePassword(ctx context.Context, userID string, req *dto.UpdatePasswordRequest) error {
-	ret := _m.Called(ctx, userID, req)
+// UpdatePassword provides a mock function with given fields: ctx, input
+func (_m *UserUsecase) UpdatePassword(ctx context.Context, input domain.UpdatePasswordInput) error {
+	ret := _m.Called(ctx, input)
 
 	if len(ret) == 0 {
 		panic("no return value specified for UpdatePassword")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *dto.UpdatePasswordRequest) error); ok {
-		r0 = rf(ctx, userID, req)
+	if rf, ok := ret.Get(0).(func(context.Context, domain.UpdatePasswordInput) error); ok {
+		r0 = rf(ctx, input)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -64,9 +62,9 @@ func (_m *UserUsecase) UpdatePassword(ctx context.Context, userID string, req *d
 	return r0
 }
 
-// UpdateProfile provides a mock function with given fields: ctx, userID, req
-func (_m *UserUsecase) UpdateProfile(ctx context.Context, userID string, req *dto.UpdateProfileRequest) (*domain.User, error) {
-	ret := _m.Called(ctx, userID, req)
+// UpdateProfile provides a mock function with given fields: ctx, input
+func (_m *UserUsecase) UpdateProfile(ctx context.Context, input domain.UpdateProfileInput) (*domain.User, error) {
+	ret := _m.Called(ctx, input)
 
 	if len(ret) == 0 {
 		panic("no return value specified for UpdateProfile")
@@ -74,19 +72,19 @@ func (_m *UserUsecase) UpdateProfile(ctx context.Context, userID string, req *dt
 
 	var r0 *domain.User
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *dto.UpdateProfileRequest) (*domain.User, error)); ok {
-		return rf(ctx, userID, req)
+	if rf, ok := ret.Get(0).(func(context.Context, domain.UpdateProfileInput) (*domain.User, error)); ok {
+		return rf(ctx, input)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, *dto.UpdateProfileRequest) *domain.User); ok {
-		r0 = rf(ctx, userID, req)
+	if rf, ok := ret.Get(0).(func(context.Context, domain.UpdateProfileInput) *domain.User); ok {
+		r0 = rf(ctx, input)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*domain.User)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, *dto.UpdateProfileRequest) error); ok {
-		r1 = rf(ctx, userID, req)
+	if rf, ok := ret.Get(1).(func(context.Context, domain.UpdateProfileInput) error); ok {
+		r1 = rf(ctx, input)
 	} else {
 		r1 = ret.Error(1)
 	}

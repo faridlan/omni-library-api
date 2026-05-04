@@ -8,6 +8,7 @@ var (
 	ErrConflict            = errors.New("data sudah ada (konflik)")
 	ErrBadParamInput       = errors.New("parameter atau format data tidak valid")
 	ErrLimitExceeded       = errors.New("kuota API eksternal habis")
+	ErrUnauthorized        = errors.New("akses tidak sah, token invalid atau expired")
 )
 
 // 2. CUSTOM ERROR STRUCT
