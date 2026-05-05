@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"errors"
 	"math"
 
 	"github.com/faridlan/omni-library-api/internal/domain"
@@ -19,33 +20,42 @@ func NewBookNoteUsecase(repo domain.BookNoteRepository, ubRepo domain.UserBookRe
 	}
 }
 
-func (u *bookNoteUsecase) AddNote(ctx context.Context, note *domain.BookNote) error {
+func (u *bookNoteUsecase) AddNote(ctx context.Context, input domain.CreateBookNoteInput) (*domain.BookNote, error) {
 
-	userBook, err := u.userBookRepo.GetByID(ctx, note.UserBookID)
+	_, err := u.userBookRepo.FindByID(ctx, input.UserBookID)
 	if err != nil {
-		return err
+		if errors.Is(err, domain.ErrNotFound) {
+			return nil, domain.NewError(domain.ErrNotFound, "Rak buku tidak ditemukan")
+		}
+		return nil, err
 	}
 
-	if userBook == nil {
-		return domain.ErrNotFound
+	newNote := &domain.BookNote{
+		UserBookID:    input.UserBookID,
+		Quote:         input.Quote,
+		PageReference: input.PageReference,
+		Tags:          input.Tags,
 	}
 
-	// Lanjut simpan ke database
-	return u.noteRepo.Create(ctx, note)
+	err = u.noteRepo.Create(ctx, newNote)
+	if err != nil {
+		return nil, domain.ErrInternalServerError
+	}
+
+	return newNote, nil
 }
 
 func (u *bookNoteUsecase) GetNotesForBook(ctx context.Context, userBookID string, params domain.PaginationQuery) ([]*domain.BookNote, domain.PaginationMeta, error) {
-	// Ambil semua catatan berdasarkan ID buku di rak user
 
-	userBook, err := u.userBookRepo.GetByID(ctx, userBookID)
+	_, err := u.userBookRepo.FindByID(ctx, userBookID)
 	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			return nil, domain.PaginationMeta{}, domain.NewError(domain.ErrNotFound, "Rak buku tidak ditemukan")
+		}
 		return nil, domain.PaginationMeta{}, err
 	}
-	if userBook == nil {
-		return nil, domain.PaginationMeta{}, domain.ErrNotFound // Berhenti di sini!
-	}
 
-	notes, totalItems, err := u.noteRepo.GetByUserBookID(ctx, userBookID, params)
+	notes, totalItems, err := u.noteRepo.FindAllByUserBookID(ctx, userBookID, params)
 	if err != nil {
 		return nil, domain.PaginationMeta{}, err
 	}
@@ -60,41 +70,39 @@ func (u *bookNoteUsecase) GetNotesForBook(ctx context.Context, userBookID string
 	}
 
 	return notes, meta, nil
-
 }
 
 func (u *bookNoteUsecase) DeleteNote(ctx context.Context, noteID string) error {
 
-	existing, err := u.noteRepo.GetByID(ctx, noteID)
+	_, err := u.noteRepo.FindByID(ctx, noteID)
 	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			return domain.NewError(domain.ErrNotFound, "Catatan tidak ditemukan")
+		}
 		return err
-	}
-	if existing == nil {
-		return domain.ErrNotFound
 	}
 
 	return u.noteRepo.Delete(ctx, noteID)
 }
 
-func (u *bookNoteUsecase) UpdateNote(ctx context.Context, note *domain.BookNote) (*domain.BookNote, error) {
+func (u *bookNoteUsecase) UpdateNote(ctx context.Context, input domain.UpdateBookNoteInput) (*domain.BookNote, error) {
 
-	existing, err := u.noteRepo.GetByID(ctx, note.ID)
+	existing, err := u.noteRepo.FindByID(ctx, input.ID)
 	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			return nil, domain.NewError(domain.ErrNotFound, "Catatan tidak ditemukan")
+		}
 		return nil, err
 	}
-	if existing == nil {
-		return nil, domain.ErrNotFound
-	}
 
-	existing.Quote = note.Quote
-	existing.PageReference = note.PageReference
-	existing.Tags = note.Tags
+	existing.Quote = input.Quote
+	existing.PageReference = input.PageReference
+	existing.Tags = input.Tags
 
 	err = u.noteRepo.Update(ctx, existing)
 	if err != nil {
-		return nil, err
+		return nil, domain.ErrInternalServerError
 	}
 
 	return existing, nil
-
 }

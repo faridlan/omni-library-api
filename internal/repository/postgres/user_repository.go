@@ -11,7 +11,6 @@ type userRepository struct {
 	db *gorm.DB
 }
 
-// NewUserRepository adalah constructor pembuat tangan repository
 func NewUserRepository(db *gorm.DB) domain.UserRepository {
 	return &userRepository{
 		db: db,
@@ -19,19 +18,51 @@ func NewUserRepository(db *gorm.DB) domain.UserRepository {
 }
 
 func (r *userRepository) Create(ctx context.Context, user *domain.User) error {
-	// 1. Ubah data murni (Domain) menjadi data siap-database (Model)
+
 	model := FromUserDomain(user)
 
-	// 2. Suruh GORM menyimpannya ke PostgreSQL
 	result := r.db.WithContext(ctx).Create(model)
 	if result.Error != nil {
 		return result.Error
 	}
 
-	// 3. Kembalikan ID dan waktu pembuatan yang dihasilkan oleh database ke Domain
 	user.ID = model.ID
 	user.CreatedAt = model.CreatedAt
 	user.UpdatedAt = model.UpdatedAt
 
+	return nil
+}
+
+func (r *userRepository) FindByEmail(ctx context.Context, email string) (*domain.User, error) {
+	var model UserModel
+	err := r.db.WithContext(ctx).Where("email = ?", email).First(&model).Error
+
+	if err != nil {
+		return nil, TranslateError(err)
+	}
+
+	return model.ToDomain(), nil
+}
+
+func (r *userRepository) FindByID(ctx context.Context, id string) (*domain.User, error) {
+	var model UserModel
+	err := r.db.WithContext(ctx).Where("id = ?", id).First(&model).Error
+
+	if err != nil {
+		return nil, TranslateError(err)
+	}
+
+	return model.ToDomain(), nil
+}
+
+func (r *userRepository) Update(ctx context.Context, user *domain.User) error {
+	model := FromUserDomain(user)
+
+	err := r.db.WithContext(ctx).Save(model).Error
+	if err != nil {
+		return err
+	}
+
+	user.UpdatedAt = model.UpdatedAt
 	return nil
 }

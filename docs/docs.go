@@ -1010,6 +1010,179 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/api/users/me": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Mengambil data profil pengguna yang sedang login berdasarkan token JWT",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Get current user profile",
+                "responses": {
+                    "200": {
+                        "description": "Berhasil mengambil profil",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-github_com_faridlan_omni-library-api_internal_delivery_http_dto_UserProfileResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized (Token tidak ada/salah)",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "User tidak ditemukan",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Memperbarui data profil (seperti nama) pengguna yang sedang login",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Update current user profile",
+                "parameters": [
+                    {
+                        "description": "Data profil yang ingin diupdate",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_delivery_http_dto.UpdateProfileRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Profil berhasil diperbarui",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-github_com_faridlan_omni-library-api_internal_delivery_http_dto_UserProfileResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request (Validasi gagal)",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "User tidak ditemukan",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/users/me/password": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Memperbarui kata sandi pengguna yang sedang login (membutuhkan kata sandi lama)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Update user password",
+                "parameters": [
+                    {
+                        "description": "Data kata sandi lama dan baru",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_delivery_http_dto.UpdatePasswordRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Password berhasil diperbarui",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-github_com_faridlan_omni-library-api_internal_delivery_http_dto_UserProfileResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request (Validasi gagal / Password lama salah)",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "User tidak ditemukan",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -1071,7 +1244,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "isbn": {
-                    "description": "Tidak wajib (karena buku indie kadang ga punya ISBN)",
                     "type": "string"
                 },
                 "page_count": {
@@ -1138,7 +1310,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "password": {
-                    "description": "Minimal 6 karakter agar aman",
                     "type": "string",
                     "minLength": 6
                 }
@@ -1184,6 +1355,38 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_faridlan_omni-library-api_internal_delivery_http_dto.UpdatePasswordRequest": {
+            "type": "object",
+            "required": [
+                "confirm_password",
+                "new_password",
+                "old_password"
+            ],
+            "properties": {
+                "confirm_password": {
+                    "type": "string"
+                },
+                "new_password": {
+                    "type": "string",
+                    "minLength": 6
+                },
+                "old_password": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_faridlan_omni-library-api_internal_delivery_http_dto.UpdateProfileRequest": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "minLength": 3
+                }
+            }
+        },
         "github_com_faridlan_omni-library-api_internal_delivery_http_dto.UpdateProgressRequest": {
             "type": "object",
             "properties": {
@@ -1201,11 +1404,33 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_faridlan_omni-library-api_internal_delivery_http_dto.UserProfileResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "role": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
         "github_com_faridlan_omni-library-api_internal_delivery_http_dto.UserResponse": {
             "type": "object",
             "properties": {
                 "created_at": {
-                    "description": "Format string agar mudah dibaca di JSON",
                     "type": "string"
                 },
                 "email": {
@@ -1241,7 +1466,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "id": {
-                    "description": "Menggunakan string untuk menampung UUID",
                     "type": "string"
                 },
                 "isbn": {
@@ -1277,7 +1501,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "tags": {
-                    "description": "Array murni Golang",
                     "type": "array",
                     "items": {
                         "type": "string"
@@ -1287,7 +1510,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "user_book_id": {
-                    "description": "Relasi ke buku di rak user",
                     "type": "string"
                 }
             }
@@ -1328,7 +1550,6 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "status": {
-                    "description": "'TO_READ', 'READING', 'FINISHED'",
                     "type": "string"
                 },
                 "updated_at": {
@@ -1343,12 +1564,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "book": {
-                    "description": "Informasi detail buku",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_domain.Book"
-                        }
-                    ]
+                    "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_domain.Book"
                 },
                 "book_id": {
                     "type": "string"
@@ -1366,7 +1582,6 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "status": {
-                    "description": "'TO_READ', 'READING', 'FINISHED'",
                     "type": "string"
                 },
                 "updated_at": {
@@ -1447,12 +1662,18 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "data": {
-                    "description": "omitempty: jika nil, key \"data\" tidak ditampilkan (opsional)",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_delivery_http_dto.TokenResponse"
-                        }
-                    ]
+                    "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_delivery_http_dto.TokenResponse"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-github_com_faridlan_omni-library-api_internal_delivery_http_dto_UserProfileResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_delivery_http_dto.UserProfileResponse"
                 },
                 "message": {
                     "type": "string"
@@ -1463,12 +1684,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "data": {
-                    "description": "omitempty: jika nil, key \"data\" tidak ditampilkan (opsional)",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_delivery_http_dto.UserResponse"
-                        }
-                    ]
+                    "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_delivery_http_dto.UserResponse"
                 },
                 "message": {
                     "type": "string"
@@ -1479,12 +1695,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "data": {
-                    "description": "omitempty: jika nil, key \"data\" tidak ditampilkan (opsional)",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_domain.Book"
-                        }
-                    ]
+                    "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_domain.Book"
                 },
                 "message": {
                     "type": "string"
@@ -1495,12 +1706,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "data": {
-                    "description": "omitempty: jika nil, key \"data\" tidak ditampilkan (opsional)",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_domain.BookNote"
-                        }
-                    ]
+                    "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_domain.BookNote"
                 },
                 "message": {
                     "type": "string"
@@ -1511,12 +1717,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "data": {
-                    "description": "omitempty: jika nil, key \"data\" tidak ditampilkan (opsional)",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_domain.UserBook"
-                        }
-                    ]
+                    "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_domain.UserBook"
                 },
                 "message": {
                     "type": "string"
@@ -1527,12 +1728,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "data": {
-                    "description": "omitempty: jika nil, key \"data\" tidak ditampilkan (opsional)",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_domain.UserBookWithMetadata"
-                        }
-                    ]
+                    "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_domain.UserBookWithMetadata"
                 },
                 "message": {
                     "type": "string"
@@ -1543,12 +1739,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "data": {
-                    "description": "omitempty: jika nil, key \"data\" tidak ditampilkan (opsional)",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.EmptyObj"
-                        }
-                    ]
+                    "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.EmptyObj"
                 },
                 "message": {
                     "type": "string"
@@ -1559,7 +1750,6 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "data": {
-                    "description": "omitempty: jika nil, key \"data\" tidak ditampilkan (opsional)",
                     "type": "string"
                 },
                 "message": {

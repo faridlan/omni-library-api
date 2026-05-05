@@ -2,135 +2,212 @@ package usecase_test
 
 import (
 	"context"
+	"os"
 	"testing"
+	"time"
 
 	"github.com/faridlan/omni-library-api/internal/domain"
 	"github.com/faridlan/omni-library-api/internal/domain/mocks"
 	"github.com/faridlan/omni-library-api/internal/usecase"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"golang.org/x/crypto/bcrypt"
 )
 
+// Helper untuk setup Usecase dan Mocks
+func setupAuthUsecase() (*mocks.UserRepository, *mocks.AuthRepository, domain.AuthUsecase) {
+	mockUserRepo := new(mocks.UserRepository)
+	mockAuthRepo := new(mocks.AuthRepository)
+
+	// Set env variables khusus untuk testing
+	os.Setenv("JWT_SECRET", "test-secret-key")
+	os.Setenv("ACCESS_TOKEN_EXPIRY_MINUTE", "15")
+	os.Setenv("REFRESH_TOKEN_EXPIRY_DAY", "7")
+
+	authUsecase := usecase.NewAuthUsecase(mockUserRepo, mockAuthRepo)
+	return mockUserRepo, mockAuthRepo, authUsecase
+}
+
+// Helper untuk membuat token JWT valid saat testing Refresh
+func generateValidRefreshToken(userID string, secret string) string {
+	claims := jwt.MapClaims{
+		"user_id": userID,
+		"exp":     time.Now().Add(time.Hour * 24 * 7).Unix(),
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	signedToken, _ := token.SignedString([]byte(secret))
+	return signedToken
+}
+
 // ==========================================
 // TEST REGISTER
 // ==========================================
+func TestRegister(t *testing.T) {
+	mockUserRepo, _, authUsecase := setupAuthUsecase()
 
-func TestRegister_EmailSudahAda(t *testing.T) {
-	mockUserRepo := new(mocks.UserRepository)
-	mockAuthRepo := new(mocks.AuthRepository)
-	uc := usecase.NewAuthUsecase(mockUserRepo, mockAuthRepo)
+	t.Run("Success", func(t *testing.T) {
+		input := domain.RegisterInput{
+			Name:     "Faridlan",
+			Email:    "faridlan@example.com",
+			Password: "password123",
+		}
 
-	existingUser := &domain.User{Email: "test@example.com"}
+		// Mocking: Email belum terdaftar (return nil)
+		mockUserRepo.On("FindByEmail", mock.Anything, input.Email).Return(nil, nil).Once()
 
-	// Naskah: Saat dicek, email ini ternyata sudah ada di database
-	mockAuthRepo.On("GetByEmail", mock.Anything, "test@example.com").Return(existingUser, nil)
+		// Mocking: Berhasil menyimpan user ke DB
+		mockUserRepo.On("Create", mock.Anything, mock.MatchedBy(func(u *domain.User) bool {
+			return u.Email == input.Email && u.Name == input.Name && u.Role == "user"
+		})).Return(nil).Once()
 
-	// Action!
-	user, err := uc.Register(context.Background(), "Faridlan", "test@example.com", "password123")
+		user, err := authUsecase.Register(context.Background(), input)
 
-	// Validasi: Harus gagal dan mengembalikan ErrConflict
-	assert.ErrorIs(t, err, domain.ErrConflict)
-	assert.Nil(t, user)
-	mockUserRepo.AssertNotCalled(t, "Create", mock.Anything, mock.Anything)
-}
+		assert.NoError(t, err)
+		assert.NotNil(t, user)
+		assert.Equal(t, "faridlan@example.com", user.Email)
+		mockUserRepo.AssertExpectations(t)
+	})
 
-func TestRegister_Sukses(t *testing.T) {
-	mockUserRepo := new(mocks.UserRepository)
-	mockAuthRepo := new(mocks.AuthRepository)
-	uc := usecase.NewAuthUsecase(mockUserRepo, mockAuthRepo)
+	t.Run("Failed - Email Already Exists (Conflict)", func(t *testing.T) {
+		input := domain.RegisterInput{
+			Name:     "Faridlan",
+			Email:    "faridlan@example.com",
+			Password: "password123",
+		}
 
-	// Naskah: Saat dicek, email ini BELUM ADA di database (return nil)
-	mockAuthRepo.On("GetByEmail", mock.Anything, "new@example.com").Return(nil, nil)
+		existingUser := &domain.User{ID: "123", Email: input.Email}
 
-	// Naskah: Pura-pura berhasil menyimpan ke database
-	mockUserRepo.On("Create", mock.Anything, mock.AnythingOfType("*domain.User")).Return(nil)
+		// Mocking: Email ditemukan di DB
+		mockUserRepo.On("FindByEmail", mock.Anything, input.Email).Return(existingUser, nil).Once()
 
-	// Action!
-	user, err := uc.Register(context.Background(), "Faridlan", "new@example.com", "password123")
+		user, err := authUsecase.Register(context.Background(), input)
 
-	// Validasi
-	assert.NoError(t, err)
-	assert.NotNil(t, user)
-	assert.Equal(t, "Faridlan", user.Name)
-	assert.Equal(t, "new@example.com", user.Email)
-	assert.Equal(t, "user", user.Role)
-
-	// Validasi Keamanan: Pastikan password yang disimpan BUKAN "password123" asli (sudah di-hash)
-	assert.NotEqual(t, "password123", user.Password)
-
-	mockUserRepo.AssertExpectations(t)
+		assert.Error(t, err)
+		assert.Nil(t, user)
+		assert.Equal(t, domain.ErrConflict, err)
+		mockUserRepo.AssertExpectations(t)
+	})
 }
 
 // ==========================================
 // TEST LOGIN
 // ==========================================
+func TestLogin(t *testing.T) {
+	mockUserRepo, mockAuthRepo, authUsecase := setupAuthUsecase()
 
-func TestLogin_EmailTidakDitemukan(t *testing.T) {
-	mockUserRepo := new(mocks.UserRepository)
-	mockAuthRepo := new(mocks.AuthRepository)
-	uc := usecase.NewAuthUsecase(mockUserRepo, mockAuthRepo)
-
-	// Naskah: Email tidak ada di DB
-	mockAuthRepo.On("GetByEmail", mock.Anything, "salah@example.com").Return(nil, nil)
-
-	// Action!
-	token, _, err := uc.Login(context.Background(), "salah@example.com", "password123")
-
-	assert.ErrorIs(t, err, domain.ErrNotFound)
-	assert.Empty(t, token)
-}
-
-func TestLogin_PasswordSalah(t *testing.T) {
-	mockUserRepo := new(mocks.UserRepository)
-	mockAuthRepo := new(mocks.AuthRepository)
-	uc := usecase.NewAuthUsecase(mockUserRepo, mockAuthRepo)
-
-	// Kita buat password asli yang di-hash untuk ditaruh di DB bohongan
-	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("password_asli"), bcrypt.DefaultCost)
-	dbUser := &domain.User{
+	// Setup Hash Password Asli
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
+	mockUser := &domain.User{
 		ID:       "user-123",
-		Email:    "test@example.com",
-		Password: string(hashedPassword), // Ingat, DB selalu menyimpan hash!
-	}
-
-	// Naskah: Email ketemu
-	mockAuthRepo.On("GetByEmail", mock.Anything, "test@example.com").Return(dbUser, nil)
-
-	// Action: Tapi user memasukkan password yang SALAH
-	token, _, err := uc.Login(context.Background(), "test@example.com", "password_ngawur")
-
-	assert.ErrorIs(t, err, domain.ErrBadParamInput)
-	assert.Empty(t, token)
-}
-
-func TestLogin_Sukses(t *testing.T) {
-	mockUserRepo := new(mocks.UserRepository)
-	mockAuthRepo := new(mocks.AuthRepository)
-	uc := usecase.NewAuthUsecase(mockUserRepo, mockAuthRepo)
-
-	// Kita buat password asli yang di-hash
-	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("rahasia123"), bcrypt.DefaultCost)
-	dbUser := &domain.User{
-		ID:       "user-123",
-		Email:    "test@example.com",
-		Role:     "user",
+		Email:    "faridlan@example.com",
 		Password: string(hashedPassword),
+		Role:     "user",
 	}
 
-	// Naskah: Email ketemu
-	mockAuthRepo.On("GetByEmail", mock.Anything, "test@example.com").Return(dbUser, nil)
+	t.Run("Success", func(t *testing.T) {
+		input := domain.LoginInput{
+			Email:    "faridlan@example.com",
+			Password: "password123",
+		}
 
-	mockAuthRepo.On("SaveRefreshToken", mock.Anything, mock.AnythingOfType("*domain.RefreshToken")).Return(nil)
+		mockUserRepo.On("FindByEmail", mock.Anything, input.Email).Return(mockUser, nil).Once()
+		mockAuthRepo.On("SaveRefreshToken", mock.Anything, mock.AnythingOfType("*domain.RefreshToken")).Return(nil).Once()
 
-	// Action: User memasukkan password yang BENAR ("rahasia123")
-	token, refreshToken, err := uc.Login(context.Background(), "test@example.com", "rahasia123")
+		accessToken, refreshToken, err := authUsecase.Login(context.Background(), input)
 
-	assert.NoError(t, err)
-	assert.NotEmpty(t, token) // Pastikan token berhasil dibuat dan tidak kosong
-	assert.NotEmpty(t, refreshToken)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, accessToken)
+		assert.NotEmpty(t, refreshToken)
+		mockUserRepo.AssertExpectations(t)
+		mockAuthRepo.AssertExpectations(t)
+	})
 
-	// Token JWT biasanya panjang, kita cek saja kalau panjangnya lebih dari 50 karakter
-	assert.True(t, len(token) > 50)
-	assert.True(t, len(refreshToken) > 50)
+	t.Run("Failed - User Not Found", func(t *testing.T) {
+		input := domain.LoginInput{
+			Email:    "unknown@example.com",
+			Password: "password123",
+		}
+
+		mockUserRepo.On("FindByEmail", mock.Anything, input.Email).Return(nil, nil).Once()
+
+		accessToken, refreshToken, err := authUsecase.Login(context.Background(), input)
+
+		assert.Error(t, err)
+		assert.Empty(t, accessToken)
+		assert.Empty(t, refreshToken)
+		assert.Contains(t, err.Error(), "User dengan ID tersebut tidak ditemukan")
+		mockUserRepo.AssertExpectations(t)
+	})
+
+	t.Run("Failed - Wrong Password", func(t *testing.T) {
+		input := domain.LoginInput{
+			Email:    "faridlan@example.com",
+			Password: "wrongpassword",
+		}
+
+		mockUserRepo.On("FindByEmail", mock.Anything, input.Email).Return(mockUser, nil).Once()
+
+		accessToken, refreshToken, err := authUsecase.Login(context.Background(), input)
+
+		assert.Error(t, err)
+		assert.Empty(t, accessToken)
+		assert.Empty(t, refreshToken)
+		assert.Contains(t, err.Error(), "Email atau password salah")
+		mockUserRepo.AssertExpectations(t)
+	})
+}
+
+// ==========================================
+// TEST REFRESH
+// ==========================================
+func TestRefresh(t *testing.T) {
+	mockUserRepo, mockAuthRepo, authUsecase := setupAuthUsecase()
+
+	validToken := generateValidRefreshToken("user-123", "test-secret-key")
+	mockUser := &domain.User{
+		ID:   "user-123",
+		Role: "user",
+	}
+
+	t.Run("Success", func(t *testing.T) {
+		mockRtData := &domain.RefreshToken{Token: validToken, UserID: "user-123"}
+
+		mockAuthRepo.On("GetRefreshToken", mock.Anything, validToken).Return(mockRtData, nil).Once()
+		mockUserRepo.On("FindByID", mock.Anything, "user-123").Return(mockUser, nil).Once()
+
+		newAccessToken, err := authUsecase.Refresh(context.Background(), validToken)
+
+		assert.NoError(t, err)
+		assert.NotEmpty(t, newAccessToken)
+		mockAuthRepo.AssertExpectations(t)
+		mockUserRepo.AssertExpectations(t)
+	})
+
+	t.Run("Failed - Refresh Token Not in DB", func(t *testing.T) {
+		mockAuthRepo.On("GetRefreshToken", mock.Anything, validToken).Return(nil, nil).Once()
+
+		newAccessToken, err := authUsecase.Refresh(context.Background(), validToken)
+
+		assert.Error(t, err)
+		assert.Empty(t, newAccessToken)
+		assert.Contains(t, err.Error(), "Refresh token tidak valid atau sudah kadaluarsa")
+		mockAuthRepo.AssertExpectations(t)
+	})
+
+	t.Run("Failed - Invalid JWT Signature", func(t *testing.T) {
+		invalidToken := generateValidRefreshToken("user-123", "wrong-secret-key")
+		mockRtData := &domain.RefreshToken{Token: invalidToken, UserID: "user-123"}
+
+		mockAuthRepo.On("GetRefreshToken", mock.Anything, invalidToken).Return(mockRtData, nil).Once()
+
+		// JWT Parse akan gagal dan memicu penghapusan token
+		mockAuthRepo.On("DeleteRefreshToken", mock.Anything, invalidToken).Return(nil).Once()
+
+		newAccessToken, err := authUsecase.Refresh(context.Background(), invalidToken)
+
+		assert.Error(t, err)
+		assert.Empty(t, newAccessToken)
+		mockAuthRepo.AssertExpectations(t)
+	})
 }

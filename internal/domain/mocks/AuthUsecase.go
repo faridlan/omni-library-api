@@ -14,9 +14,9 @@ type AuthUsecase struct {
 	mock.Mock
 }
 
-// Login provides a mock function with given fields: ctx, email, password
-func (_m *AuthUsecase) Login(ctx context.Context, email string, password string) (string, string, error) {
-	ret := _m.Called(ctx, email, password)
+// Login provides a mock function with given fields: ctx, input
+func (_m *AuthUsecase) Login(ctx context.Context, input domain.LoginInput) (string, string, error) {
+	ret := _m.Called(ctx, input)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Login")
@@ -25,23 +25,23 @@ func (_m *AuthUsecase) Login(ctx context.Context, email string, password string)
 	var r0 string
 	var r1 string
 	var r2 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) (string, string, error)); ok {
-		return rf(ctx, email, password)
+	if rf, ok := ret.Get(0).(func(context.Context, domain.LoginInput) (string, string, error)); ok {
+		return rf(ctx, input)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) string); ok {
-		r0 = rf(ctx, email, password)
+	if rf, ok := ret.Get(0).(func(context.Context, domain.LoginInput) string); ok {
+		r0 = rf(ctx, input)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) string); ok {
-		r1 = rf(ctx, email, password)
+	if rf, ok := ret.Get(1).(func(context.Context, domain.LoginInput) string); ok {
+		r1 = rf(ctx, input)
 	} else {
 		r1 = ret.Get(1).(string)
 	}
 
-	if rf, ok := ret.Get(2).(func(context.Context, string, string) error); ok {
-		r2 = rf(ctx, email, password)
+	if rf, ok := ret.Get(2).(func(context.Context, domain.LoginInput) error); ok {
+		r2 = rf(ctx, input)
 	} else {
 		r2 = ret.Error(2)
 	}
@@ -77,9 +77,9 @@ func (_m *AuthUsecase) Refresh(ctx context.Context, tokenString string) (string,
 	return r0, r1
 }
 
-// Register provides a mock function with given fields: ctx, name, email, password
-func (_m *AuthUsecase) Register(ctx context.Context, name string, email string, password string) (*domain.User, error) {
-	ret := _m.Called(ctx, name, email, password)
+// Register provides a mock function with given fields: ctx, input
+func (_m *AuthUsecase) Register(ctx context.Context, input domain.RegisterInput) (*domain.User, error) {
+	ret := _m.Called(ctx, input)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Register")
@@ -87,19 +87,19 @@ func (_m *AuthUsecase) Register(ctx context.Context, name string, email string, 
 
 	var r0 *domain.User
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) (*domain.User, error)); ok {
-		return rf(ctx, name, email, password)
+	if rf, ok := ret.Get(0).(func(context.Context, domain.RegisterInput) (*domain.User, error)); ok {
+		return rf(ctx, input)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *domain.User); ok {
-		r0 = rf(ctx, name, email, password)
+	if rf, ok := ret.Get(0).(func(context.Context, domain.RegisterInput) *domain.User); ok {
+		r0 = rf(ctx, input)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*domain.User)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
-		r1 = rf(ctx, name, email, password)
+	if rf, ok := ret.Get(1).(func(context.Context, domain.RegisterInput) error); ok {
+		r1 = rf(ctx, input)
 	} else {
 		r1 = ret.Error(1)
 	}

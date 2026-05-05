@@ -37,7 +37,6 @@ definitions:
       description:
         type: string
       isbn:
-        description: Tidak wajib (karena buku indie kadang ga punya ISBN)
         type: string
       page_count:
         type: integer
@@ -81,7 +80,6 @@ definitions:
       name:
         type: string
       password:
-        description: Minimal 6 karakter agar aman
         minLength: 6
         type: string
     required:
@@ -116,6 +114,28 @@ definitions:
     required:
     - quote
     type: object
+  github_com_faridlan_omni-library-api_internal_delivery_http_dto.UpdatePasswordRequest:
+    properties:
+      confirm_password:
+        type: string
+      new_password:
+        minLength: 6
+        type: string
+      old_password:
+        type: string
+    required:
+    - confirm_password
+    - new_password
+    - old_password
+    type: object
+  github_com_faridlan_omni-library-api_internal_delivery_http_dto.UpdateProfileRequest:
+    properties:
+      name:
+        minLength: 3
+        type: string
+    required:
+    - name
+    type: object
   github_com_faridlan_omni-library-api_internal_delivery_http_dto.UpdateProgressRequest:
     properties:
       current_page:
@@ -128,10 +148,24 @@ definitions:
         example: READING
         type: string
     type: object
+  github_com_faridlan_omni-library-api_internal_delivery_http_dto.UserProfileResponse:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      role:
+        type: string
+      updated_at:
+        type: string
+    type: object
   github_com_faridlan_omni-library-api_internal_delivery_http_dto.UserResponse:
     properties:
       created_at:
-        description: Format string agar mudah dibaca di JSON
         type: string
       email:
         type: string
@@ -155,7 +189,6 @@ definitions:
       description:
         type: string
       id:
-        description: Menggunakan string untuk menampung UUID
         type: string
       isbn:
         type: string
@@ -179,14 +212,12 @@ definitions:
       quote:
         type: string
       tags:
-        description: Array murni Golang
         items:
           type: string
         type: array
       updated_at:
         type: string
       user_book_id:
-        description: Relasi ke buku di rak user
         type: string
     type: object
   github_com_faridlan_omni-library-api_internal_domain.PaginationMeta:
@@ -213,7 +244,6 @@ definitions:
       rating:
         type: integer
       status:
-        description: '''TO_READ'', ''READING'', ''FINISHED'''
         type: string
       updated_at:
         type: string
@@ -223,9 +253,7 @@ definitions:
   github_com_faridlan_omni-library-api_internal_domain.UserBookWithMetadata:
     properties:
       book:
-        allOf:
-        - $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_domain.Book'
-        description: Informasi detail buku
+        $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_domain.Book'
       book_id:
         type: string
       created_at:
@@ -237,7 +265,6 @@ definitions:
       rating:
         type: integer
       status:
-        description: '''TO_READ'', ''READING'', ''FINISHED'''
         type: string
       updated_at:
         type: string
@@ -290,70 +317,62 @@ definitions:
   ? github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-github_com_faridlan_omni-library-api_internal_delivery_http_dto_TokenResponse
   : properties:
       data:
-        allOf:
-        - $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_delivery_http_dto.TokenResponse'
-        description: 'omitempty: jika nil, key "data" tidak ditampilkan (opsional)'
+        $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_delivery_http_dto.TokenResponse'
+      message:
+        type: string
+    type: object
+  ? github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-github_com_faridlan_omni-library-api_internal_delivery_http_dto_UserProfileResponse
+  : properties:
+      data:
+        $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_delivery_http_dto.UserProfileResponse'
       message:
         type: string
     type: object
   ? github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-github_com_faridlan_omni-library-api_internal_delivery_http_dto_UserResponse
   : properties:
       data:
-        allOf:
-        - $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_delivery_http_dto.UserResponse'
-        description: 'omitempty: jika nil, key "data" tidak ditampilkan (opsional)'
+        $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_delivery_http_dto.UserResponse'
       message:
         type: string
     type: object
   github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-github_com_faridlan_omni-library-api_internal_domain_Book:
     properties:
       data:
-        allOf:
-        - $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_domain.Book'
-        description: 'omitempty: jika nil, key "data" tidak ditampilkan (opsional)'
+        $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_domain.Book'
       message:
         type: string
     type: object
   ? github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-github_com_faridlan_omni-library-api_internal_domain_BookNote
   : properties:
       data:
-        allOf:
-        - $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_domain.BookNote'
-        description: 'omitempty: jika nil, key "data" tidak ditampilkan (opsional)'
+        $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_domain.BookNote'
       message:
         type: string
     type: object
   ? github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-github_com_faridlan_omni-library-api_internal_domain_UserBook
   : properties:
       data:
-        allOf:
-        - $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_domain.UserBook'
-        description: 'omitempty: jika nil, key "data" tidak ditampilkan (opsional)'
+        $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_domain.UserBook'
       message:
         type: string
     type: object
   ? github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-github_com_faridlan_omni-library-api_internal_domain_UserBookWithMetadata
   : properties:
       data:
-        allOf:
-        - $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_domain.UserBookWithMetadata'
-        description: 'omitempty: jika nil, key "data" tidak ditampilkan (opsional)'
+        $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_domain.UserBookWithMetadata'
       message:
         type: string
     type: object
   github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-github_com_faridlan_omni-library-api_internal_utils_EmptyObj:
     properties:
       data:
-        allOf:
-        - $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.EmptyObj'
-        description: 'omitempty: jika nil, key "data" tidak ditampilkan (opsional)'
+        $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.EmptyObj'
       message:
         type: string
     type: object
   github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-string:
     properties:
       data:
-        description: 'omitempty: jika nil, key "data" tidak ditampilkan (opsional)'
         type: string
       message:
         type: string
@@ -1017,6 +1036,117 @@ paths:
       summary: Perbarui Catatan Buku
       tags:
       - Book Notes
+  /api/users/me:
+    get:
+      consumes:
+      - application/json
+      description: Mengambil data profil pengguna yang sedang login berdasarkan token
+        JWT
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Berhasil mengambil profil
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-github_com_faridlan_omni-library-api_internal_delivery_http_dto_UserProfileResponse'
+        "401":
+          description: Unauthorized (Token tidak ada/salah)
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+        "404":
+          description: User tidak ditemukan
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get current user profile
+      tags:
+      - users
+    put:
+      consumes:
+      - application/json
+      description: Memperbarui data profil (seperti nama) pengguna yang sedang login
+      parameters:
+      - description: Data profil yang ingin diupdate
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_delivery_http_dto.UpdateProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Profil berhasil diperbarui
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-github_com_faridlan_omni-library-api_internal_delivery_http_dto_UserProfileResponse'
+        "400":
+          description: Bad Request (Validasi gagal)
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+        "404":
+          description: User tidak ditemukan
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update current user profile
+      tags:
+      - users
+  /api/users/me/password:
+    put:
+      consumes:
+      - application/json
+      description: Memperbarui kata sandi pengguna yang sedang login (membutuhkan
+        kata sandi lama)
+      parameters:
+      - description: Data kata sandi lama dan baru
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_delivery_http_dto.UpdatePasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Password berhasil diperbarui
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-github_com_faridlan_omni-library-api_internal_delivery_http_dto_UserProfileResponse'
+        "400":
+          description: Bad Request (Validasi gagal / Password lama salah)
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+        "404":
+          description: User tidak ditemukan
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+      security:
+      - BearerAuth: []
+      - BearerAuth: []
+      summary: Update user password
+      tags:
+      - users
 securityDefinitions:
   BearerAuth:
     description: 'Masukkan token dengan format: Bearer {token}'

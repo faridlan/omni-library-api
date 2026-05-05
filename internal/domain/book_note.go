@@ -5,34 +5,41 @@ import (
 	"time"
 )
 
-// ==========================================
-// 1. ENTITY
-// ==========================================
 type BookNote struct {
-	ID            string    `json:"id"`
-	UserBookID    string    `json:"user_book_id"` // Relasi ke buku di rak user
-	Quote         string    `json:"quote"`
-	PageReference int       `json:"page_reference"`
-	Tags          []string  `json:"tags"` // Array murni Golang
-	CreatedAt     time.Time `json:"created_at"`
-	UpdatedAt     time.Time `json:"updated_at"`
+	ID            string
+	UserBookID    string
+	Quote         string
+	PageReference int
+	Tags          []string
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
 }
 
-// ==========================================
-// 2. INTERFACES
-// ==========================================
+type CreateBookNoteInput struct {
+	UserBookID    string
+	Quote         string
+	PageReference int
+	Tags          []string
+}
+
+type UpdateBookNoteInput struct {
+	ID            string
+	Quote         string
+	PageReference int
+	Tags          []string
+}
+
 type BookNoteRepository interface {
 	Create(ctx context.Context, note *BookNote) error
-	// Mengambil semua catatan dari satu buku tertentu di rak
-	GetByUserBookID(ctx context.Context, userBookID string, params PaginationQuery) ([]*BookNote, int64, error)
-	GetByID(ctx context.Context, noteID string) (*BookNote, error)
-	Delete(ctx context.Context, noteID string) error
+	FindAllByUserBookID(ctx context.Context, userBookID string, params PaginationQuery) ([]*BookNote, int64, error)
+	FindByID(ctx context.Context, noteID string) (*BookNote, error)
 	Update(ctx context.Context, note *BookNote) error
+	Delete(ctx context.Context, noteID string) error
 }
 
 type BookNoteUsecase interface {
-	AddNote(ctx context.Context, note *BookNote) error
+	AddNote(ctx context.Context, input CreateBookNoteInput) (*BookNote, error)
 	GetNotesForBook(ctx context.Context, userBookID string, params PaginationQuery) ([]*BookNote, PaginationMeta, error)
+	UpdateNote(ctx context.Context, input UpdateBookNoteInput) (*BookNote, error)
 	DeleteNote(ctx context.Context, noteID string) error
-	UpdateNote(ctx context.Context, note *BookNote) (*BookNote, error)
 }

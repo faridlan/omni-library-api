@@ -2,18 +2,17 @@ package usecase
 
 import (
 	"context"
+	"errors"
 	"math"
 
 	"github.com/faridlan/omni-library-api/internal/domain"
 )
 
-// bookUsecase adalah implementasi dari domain.BookUsecase
 type bookUsecase struct {
 	bookRepo domain.BookRepository
 	fetcher  domain.BookMetadataFetcher
 }
 
-// NewBookUsecase menginjeksi repository dan fetcher ke dalam usecase
 func NewBookUsecase(repo domain.BookRepository, fetcher domain.BookMetadataFetcher) domain.BookUsecase {
 	return &bookUsecase{
 		bookRepo: repo,
@@ -21,55 +20,40 @@ func NewBookUsecase(repo domain.BookRepository, fetcher domain.BookMetadataFetch
 	}
 }
 
-// FetchAndSaveMetadata adalah fitur utama kita malam ini
 func (u *bookUsecase) FetchAndSaveMetadata(ctx context.Context, isbn string) (*domain.Book, error) {
-	// ATURAN BISNIS 1: Cek apakah buku sudah ada di database lokal kita?
-	// Ini penerapan efisiensi agar kita tidak buang-buang kuota API eksternal
-	existingBook, err := u.bookRepo.GetByISBN(ctx, isbn)
-	if err != nil {
-		return nil, err // Return error jika database sedang bermasalah
+
+	if existingBook, err := u.bookRepo.GetByISBN(ctx, isbn); err != nil && !errors.Is(err, domain.ErrNotFound) {
+		return nil, err
+	} else if existingBook != nil {
+		return nil, domain.NewError(domain.ErrConflict, "Buku dengan ISBN tersebut sudah ada di sistem")
 	}
 
-	// Jika buku sudah ada, langsung kembalikan data dari database lokal
-	if existingBook != nil {
-		return existingBook, nil
-	}
-
-	// ATURAN BISNIS 2: Buku tidak ada di lokal. Saatnya minta tolong fetcher cari di internet
 	newBook, err := u.fetcher.FetchByISBN(ctx, isbn)
 	if err != nil {
-		return nil, err // Error saat koneksi ke Google Books
+		return nil, err
 	}
 
-	// Jika Google Books tidak punya bukunya
 	if newBook == nil {
-		return nil, domain.ErrNotFound
+		return nil, domain.NewError(domain.ErrNotFound, "Buku dengan ISBN tersebut tidak ditemukan")
 	}
 
-	// ATURAN BISNIS 3: Buku ditemukan di internet! Simpan ke database lokal kita
 	err = u.bookRepo.Create(ctx, newBook)
 	if err != nil {
-		return nil, err // Gagal menyimpan ke database
+		return nil, err
 	}
 
-	// Berhasil! Kembalikan buku yang baru saja disimpan
 	return newBook, nil
 }
 
-// GetAllBooks mengambil seluruh katalog buku dari database dengan Pagination
 func (u *bookUsecase) GetAllBooks(ctx context.Context, params domain.PaginationQuery) ([]*domain.Book, domain.PaginationMeta, error) {
 
-	// 1. Panggil Repository untuk ambil buku dan total angkanya
 	books, totalItems, err := u.bookRepo.GetAll(ctx, params)
 	if err != nil {
 		return nil, domain.PaginationMeta{}, err
 	}
 
-	// 2. Hitung Total Halaman (Misal: 25 Buku, Limit 10 -> Total Halaman = 3)
-	// Kita gunakan math.Ceil untuk membulatkan ke atas (2.5 -> 3.0)
 	totalPages := int(math.Ceil(float64(totalItems) / float64(params.Limit)))
 
-	// 3. Susun Metadata
 	meta := domain.PaginationMeta{
 		CurrentPage: params.Page,
 		Limit:       params.Limit,
@@ -83,55 +67,61 @@ func (u *bookUsecase) GetAllBooks(ctx context.Context, params domain.PaginationQ
 func (u *bookUsecase) GetBookByID(ctx context.Context, id string) (*domain.Book, error) {
 	book, err := u.bookRepo.GetByID(ctx, id)
 	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			return nil, domain.NewError(domain.ErrNotFound, "Buku dengan ID tersebut tidak ditemukan")
+		}
 		return nil, err
-	}
-	if book == nil {
-		return nil, domain.ErrNotFound
 	}
 	return book, nil
 }
 
-func (u *bookUsecase) CreateManual(ctx context.Context, book *domain.Book) (*domain.Book, error) {
-	// 1. Cek apakah ISBN sudah dipakai (Jika Admin mengisi ISBN)
-	if book.ISBN != "" {
-		existing, _ := u.bookRepo.GetByISBN(ctx, book.ISBN)
-		if existing != nil {
-			return nil, domain.ErrConflict
+func (u *bookUsecase) CreateManual(ctx context.Context, input domain.CreateBookInput) (*domain.Book, error) {
+
+	if input.ISBN != "" {
+		if existing, err := u.bookRepo.GetByISBN(ctx, input.ISBN); err != nil && !errors.Is(err, domain.ErrNotFound) {
+			return nil, err
+		} else if existing != nil {
+			return nil, domain.NewError(domain.ErrConflict, "Buku dengan ISBN tersebut sudah terdaftar")
 		}
 	}
 
-	// 2. Simpan ke database
-	err := u.bookRepo.Create(ctx, book)
+	bookInput := &domain.Book{
+		ISBN:          input.ISBN,
+		Title:         input.Title,
+		Authors:       input.Authors,
+		PublishedDate: input.PublishedDate,
+		Description:   input.Description,
+		PageCount:     input.PageCount,
+		CoverURL:      input.CoverURL,
+	}
+
+	err := u.bookRepo.Create(ctx, bookInput)
 	if err != nil {
 		return nil, err
 	}
 
-	return book, nil
+	return bookInput, nil
 }
 
-// Update Buku
-func (u *bookUsecase) UpdateBook(ctx context.Context, id string, req *domain.Book) (*domain.Book, error) {
-	// 1. Pastikan bukunya ada di database
-	existing, err := u.bookRepo.GetByID(ctx, id)
+func (u *bookUsecase) UpdateBook(ctx context.Context, input domain.UpdateBookInput) (*domain.Book, error) {
+
+	existing, err := u.bookRepo.GetByID(ctx, input.ID)
 	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			return nil, domain.NewError(domain.ErrNotFound, "Buku dengan ID tersebut tidak ditemukan")
+		}
 		return nil, err
 	}
-	if existing == nil {
-		return nil, domain.ErrNotFound
+
+	existing.Title = input.Title
+	existing.Authors = input.Authors
+	existing.Description = input.Description
+	existing.PageCount = input.PageCount
+	existing.CoverURL = input.CoverURL
+	if input.ISBN != "" {
+		existing.ISBN = input.ISBN
 	}
 
-	// 2. Timpa data lama dengan data baru
-	existing.Title = req.Title
-	existing.Authors = req.Authors
-	existing.Description = req.Description
-	existing.PageCount = req.PageCount
-	existing.CoverURL = req.CoverURL
-	if req.ISBN != "" {
-		existing.ISBN = req.ISBN
-	}
-	// (Tambahkan field lain jika perlu)
-
-	// 3. Simpan perubahan
 	err = u.bookRepo.Update(ctx, existing)
 	if err != nil {
 		return nil, err
@@ -140,17 +130,14 @@ func (u *bookUsecase) UpdateBook(ctx context.Context, id string, req *domain.Boo
 	return existing, nil
 }
 
-// Delete Buku
 func (u *bookUsecase) DeleteBook(ctx context.Context, id string) error {
-	// 1. Pastikan bukunya ada
-	existing, err := u.bookRepo.GetByID(ctx, id)
+	_, err := u.bookRepo.GetByID(ctx, id)
 	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			return domain.NewError(domain.ErrNotFound, "Buku dengan ID tersebut tidak ditemukan")
+		}
 		return err
 	}
-	if existing == nil {
-		return domain.ErrNotFound
-	}
 
-	// 2. Eksekusi hapus
 	return u.bookRepo.Delete(ctx, id)
 }

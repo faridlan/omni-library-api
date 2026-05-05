@@ -6,7 +6,6 @@ import (
 	"github.com/faridlan/omni-library-api/internal/domain"
 )
 
-// DAO Khusus Database
 type UserBookModel struct {
 	ID          string `gorm:"primaryKey;type:uuid;default:uuid_generate_v4()"`
 	UserID      string `gorm:"type:uuid;not null"`

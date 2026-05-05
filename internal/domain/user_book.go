@@ -5,49 +5,44 @@ import (
 	"time"
 )
 
-// ==========================================
-// 1. ENTITY
-// ==========================================
 type UserBook struct {
-	ID          string    `json:"id"`
-	UserID      string    `json:"user_id"`
-	BookID      string    `json:"book_id"`
-	Status      string    `json:"status"` // 'TO_READ', 'READING', 'FINISHED'
-	CurrentPage int       `json:"current_page"`
-	Rating      int       `json:"rating"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	ID          string
+	UserID      string
+	BookID      string
+	Status      string
+	CurrentPage int
+	Rating      int
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 }
 
 type UserBookWithMetadata struct {
 	UserBook
-	Book Book `json:"book"` // Informasi detail buku
+	Book Book `json:"book"`
 }
 
-// ==========================================
-// 2. INTERFACES
-// ==========================================
+type UpdateUserBookInput struct {
+	ID     string
+	UserID string
+	BookID string
+	Status string
+	Page   int
+	Rating int
+}
+
 type UserBookRepository interface {
-	// Menambahkan buku ke rak pribadi
 	AddBookToShelf(ctx context.Context, ub *UserBook) error
-
-	// Mengupdate progress bacaan (halaman atau status)
 	UpdateProgress(ctx context.Context, ub *UserBook) error
-
-	// Mengecek apakah buku sudah ada di rak user
-	GetByUserAndBookID(ctx context.Context, userID, bookID string) (*UserBookWithMetadata, error)
-	GetByUserID(ctx context.Context, userID string, status string, params PaginationQuery) ([]*UserBookWithMetadata, int64, error)
-	GetByID(ctx context.Context, id string) (*UserBook, error)
+	GetDetailByID(ctx context.Context, userID, userBookID string) (*UserBookWithMetadata, error)
+	FindAllByUserID(ctx context.Context, userID string, status string, params PaginationQuery) ([]*UserBookWithMetadata, int64, error)
+	FindByID(ctx context.Context, id string) (*UserBook, error)
+	FindByUserIDAndBookID(ctx context.Context, userID, bookID string) (*UserBookWithMetadata, error)
 	Delete(ctx context.Context, userID, bookID string) error
-	GetByBookID(ctx context.Context, userID, bookID string) (*UserBookWithMetadata, error)
 }
 
 type UserBookUsecase interface {
-	// Fitur: User ingin memasukkan buku ke raknya (default status: TO_READ)
 	TrackNewBook(ctx context.Context, userID, bookID string) (*UserBook, error)
-
-	// Fitur: User ingin mengupdate dia sampai halaman berapa / kasih rating
-	UpdateReadingStatus(ctx context.Context, userID, bookID, status string, page, rating int) (*UserBook, error)
+	UpdateReadingStatus(ctx context.Context, input UpdateUserBookInput) (*UserBook, error)
 	GetUserLibrary(ctx context.Context, userID string, status string, params PaginationQuery) ([]*UserBookWithMetadata, PaginationMeta, error)
 	GetUserBookDetail(ctx context.Context, userID, bookID string) (*UserBookWithMetadata, error)
 	DeleteBookFromShelf(ctx context.Context, userID, bookID string) error

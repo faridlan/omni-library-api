@@ -8,22 +8,18 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-// Gunakan satu instance validator untuk seluruh aplikasi (Singleton)
 var validate = validator.New()
 
-// ValidateStruct memeriksa struct dan mengembalikan pesan error yang ramah dibaca
 func ValidateStruct(data interface{}) error {
 	err := validate.Struct(data)
 	if err != nil {
 		var errorMessages []string
 
-		// Looping semua error yang ditemukan
 		for _, e := range err.(validator.ValidationErrors) {
-			field := e.Field() // Nama kolom (contoh: "Password")
-			tag := e.Tag()     // Aturan yang dilanggar (contoh: "min")
-			param := e.Param() // Nilai parameter aturan (contoh: "6")
+			field := e.Field()
+			tag := e.Tag()
+			param := e.Param()
 
-			// Menerjemahkan pesan berdasarkan tag
 			switch tag {
 			case "required":
 				errorMessages = append(errorMessages, fmt.Sprintf("%s tidak boleh kosong", field))
@@ -38,7 +34,6 @@ func ValidateStruct(data interface{}) error {
 			}
 		}
 
-		// Gabungkan semua pesan error jika ada lebih dari satu
 		return errors.New(strings.Join(errorMessages, ", "))
 	}
 

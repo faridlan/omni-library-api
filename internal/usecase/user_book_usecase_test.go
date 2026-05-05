@@ -2,6 +2,7 @@ package usecase_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/faridlan/omni-library-api/internal/domain"
@@ -11,225 +12,226 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-// SKENARIO 1: Buku Master Tidak Ditemukan
-func TestTrackNewBook_BukuMasterTidakAda(t *testing.T) {
-	mockUserBookRepo := new(mocks.UserBookRepository)
-	mockBookRepo := new(mocks.BookRepository) // Butuh stuntman BookRepo karena kita ngecek ke tabel master
-	uc := usecase.NewUserBookUsecase(mockUserBookRepo, mockBookRepo)
-
-	userID := "user-123"
-	bookID := "buku-salah-404"
-
-	// Naskah: Saat Otak nanya ID buku ini ke tabel master, jawab "Nggak ketemu (nil)"
-	mockBookRepo.On("GetByID", mock.Anything, bookID).Return(nil, nil)
-
-	// Action!
-	result, err := uc.TrackNewBook(context.Background(), userID, bookID)
-
-	// Validasi: Harus error NotFound
-	assert.ErrorIs(t, err, domain.ErrNotFound)
-	assert.Nil(t, result)
-
-	// Validasi Disiplin: Otak TIDAK BOLEH lanjut ngecek ke rak user!
-	mockUserBookRepo.AssertNotCalled(t, "GetByUserAndBookID", mock.Anything, mock.Anything, mock.Anything)
-}
-
-// SKENARIO 2: Buku Sudah Ada Di Rak User
-func TestTrackNewBook_BukuSudahAdaDiRak(t *testing.T) {
+// Helper setup
+func setupUserBookUsecase() (*mocks.UserBookRepository, *mocks.BookRepository, domain.UserBookUsecase) {
 	mockUserBookRepo := new(mocks.UserBookRepository)
 	mockBookRepo := new(mocks.BookRepository)
-	uc := usecase.NewUserBookUsecase(mockUserBookRepo, mockBookRepo)
-
-	userID := "user-123"
-	bookID := "buku-valid-001"
-	dummyMasterBook := &domain.Book{ID: bookID}
-	// existingShelf := &domain.UserBook{UserID: userID, BookID: bookID}
-	existingShelf := &domain.UserBookWithMetadata{
-		UserBook: domain.UserBook{
-			UserID: userID,
-			BookID: bookID}}
-
-	// Naskah A: Buku master ketemu
-	mockBookRepo.On("GetByID", mock.Anything, bookID).Return(dummyMasterBook, nil)
-
-	// Naskah B: Saat ngecek ke rak user, ternyata SUDAH ADA datanya!
-	mockUserBookRepo.On("GetByBookID", mock.Anything, userID, bookID).Return(existingShelf, nil)
-
-	// Action!
-	result, err := uc.TrackNewBook(context.Background(), userID, bookID)
-
-	// Validasi: Harus error Conflict (409)
-	assert.ErrorIs(t, err, domain.ErrConflict)
-	assert.Nil(t, result)
-
-	// Validasi Disiplin: Otak TIDAK BOLEH nyuruh save (AddBookToShelf)
-	mockUserBookRepo.AssertNotCalled(t, "AddBookToShelf", mock.Anything, mock.Anything)
-}
-
-// SKENARIO 3: Jalan Mulus (Happy Path)
-func TestTrackNewBook_Sukses(t *testing.T) {
-	mockUserBookRepo := new(mocks.UserBookRepository)
-	mockBookRepo := new(mocks.BookRepository)
-	uc := usecase.NewUserBookUsecase(mockUserBookRepo, mockBookRepo)
-
-	userID := "user-123"
-	bookID := "buku-valid-001"
-	dummyMasterBook := &domain.Book{ID: bookID}
-
-	// Naskah A: Buku master ketemu
-	mockBookRepo.On("GetByID", mock.Anything, bookID).Return(dummyMasterBook, nil)
-
-	// Naskah B: Dicek ke rak user, datanya BELUM ADA (nil) -> Aman!
-	mockUserBookRepo.On("GetByBookID", mock.Anything, userID, bookID).Return(nil, nil)
-
-	// Naskah C: Otak menyuruh save ke rak. Kita suruh Stuntman pura-pura sukses save.
-	// Kita pakai mock.AnythingOfType untuk ngakalin karena kita nggak tahu alamat pointer memorinya secara pasti.
-	mockUserBookRepo.On("AddBookToShelf", mock.Anything, mock.AnythingOfType("*domain.UserBook")).Return(nil)
-
-	// Action!
-	result, err := uc.TrackNewBook(context.Background(), userID, bookID)
-
-	// Validasi
-	assert.NoError(t, err) // Nggak boleh ada error
-	assert.NotNil(t, result)
-	assert.Equal(t, "TO_READ", result.Status) // Pastikan status otomatis terset "TO_READ"
-
-	// Validasi Kedisiplinan: Semua Stuntman harus menjalankan naskahnya
-	mockBookRepo.AssertExpectations(t)
-	mockUserBookRepo.AssertExpectations(t)
-}
-
-// SKENARIO 4: Update Progres - Gagal Karena Buku Tidak Ada di Rak
-func TestUpdateReadingStatus_BukuTidakAdaDiRak(t *testing.T) {
-	mockUserBookRepo := new(mocks.UserBookRepository)
-	mockBookRepo := new(mocks.BookRepository)
-	uc := usecase.NewUserBookUsecase(mockUserBookRepo, mockBookRepo)
-
-	userID := "user-123"
-	bookID := "buku-ngasal-404"
-
-	// NASKAH: Saat Otak mengecek ke rak user, Stuntman menjawab "Kosong (nil)"
-	mockUserBookRepo.On("GetByUserAndBookID", mock.Anything, userID, bookID).Return(nil, nil)
-
-	// ACTION! (Mencoba update ke halaman 50)
-	result, err := uc.UpdateReadingStatus(context.Background(), userID, bookID, "READING", 50, 4)
-
-	// VALIDASI
-	assert.ErrorIs(t, err, domain.ErrNotFound) // Harus lapor NotFound
-	assert.Nil(t, result)
-
-	// VALIDASI DISIPLIN: Karena buku nggak ada, jangan pernah coba-coba manggil fungsi Update!
-	mockUserBookRepo.AssertNotCalled(t, "UpdateProgress", mock.Anything, mock.Anything)
-}
-
-// SKENARIO 5: Update Progres - Sukses (Happy Path)
-func TestUpdateReadingStatus_Sukses(t *testing.T) {
-	mockUserBookRepo := new(mocks.UserBookRepository)
-	mockBookRepo := new(mocks.BookRepository)
-	uc := usecase.NewUserBookUsecase(mockUserBookRepo, mockBookRepo)
-
-	userID := "user-123"
-	bookID := "buku-valid-001"
-
-	// Anggap saja ini data lama sebelum di-update
-	// existingTrack := &domain.UserBook{
-	// 	UserID:      userID,
-	// 	BookID:      bookID,
-	// 	Status:      "TO_READ",
-	// 	CurrentPage: 0,
-	// 	Rating:      0,
-	// }
-
-	existingTrack := &domain.UserBookWithMetadata{
-		UserBook: domain.UserBook{
-			UserID:      userID,
-			BookID:      bookID,
-			Status:      "TO_READ",
-			CurrentPage: 0,
-			Rating:      0,
-		},
-	}
-
-	// NASKAH A: Saat dicek ke rak, Stuntman memberikan data lama di atas
-	mockUserBookRepo.On("GetByUserAndBookID", mock.Anything, userID, bookID).Return(existingTrack, nil)
-
-	// NASKAH B: Saat disuruh simpan update, Stuntman pura-pura sukses
-	mockUserBookRepo.On("UpdateProgress", mock.Anything, mock.AnythingOfType("*domain.UserBook")).Return(nil)
-
-	// ACTION! (User membaca sampai halaman 125, ngasih rating 5)
-	result, err := uc.UpdateReadingStatus(context.Background(), userID, bookID, "READING", 125, 5)
-
-	// VALIDASI
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-
-	// Pastikan Otak benar-benar menimpa datanya!
-	assert.Equal(t, "READING", result.Status)
-	assert.Equal(t, 125, result.CurrentPage)
-	assert.Equal(t, 5, result.Rating)
-
-	// Validasi bahwa semua Stuntman menjalankan naskahnya
-	mockUserBookRepo.AssertExpectations(t)
+	userBookUsecase := usecase.NewUserBookUsecase(mockUserBookRepo, mockBookRepo)
+	return mockUserBookRepo, mockBookRepo, userBookUsecase
 }
 
 // ==========================================
-// TEST GET USER LIBRARY (PAGINATION)
+// TEST TRACK NEW BOOK
 // ==========================================
-
-func TestGetUserLibrary_Sukses_HitungPaginasi(t *testing.T) {
-	// 1. SIAPKAN STUNTMAN
-	mockUserBookRepo := new(mocks.UserBookRepository)
-	mockBookRepo := new(mocks.BookRepository)
-	uc := usecase.NewUserBookUsecase(mockUserBookRepo, mockBookRepo)
-
-	// 2. SIAPKAN DATA PALSU & PARAMETER
+func TestTrackNewBook(t *testing.T) {
+	mockUBRepo, mockBookRepo, u := setupUserBookUsecase()
 	userID := "user-123"
-	statusFilter := "READING"
-	params := domain.PaginationQuery{Page: 1, Limit: 5} // Limit 5 per halaman
+	bookID := "book-456"
 
-	// Pura-puranya kita balikin 2 buku
-	mockData := []*domain.UserBookWithMetadata{
-		{UserBook: domain.UserBook{ID: "ub-1", BookID: "book-1"}},
-		{UserBook: domain.UserBook{ID: "ub-2", BookID: "book-2"}},
-	}
+	t.Run("Success", func(t *testing.T) {
+		mockBookRepo.On("GetByID", mock.Anything, bookID).Return(&domain.Book{ID: bookID}, nil).Once()
+		// Skenario buku belum ada di rak (harus return ErrNotFound agar bisa dilanjut)
+		mockUBRepo.On("FindByUserIDAndBookID", mock.Anything, userID, bookID).Return(nil, domain.ErrNotFound).Once()
 
-	// Total data di DB ada 12
-	var totalData int64 = 12
+		mockUBRepo.On("AddBookToShelf", mock.Anything, mock.MatchedBy(func(ub *domain.UserBook) bool {
+			return ub.UserID == userID && ub.BookID == bookID && ub.Status == "TO_READ"
+		})).Return(nil).Once()
 
-	// 3. ATUR SKENARIO (Ekspektasi)
-	mockUserBookRepo.On("GetByUserID", mock.Anything, userID, statusFilter, params).
-		Return(mockData, totalData, nil)
+		result, err := u.TrackNewBook(context.Background(), userID, bookID)
 
-	// 4. EKSEKUSI ACTION!
-	result, meta, err := uc.GetUserLibrary(context.Background(), userID, statusFilter, params)
+		assert.NoError(t, err)
+		assert.NotNil(t, result)
+		assert.Equal(t, "TO_READ", result.Status)
+		mockBookRepo.AssertExpectations(t)
+		mockUBRepo.AssertExpectations(t)
+	})
 
-	// 5. VALIDASI HASIL
-	assert.NoError(t, err)
-	assert.Len(t, result, 2)
+	t.Run("Failed - Master Book Not Found", func(t *testing.T) {
+		mockBookRepo.On("GetByID", mock.Anything, bookID).Return(nil, domain.ErrNotFound).Once()
 
-	// 6. VALIDASI MATEMATIKA PAGINASI
-	assert.Equal(t, int64(12), meta.TotalItems)
-	assert.Equal(t, 5, meta.Limit)
+		result, err := u.TrackNewBook(context.Background(), userID, bookID)
 
-	// 12 data dibagi 5 per halaman = 2.4 (Dibulatkan ke atas jadi 3 Halaman)
-	assert.Equal(t, 3, meta.TotalPages)
+		assert.Error(t, err)
+		assert.Nil(t, result)
+		assert.Contains(t, err.Error(), "Buku dengan ID tersebut tidak ditemukan")
+		mockBookRepo.AssertExpectations(t)
+	})
+
+	t.Run("Failed - Database Error on Checking Master Book", func(t *testing.T) {
+		dbError := errors.New("connection reset by peer")
+		mockBookRepo.On("GetByID", mock.Anything, bookID).Return(nil, dbError).Once()
+
+		result, err := u.TrackNewBook(context.Background(), userID, bookID)
+
+		assert.Error(t, err)
+		assert.Nil(t, result)
+		assert.Equal(t, dbError, err) // Ini membuktikan bug fix-mu berhasil!
+		mockBookRepo.AssertExpectations(t)
+	})
+
+	t.Run("Failed - Book Already in Shelf (Conflict)", func(t *testing.T) {
+		mockBookRepo.On("GetByID", mock.Anything, bookID).Return(&domain.Book{ID: bookID}, nil).Once()
+		// Skenario buku SUDAH ada di rak
+		mockUBRepo.On("FindByUserIDAndBookID", mock.Anything, userID, bookID).Return(&domain.UserBookWithMetadata{}, nil).Once()
+
+		result, err := u.TrackNewBook(context.Background(), userID, bookID)
+
+		assert.Error(t, err)
+		assert.Nil(t, result)
+		assert.ErrorIs(t, err, domain.ErrConflict)
+		assert.Contains(t, err.Error(), "Buku sudah ada di rak pengguna")
+		mockBookRepo.AssertExpectations(t)
+		mockUBRepo.AssertExpectations(t)
+	})
 }
 
-func TestGetUserLibrary_Gagal_DariRepo(t *testing.T) {
-	mockUserBookRepo := new(mocks.UserBookRepository)
-	mockBookRepo := new(mocks.BookRepository)
-	uc := usecase.NewUserBookUsecase(mockUserBookRepo, mockBookRepo)
+// ==========================================
+// TEST UPDATE READING STATUS
+// ==========================================
+func TestUpdateReadingStatus(t *testing.T) {
+	mockUBRepo, _, u := setupUserBookUsecase()
 
-	userID := "user-123"
-	params := domain.PaginationQuery{Page: 1, Limit: 10}
-	expectedErr := domain.ErrInternalServerError
+	t.Run("Success", func(t *testing.T) {
+		input := domain.UpdateUserBookInput{
+			UserID: "user-123",
+			BookID: "book-456",
+			Status: "READING",
+			Page:   50,
+			Rating: 5,
+		}
 
-	mockUserBookRepo.On("GetByUserID", mock.Anything, userID, "", params).
-		Return(nil, int64(0), expectedErr)
+		existingData := &domain.UserBookWithMetadata{
+			UserBook: domain.UserBook{ID: "ub-789", Status: "TO_READ", CurrentPage: 0, Rating: 0},
+		}
 
-	result, meta, err := uc.GetUserLibrary(context.Background(), userID, "", params)
+		mockUBRepo.On("FindByUserIDAndBookID", mock.Anything, input.UserID, input.BookID).Return(existingData, nil).Once()
 
-	assert.ErrorIs(t, err, expectedErr)
-	assert.Nil(t, result)
-	assert.Equal(t, 0, meta.TotalPages)
+		mockUBRepo.On("UpdateProgress", mock.Anything, mock.MatchedBy(func(ub *domain.UserBook) bool {
+			return ub.Status == "READING" && ub.CurrentPage == 50 && ub.Rating == 5
+		})).Return(nil).Once()
+
+		result, err := u.UpdateReadingStatus(context.Background(), input)
+
+		assert.NoError(t, err)
+		assert.NotNil(t, result)
+		assert.Equal(t, "READING", result.Status)
+		mockUBRepo.AssertExpectations(t)
+	})
+
+	t.Run("Failed - Shelf Not Found", func(t *testing.T) {
+		input := domain.UpdateUserBookInput{UserID: "user-123", BookID: "book-456"}
+
+		mockUBRepo.On("FindByUserIDAndBookID", mock.Anything, input.UserID, input.BookID).Return(nil, domain.ErrNotFound).Once()
+
+		result, err := u.UpdateReadingStatus(context.Background(), input)
+
+		assert.Error(t, err)
+		assert.Nil(t, result)
+		assert.Contains(t, err.Error(), "Buku dengan ID tersebut tidak ditemukan")
+		mockUBRepo.AssertExpectations(t)
+	})
+
+	t.Run("Failed - Database Error on Find", func(t *testing.T) {
+		input := domain.UpdateUserBookInput{UserID: "user-123", BookID: "book-456"}
+		dbError := errors.New("db down")
+
+		mockUBRepo.On("FindByUserIDAndBookID", mock.Anything, input.UserID, input.BookID).Return(nil, dbError).Once()
+
+		result, err := u.UpdateReadingStatus(context.Background(), input)
+
+		assert.Error(t, err)
+		assert.Nil(t, result)
+		assert.Equal(t, dbError, err) // Bukti bug fix-mu jalan
+		mockUBRepo.AssertExpectations(t)
+	})
+}
+
+// ==========================================
+// TEST GET USER LIBRARY
+// ==========================================
+func TestGetUserLibrary(t *testing.T) {
+	mockUBRepo, _, u := setupUserBookUsecase()
+
+	t.Run("Success", func(t *testing.T) {
+		params := domain.PaginationQuery{Page: 1, Limit: 10}
+		mockData := []*domain.UserBookWithMetadata{{}, {}}
+		var totalItems int64 = 15 // Jika total 15 dan limit 10, maka totalPages harusnya 2
+
+		mockUBRepo.On("FindAllByUserID", mock.Anything, "user-123", "READING", params).Return(mockData, totalItems, nil).Once()
+
+		books, meta, err := u.GetUserLibrary(context.Background(), "user-123", "READING", params)
+
+		assert.NoError(t, err)
+		assert.Len(t, books, 2)
+		assert.Equal(t, 2, meta.TotalPages)
+		assert.Equal(t, int64(15), meta.TotalItems)
+		mockUBRepo.AssertExpectations(t)
+	})
+}
+
+// ==========================================
+// TEST GET USER BOOK DETAIL
+// ==========================================
+func TestGetUserBookDetail(t *testing.T) {
+	mockUBRepo, _, u := setupUserBookUsecase()
+
+	t.Run("Success", func(t *testing.T) {
+		mockData := &domain.UserBookWithMetadata{}
+		mockUBRepo.On("GetDetailByID", mock.Anything, "user-123", "book-456").Return(mockData, nil).Once()
+
+		result, err := u.GetUserBookDetail(context.Background(), "user-123", "book-456")
+
+		assert.NoError(t, err)
+		assert.NotNil(t, result)
+		mockUBRepo.AssertExpectations(t)
+	})
+
+	t.Run("Failed - Not Found", func(t *testing.T) {
+		mockUBRepo.On("GetDetailByID", mock.Anything, "user-123", "book-456").Return(nil, domain.ErrNotFound).Once()
+
+		result, err := u.GetUserBookDetail(context.Background(), "user-123", "book-456")
+
+		assert.Error(t, err)
+		assert.Nil(t, result)
+		assert.Contains(t, err.Error(), "Buku dengan ID tersebut tidak ditemukan")
+		mockUBRepo.AssertExpectations(t)
+	})
+}
+
+// ==========================================
+// TEST DELETE BOOK FROM SHELF
+// ==========================================
+func TestDeleteBookFromShelf(t *testing.T) {
+	mockUBRepo, _, u := setupUserBookUsecase()
+
+	t.Run("Success", func(t *testing.T) {
+		mockUBRepo.On("FindByUserIDAndBookID", mock.Anything, "user-123", "book-456").Return(&domain.UserBookWithMetadata{}, nil).Once()
+		mockUBRepo.On("Delete", mock.Anything, "user-123", "book-456").Return(nil).Once()
+
+		err := u.DeleteBookFromShelf(context.Background(), "user-123", "book-456")
+
+		assert.NoError(t, err)
+		mockUBRepo.AssertExpectations(t)
+	})
+
+	t.Run("Failed - Not Found", func(t *testing.T) {
+		mockUBRepo.On("FindByUserIDAndBookID", mock.Anything, "user-123", "book-456").Return(nil, domain.ErrNotFound).Once()
+
+		err := u.DeleteBookFromShelf(context.Background(), "user-123", "book-456")
+
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "Buku dengan ID tersebut tidak ditemukan")
+		mockUBRepo.AssertExpectations(t)
+	})
+
+	t.Run("Failed - Database Error on Find", func(t *testing.T) {
+		dbError := errors.New("timeout")
+		mockUBRepo.On("FindByUserIDAndBookID", mock.Anything, "user-123", "book-456").Return(nil, dbError).Once()
+
+		err := u.DeleteBookFromShelf(context.Background(), "user-123", "book-456")
+
+		assert.Error(t, err)
+		assert.Equal(t, dbError, err) // Terproteksi dari bug
+		mockUBRepo.AssertExpectations(t)
+	})
 }

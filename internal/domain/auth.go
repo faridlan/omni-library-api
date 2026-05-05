@@ -14,17 +14,24 @@ type RefreshToken struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
+type LoginInput struct {
+	Email    string
+	Password string
+}
+
+type RegisterInput struct {
+	Name     string
+	Email    string
+	Password string
+}
+
 type AuthRepository interface {
-	GetByEmail(ctx context.Context, email string) (*User, error)
-	GetByID(ctx context.Context, id string) (*User, error)
 	SaveRefreshToken(ctx context.Context, rt *RefreshToken) error
 	GetRefreshToken(ctx context.Context, token string) (*RefreshToken, error)
 	DeleteRefreshToken(ctx context.Context, token string) error
 }
-
-// AuthUsecase adalah kontrak untuk otak yang mengurus pendaftaran dan login
 type AuthUsecase interface {
-	Register(ctx context.Context, name, email, password string) (*User, error)
-	Login(ctx context.Context, email string, password string) (string, string, error)
+	Register(ctx context.Context, input RegisterInput) (*User, error)
+	Login(ctx context.Context, input LoginInput) (string, string, error)
 	Refresh(ctx context.Context, tokenString string) (string, error)
 }

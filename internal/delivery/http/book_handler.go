@@ -13,35 +13,52 @@ type BookHandler struct {
 	bookUsecase domain.BookUsecase
 }
 
-func NewBookHandler(router fiber.Router, bu domain.BookUsecase) *BookHandler {
+func NewBookHandler(bu domain.BookUsecase) *BookHandler {
 	return &BookHandler{
 		bookUsecase: bu,
 	}
 }
 
-// FetchAndSave godoc
-// @Summary Ambil & Simpan Metadata Buku
-// @Description Mencari buku di Google Books via ISBN dan menyimpannya ke database lokal
-// @Tags Books
-// @Accept json
-// @Produce json
-// @Param request body dto.FetchBookRequest true "Payload berisi ISBN"
-// @Success 200 {object} utils.SuccessResponse[domain.Book] "Metadata buku berhasil diambil"
-// @Failure 400 {object} utils.ErrorResponse
-// @Failure 404 {object} utils.ErrorResponse "Buku tidak ditemukan di Google Books"
-// @Failure 500 {object} utils.ErrorResponse
-// @Router /api/books/fetch [post]
-// @Security BearerAuth
-func (h *BookHandler) FetchAndSave(c *fiber.Ctx) error {
+// ==========================================
+// HELPER: MAPPING ENTITY KE RESPONSE DTO
+// ==========================================
+func toBookResponse(b *domain.Book) dto.BookResponse {
+	if b == nil {
+		return dto.BookResponse{}
+	}
+	return dto.BookResponse{
+		ID:            b.ID,
+		ISBN:          b.ISBN,
+		Title:         b.Title,
+		Authors:       b.Authors,
+		PublishedDate: b.PublishedDate,
+		Description:   b.Description,
+		PageCount:     b.PageCount,
+		CoverURL:      b.CoverURL,
+		CreatedAt:     b.CreatedAt,
+		UpdatedAt:     b.UpdatedAt,
+	}
+}
 
+// FetchAndSave godoc
+// @Summary      Ambil & Simpan Metadata Buku
+// @Description  Mencari buku di Google Books via ISBN dan menyimpannya ke database lokal
+// @Tags         Books
+// @Accept       json
+// @Produce      json
+// @Param        request body dto.FetchBookRequest true "Payload berisi ISBN"
+// @Success      200 {object} utils.SuccessResponse[dto.BookResponse] "Metadata buku berhasil diambil"
+// @Failure      400 {object} utils.ErrorResponse "Format JSON salah / Validasi gagal"
+// @Failure      404 {object} utils.ErrorResponse "Buku tidak ditemukan di Google Books"
+// @Failure      500 {object} utils.ErrorResponse "Internal Server Error"
+// @Router       /api/books/fetch [post]
+// @Security     BearerAuth
+func (h *BookHandler) FetchAndSave(c *fiber.Ctx) error {
 	var req dto.FetchBookRequest
 
-	// 1. Tangkap JSON
 	if err := c.BodyParser(&req); err != nil {
 		return utils.SendError(c, fiber.StatusBadRequest, "Format JSON salah")
 	}
-
-	// 2. VALIDASI OTOMATIS! (Membaca tag validate:"required" di DTO)
 	if err := utils.ValidateStruct(&req); err != nil {
 		return utils.SendError(c, fiber.StatusBadRequest, err.Error())
 	}
@@ -51,53 +68,58 @@ func (h *BookHandler) FetchAndSave(c *fiber.Ctx) error {
 		return utils.HandleDomainError(c, err)
 	}
 
-	return utils.SendSuccess(c, fiber.StatusOK, "Metadata buku berhasil diambil", book)
+	// MAPPING KE RESPONSE DTO
+	res := toBookResponse(book)
+
+	return utils.SendSuccess(c, fiber.StatusOK, "Metadata buku berhasil diambil", res)
 }
 
 // GetAll godoc
-// @Summary Ambil Katalog Buku
-// @Description Mengambil daftar buku dari database secara terpaginasi (pagination)
-// @Tags Books
-// @Produce json
-// @Param page query int false "Nomor Halaman (Default: 1)"
-// @Param limit query int false "Jumlah Data per Halaman (Default: 10)"
-// @Success 200 {object} utils.PaginatedResponse[domain.Book] "Berhasil mengambil katalog buku"
-// @Failure 500 {object} utils.ErrorResponse "Internal Server Error"
-// @Router /api/books [get]
+// @Summary      Ambil Katalog Buku
+// @Description  Mengambil daftar buku dari database secara terpaginasi (pagination)
+// @Tags         Books
+// @Produce      json
+// @Param        page query int false "Nomor Halaman (Default: 1)"
+// @Param        limit query int false "Jumlah Data per Halaman (Default: 10)"
+// @Success      200 {object} utils.PaginatedResponse[dto.BookResponse] "Berhasil mengambil katalog buku"
+// @Failure      500 {object} utils.ErrorResponse "Internal Server Error"
+// @Router       /api/books [get]
 func (h *BookHandler) GetAll(c *fiber.Ctx) error {
-	// 1. Tangkap parameter dari URL (berikan default value jika user tidak mengirimnya)
 	page := c.QueryInt("page", 1)
 	limit := c.QueryInt("limit", 10)
 
-	// 2. Bungkus ke dalam Struct PaginationQuery
 	params := domain.PaginationQuery{
 		Page:  page,
 		Limit: limit,
 	}
 
-	// 3. Panggil Usecase
 	books, meta, err := h.bookUsecase.GetAllBooks(c.Context(), params)
 	if err != nil {
 		return utils.SendError(c, fiber.StatusInternalServerError, "Gagal mengambil data buku", err.Error())
 	}
 
-	if books == nil {
-		books = make([]*domain.Book, 0)
+	// MAPPING ARRAY ENTITY KE ARRAY RESPONSE DTO
+	var res []dto.BookResponse
+	for _, b := range books {
+		res = append(res, toBookResponse(b))
+	}
+	// Pastikan array tidak null (menghindari kembalian "null" di JSON, diganti "[]")
+	if res == nil {
+		res = make([]dto.BookResponse, 0)
 	}
 
-	// 4. Kembalikan Response Menggunakan Format Sukses yang Baru!
-	return utils.SendSuccessPaginated(c, "Berhasil mengambil katalog buku", books, meta)
+	return utils.SendSuccessPaginated(c, "Berhasil mengambil katalog buku", res, meta)
 }
 
 // GetBookByID godoc
-// @Summary Ambil Buku Berdasarkan ID
-// @Description Mengambil detail buku berdasarkan ID yang diberikan
-// @Tags Books
-// @Produce json
-// @Param id path string true "ID Buku"
-// @Success 200 {object} utils.SuccessResponse[domain.Book] "Buku ditemukan"
-// @Failure 404 {object} utils.ErrorResponse "Buku tidak ditemukan"
-// @Router /api/books/{id} [get]
+// @Summary      Ambil Buku Berdasarkan ID
+// @Description  Mengambil detail buku berdasarkan ID yang diberikan
+// @Tags         Books
+// @Produce      json
+// @Param        id path string true "ID Buku"
+// @Success      200 {object} utils.SuccessResponse[dto.BookResponse] "Buku ditemukan"
+// @Failure      404 {object} utils.ErrorResponse "Buku tidak ditemukan"
+// @Router       /api/books/{id} [get]
 func (h *BookHandler) GetBookByID(c *fiber.Ctx) error {
 	bookID := c.Params("id")
 	if err := utils.ValidateUUID(bookID, "book_id"); err != nil {
@@ -109,23 +131,26 @@ func (h *BookHandler) GetBookByID(c *fiber.Ctx) error {
 		return utils.HandleDomainError(c, err)
 	}
 
-	return utils.SendSuccess(c, fiber.StatusOK, "Buku ditemukan", book)
+	res := toBookResponse(book)
+
+	return utils.SendSuccess(c, fiber.StatusOK, "Buku ditemukan", res)
 }
 
 // CreateManual godoc
-// @Summary Tambah Buku Manual (Admin Only)
-// @Description Menambahkan buku lokal tanpa ISBN ke database master
-// @Tags Books
-// @Accept json
-// @Produce json
-// @Security BearerAuth
-// @Success 201 {object} utils.SuccessResponse[domain.Book] "Buku berhasil ditambahkan"
-// @Failure 401 {object} utils.ErrorResponse "Unauthorized (Tidak bawa Token)"
-// @Failure 403 {object} utils.ErrorResponse "Forbidden (Bukan Admin)"
-// @Param request body dto.BookRequest true "Payload data buku"
-// @Router /api/books/manual [post]
+// @Summary      Tambah Buku Manual (Admin Only)
+// @Description  Menambahkan buku lokal tanpa ISBN ke database master
+// @Tags         Books
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        request body dto.BookRequest true "Payload data buku"
+// @Success      201 {object} utils.SuccessResponse[dto.BookResponse] "Buku berhasil ditambahkan"
+// @Failure      400 {object} utils.ErrorResponse "Format JSON salah / Validasi gagal"
+// @Failure      401 {object} utils.ErrorResponse "Unauthorized"
+// @Failure      403 {object} utils.ErrorResponse "Forbidden"
+// @Failure      409 {object} utils.ErrorResponse "ISBN sudah ada"
+// @Router       /api/books/manual [post]
 func (h *BookHandler) CreateManual(c *fiber.Ctx) error {
-	// Nanti kita panggil h.bookUsecase.CreateManual(...) di sini
 	var req dto.BookRequest
 	if err := c.BodyParser(&req); err != nil {
 		return utils.SendError(c, fiber.StatusBadRequest, "Format JSON salah")
@@ -144,8 +169,8 @@ func (h *BookHandler) CreateManual(c *fiber.Ctx) error {
 		pubDate = parsed
 	}
 
-	// Ubah DTO menjadi Domain
-	newBook := &domain.Book{
+	// MAPPING DTO -> DOMAIN INPUT (Sesuai kritik arsitektur sebelumnya)
+	input := domain.CreateBookInput{
 		ISBN:          req.ISBN,
 		Title:         req.Title,
 		Authors:       req.Authors,
@@ -155,27 +180,32 @@ func (h *BookHandler) CreateManual(c *fiber.Ctx) error {
 		CoverURL:      req.CoverURL,
 	}
 
-	result, err := h.bookUsecase.CreateManual(c.Context(), newBook)
+	// Panggil Usecase (Pastikan Usecase-mu sudah menggunakan domain.CreateBookInput)
+	result, err := h.bookUsecase.CreateManual(c.Context(), input)
 	if err != nil {
 		return utils.HandleDomainError(c, err)
 	}
 
-	return utils.SendSuccess(c, fiber.StatusCreated, "Buku berhasil ditambahkan", result)
+	// MAPPING BALIK KE RESPONSE DTO
+	res := toBookResponse(result)
+
+	return utils.SendSuccess(c, fiber.StatusCreated, "Buku berhasil ditambahkan", res)
 }
 
 // UpdateBook godoc
-// @Summary Update Data Buku (Admin Only)
-// @Description Mengedit metadata buku master (judul, cover, dll)
-// @Tags Books
-// @Accept json
-// @Produce json
-// @Param id path string true "ID Buku"
-// @Security BearerAuth
-// @Success 200 {object} utils.SuccessResponse[domain.Book] "Metadata buku berhasil diperbarui"
-// @Failure 401 {object} utils.ErrorResponse "Unauthorized"
-// @Failure 403 {object} utils.ErrorResponse "Forbidden"
-// @Param request body dto.BookRequest true "Payload data update"
-// @Router /api/books/{id} [put]
+// @Summary      Update Data Buku (Admin Only)
+// @Description  Mengedit metadata buku master (judul, cover, dll)
+// @Tags         Books
+// @Accept       json
+// @Produce      json
+// @Param        id path string true "ID Buku"
+// @Param        request body dto.BookRequest true "Payload data update"
+// @Security     BearerAuth
+// @Success      200 {object} utils.SuccessResponse[dto.BookResponse] "Metadata buku berhasil diperbarui"
+// @Failure      400 {object} utils.ErrorResponse "Bad Request"
+// @Failure      401 {object} utils.ErrorResponse "Unauthorized"
+// @Failure      403 {object} utils.ErrorResponse "Forbidden"
+// @Router       /api/books/{id} [put]
 func (h *BookHandler) UpdateBook(c *fiber.Ctx) error {
 	bookID := c.Params("id")
 	if err := utils.ValidateUUID(bookID, "book_id"); err != nil {
@@ -200,7 +230,9 @@ func (h *BookHandler) UpdateBook(c *fiber.Ctx) error {
 		pubDate = parsed
 	}
 
-	updateData := &domain.Book{
+	// MAPPING DTO -> DOMAIN INPUT
+	input := domain.UpdateBookInput{
+		ID:            bookID,
 		ISBN:          req.ISBN,
 		Title:         req.Title,
 		Authors:       req.Authors,
@@ -210,25 +242,30 @@ func (h *BookHandler) UpdateBook(c *fiber.Ctx) error {
 		CoverURL:      req.CoverURL,
 	}
 
-	result, err := h.bookUsecase.UpdateBook(c.Context(), bookID, updateData)
+	// Panggil Usecase (Pastikan Usecase-mu sudah menggunakan domain.UpdateBookInput)
+	result, err := h.bookUsecase.UpdateBook(c.Context(), input)
 	if err != nil {
 		return utils.HandleDomainError(c, err)
 	}
 
-	return utils.SendSuccess(c, fiber.StatusOK, "Metadata buku berhasil diperbarui", result)
+	res := toBookResponse(result)
+
+	return utils.SendSuccess(c, fiber.StatusOK, "Metadata buku berhasil diperbarui", res)
 }
 
 // DeleteBook godoc
-// @Summary Hapus Buku (Admin Only)
-// @Description Menghapus buku dari database master secara permanen
-// @Tags Books
-// @Produce json
-// @Param id path string true "ID Buku"
-// @Security BearerAuth
-// @Success 200 {object} utils.SuccessResponse[utils.EmptyObj] "Buku berhasil dihapus dari sistem"
-// @Failure 401 {object} utils.ErrorResponse "Unauthorized"
-// @Failure 403 {object} utils.ErrorResponse "Forbidden"
-// @Router /api/books/{id} [delete]
+// @Summary      Hapus Buku (Admin Only)
+// @Description  Menghapus buku dari database master secara permanen
+// @Tags         Books
+// @Produce      json
+// @Param        id path string true "ID Buku"
+// @Security     BearerAuth
+// @Success      200 {object} utils.SuccessResponse[interface{}] "Buku berhasil dihapus dari sistem"
+// @Failure      400 {object} utils.ErrorResponse "Format ID salah"
+// @Failure      401 {object} utils.ErrorResponse "Unauthorized"
+// @Failure      403 {object} utils.ErrorResponse "Forbidden"
+// @Failure      404 {object} utils.ErrorResponse "Buku tidak ditemukan"
+// @Router       /api/books/{id} [delete]
 func (h *BookHandler) DeleteBook(c *fiber.Ctx) error {
 	bookID := c.Params("id")
 	if err := utils.ValidateUUID(bookID, "book_id"); err != nil {

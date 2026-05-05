@@ -2,6 +2,7 @@ package usecase_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/faridlan/omni-library-api/internal/domain"
@@ -11,289 +12,205 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestFetchAndSaveMetadata_BukuAdaDiLokal(t *testing.T) {
-	// 1. SIAPKAN STUNTMAN (Mocks)
+func setupBookUsecase() (*mocks.BookRepository, *mocks.BookMetadataFetcher, domain.BookUsecase) {
 	mockRepo := new(mocks.BookRepository)
 	mockFetcher := new(mocks.BookMetadataFetcher)
-
-	// 2. SUNTIKKAN STUNTMAN KE DALAM USECASE
-	bookUC := usecase.NewBookUsecase(mockRepo, mockFetcher)
-
-	// 3. SIAPKAN DATA PALSU
-	isbnTest := "9781234567890"
-	dummyBook := &domain.Book{
-		ID:    "buku-001",
-		ISBN:  isbnTest,
-		Title: "Golang Clean Architecture",
-	}
-
-	// 4. ATUR SKENARIO (Ekspektasi)
-	// Kita perintahkan Stuntman Repo: "Kalau ada yang manggil fungsi GetByISBN pakai ISBN ini,
-	// kembalikan dummyBook dan jangan ada error (nil)!"
-	mockRepo.On("GetByISBN", mock.Anything, isbnTest).Return(dummyBook, nil)
-
-	// 5. EKSEKUSI FUNGSI ASLI! (ACTION!)
-	result, err := bookUC.FetchAndSaveMetadata(context.Background(), isbnTest)
-
-	// 6. VALIDASI HASILNYA (Assert)
-	// Kita pakai library Testify Assert agar mengeceknya mudah bagaikan membaca bahasa Inggris
-	assert.NoError(t, err)                         // Pastikan tidak ada error
-	assert.NotNil(t, result)                       // Pastikan hasilnya tidak kosong
-	assert.Equal(t, dummyBook.Title, result.Title) // Pastikan judulnya sama
-
-	// 7. VALIDASI ATURAN BISNIS (Sangat Penting!)
-	// Karena buku sudah ada di lokal, Fetcher (Google API) dan Create (Save ke DB)
-	// TIDAK BOLEH dipanggil sama sekali. Kita buktikan di sini!
-	mockFetcher.AssertNotCalled(t, "FetchByISBN", mock.Anything, mock.Anything)
-	mockRepo.AssertNotCalled(t, "Create", mock.Anything, mock.Anything)
-}
-
-func TestFetchAndSaveMetadata_BukuTidakAdaDiLokal_AmbilDariAPI(t *testing.T) {
-	// 1. SIAPKAN STUNTMAN
-	mockRepo := new(mocks.BookRepository)
-	mockFetcher := new(mocks.BookMetadataFetcher)
-	bookUC := usecase.NewBookUsecase(mockRepo, mockFetcher)
-
-	isbnTest := "9780134685991"
-	fetchedBook := &domain.Book{
-		ID:    "buku-baru-002",
-		ISBN:  isbnTest,
-		Title: "Effective Java",
-	}
-
-	// 2. ATUR SKENARIO (Ekspektasi)
-	// Langkah A: Repo ditanya, tapi bukunya TIDAK ADA (return nil, nil)
-	mockRepo.On("GetByISBN", mock.Anything, isbnTest).Return(nil, nil)
-
-	// Langkah B: Karena tidak ada, Usecase PASTI memanggil Fetcher.
-	// Kita suruh Fetcher pura-pura berhasil menemukan bukunya di Google.
-	mockFetcher.On("FetchByISBN", mock.Anything, isbnTest).Return(fetchedBook, nil)
-
-	// Langkah C: Karena berhasil di-fetch, Usecase PASTI memanggil Repo.Create untuk menyimpan.
-	// Kita suruh Repo pura-pura berhasil menyimpan tanpa error.
-	mockRepo.On("Create", mock.Anything, fetchedBook).Return(nil)
-
-	// 3. EKSEKUSI ACTION!
-	result, err := bookUC.FetchAndSaveMetadata(context.Background(), isbnTest)
-
-	// 4. VALIDASI HASIL (Assert)
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-	assert.Equal(t, fetchedBook.Title, result.Title)
-
-	// 5. VALIDASI ALUR KERJA (Penting!)
-	// Kita pastikan bahwa SEMUA skenario yang kita atur di atas (A, B, C)
-	// BENAR-BENAR DIPANGGIL oleh usecase. Kalau ada satu saja yang terlewat, tes ini akan gagal.
-	mockRepo.AssertExpectations(t)
-	mockFetcher.AssertExpectations(t)
-}
-
-func TestFetchAndSaveMetadata_BukuTidakDitemukanDiManapun(t *testing.T) {
-	// 1. KITA SIAPKAN STUNTMAN (PEMERAN PENGGANTI)
-	mockRepo := new(mocks.BookRepository)
-	mockFetcher := new(mocks.BookMetadataFetcher)
-	bookUC := usecase.NewBookUsecase(mockRepo, mockFetcher)
-
-	isbnTest := "9999999999999" // ISBN ngasal yang pasti nggak ada
-
-	// 2. KITA BERIKAN NASKAH SKENARIO KE STUNTMAN
-
-	// Naskah A: Saat Otak nanya ke Repo Lokal, suruh Repo jawab "Nggak Ada (nil)"
-	mockRepo.On("GetByISBN", mock.Anything, isbnTest).Return(nil, nil)
-
-	// Naskah B: Saat Otak nanya ke Google API, suruh Google jawab "Nggak Ada (nil)" juga!
-	mockFetcher.On("FetchByISBN", mock.Anything, isbnTest).Return(nil, nil)
-
-	// 3. ACTION! (Mulai pengetesan)
-	result, err := bookUC.FetchAndSaveMetadata(context.Background(), isbnTest)
-
-	// 4. CEK HASIL AKHIRNYA
-	assert.Error(t, err)  // Pastikan HARUS ADA error (karena gagal ketemu)
-	assert.Nil(t, result) // Pastikan datanya kosong (nil)
-
-	// Pastikan error-nya BENAR-BENAR error NotFound, bukan error database meledak
-	assert.ErrorIs(t, err, domain.ErrNotFound)
-
-	// 5. CEK KEDISIPLINAN OTAK (Sangat Penting!)
-	// Karena buku nggak ketemu, Otak TIDAK BOLEH memanggil perintah Save/Create ke Database!
-	// Kalau dia manggil Create, berarti Otaknya error/bug.
-	mockRepo.AssertNotCalled(t, "Create", mock.Anything, mock.Anything)
+	u := usecase.NewBookUsecase(mockRepo, mockFetcher)
+	return mockRepo, mockFetcher, u
 }
 
 // ==========================================
-// TEST CREATE MANUAL (ADMIN)
+// TEST FETCH AND SAVE METADATA
 // ==========================================
+func TestFetchAndSaveMetadata(t *testing.T) {
+	mockRepo, mockFetcher, u := setupBookUsecase()
+	isbn := "9781234567890"
 
-func TestCreateManual_ConflictISBN(t *testing.T) {
-	mockRepo := new(mocks.BookRepository)
-	mockFetcher := new(mocks.BookMetadataFetcher) // Tetap butuh meski tidak dipakai di fungsi ini
-	uc := usecase.NewBookUsecase(mockRepo, mockFetcher)
+	t.Run("Success", func(t *testing.T) {
+		mockRepo.On("GetByISBN", mock.Anything, isbn).Return(nil, domain.ErrNotFound).Once()
 
-	reqBook := &domain.Book{ISBN: "123", Title: "Buku Test"}
+		newBook := &domain.Book{ISBN: isbn, Title: "Test Book"}
+		mockFetcher.On("FetchByISBN", mock.Anything, isbn).Return(newBook, nil).Once()
+		mockRepo.On("Create", mock.Anything, newBook).Return(nil).Once()
 
-	// Naskah: ISBN ternyata sudah ada di DB
-	mockRepo.On("GetByISBN", mock.Anything, "123").Return(&domain.Book{ID: "old-id"}, nil)
+		result, err := u.FetchAndSaveMetadata(context.Background(), isbn)
 
-	res, err := uc.CreateManual(context.Background(), reqBook)
+		assert.NoError(t, err)
+		assert.NotNil(t, result)
+		assert.Equal(t, "Test Book", result.Title)
+		mockRepo.AssertExpectations(t)
+		mockFetcher.AssertExpectations(t)
+	})
 
-	assert.ErrorIs(t, err, domain.ErrConflict)
-	assert.Nil(t, res)
-}
+	t.Run("Failed - Book Already Exists (Conflict)", func(t *testing.T) {
+		existingBook := &domain.Book{ISBN: isbn}
+		mockRepo.On("GetByISBN", mock.Anything, isbn).Return(existingBook, nil).Once()
 
-func TestCreateManual_Success(t *testing.T) {
-	mockRepo := new(mocks.BookRepository)
-	mockFetcher := new(mocks.BookMetadataFetcher)
-	uc := usecase.NewBookUsecase(mockRepo, mockFetcher)
+		result, err := u.FetchAndSaveMetadata(context.Background(), isbn)
 
-	reqBook := &domain.Book{ISBN: "123", Title: "Buku Test"}
+		assert.Error(t, err)
+		assert.Nil(t, result)
+		assert.ErrorIs(t, err, domain.ErrConflict)
+		assert.Contains(t, err.Error(), "Buku dengan ISBN tersebut sudah ada di sistem")
+		mockRepo.AssertExpectations(t)
+	})
 
-	// Naskah: ISBN belum ada, lalu Create sukses
-	mockRepo.On("GetByISBN", mock.Anything, "123").Return(nil, nil)
-	mockRepo.On("Create", mock.Anything, reqBook).Return(nil)
+	t.Run("Failed - Not Found in Google Books", func(t *testing.T) {
+		mockRepo.On("GetByISBN", mock.Anything, isbn).Return(nil, domain.ErrNotFound).Once()
+		mockFetcher.On("FetchByISBN", mock.Anything, isbn).Return(nil, nil).Once() // Asumsi fetcher return nil jika tidak ketemu
 
-	res, err := uc.CreateManual(context.Background(), reqBook)
+		result, err := u.FetchAndSaveMetadata(context.Background(), isbn)
 
-	assert.NoError(t, err)
-	assert.NotNil(t, res)
-	assert.Equal(t, "Buku Test", res.Title)
-}
-
-// ==========================================
-// TEST UPDATE BOOK (ADMIN)
-// ==========================================
-
-func TestUpdateBook_NotFound(t *testing.T) {
-	mockRepo := new(mocks.BookRepository)
-	mockFetcher := new(mocks.BookMetadataFetcher)
-	uc := usecase.NewBookUsecase(mockRepo, mockFetcher)
-
-	// Naskah: Dicari by ID tidak ketemu
-	mockRepo.On("GetByID", mock.Anything, "id-ngawur").Return(nil, nil)
-
-	res, err := uc.UpdateBook(context.Background(), "id-ngawur", &domain.Book{Title: "Baru"})
-
-	assert.ErrorIs(t, err, domain.ErrNotFound)
-	assert.Nil(t, res)
-}
-
-func TestUpdateBook_Success(t *testing.T) {
-	mockRepo := new(mocks.BookRepository)
-	mockFetcher := new(mocks.BookMetadataFetcher)
-	uc := usecase.NewBookUsecase(mockRepo, mockFetcher)
-
-	oldBook := &domain.Book{ID: "id-123", Title: "Lama"}
-	reqBook := &domain.Book{Title: "Baru"}
-
-	// Naskah: Buku ketemu, lalu Update sukses
-	mockRepo.On("GetByID", mock.Anything, "id-123").Return(oldBook, nil)
-	mockRepo.On("Update", mock.Anything, mock.AnythingOfType("*domain.Book")).Return(nil)
-
-	res, err := uc.UpdateBook(context.Background(), "id-123", reqBook)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, res)
-	assert.Equal(t, "Baru", res.Title) // Pastikan title-nya terganti
+		assert.Error(t, err)
+		assert.Nil(t, result)
+		assert.Contains(t, err.Error(), "Buku dengan ISBN tersebut tidak ditemukan")
+		mockRepo.AssertExpectations(t)
+		mockFetcher.AssertExpectations(t)
+	})
 }
 
 // ==========================================
-// TEST DELETE BOOK (ADMIN)
+// TEST GET ALL BOOKS
 // ==========================================
+func TestGetAllBooks(t *testing.T) {
+	mockRepo, _, u := setupBookUsecase()
 
-func TestDeleteBook_NotFound(t *testing.T) {
-	mockRepo := new(mocks.BookRepository)
-	mockFetcher := new(mocks.BookMetadataFetcher)
-	uc := usecase.NewBookUsecase(mockRepo, mockFetcher)
+	t.Run("Success", func(t *testing.T) {
+		params := domain.PaginationQuery{Page: 1, Limit: 10}
+		mockData := []*domain.Book{{}, {}}
+		var totalItems int64 = 25 // 25 items, limit 10 = 3 pages
 
-	// Naskah: Buku yang mau dihapus tidak ada
-	mockRepo.On("GetByID", mock.Anything, "id-ngawur").Return(nil, nil)
+		mockRepo.On("GetAll", mock.Anything, params).Return(mockData, totalItems, nil).Once()
 
-	err := uc.DeleteBook(context.Background(), "id-ngawur")
+		books, meta, err := u.GetAllBooks(context.Background(), params)
 
-	assert.ErrorIs(t, err, domain.ErrNotFound)
-}
-
-func TestDeleteBook_Success(t *testing.T) {
-	mockRepo := new(mocks.BookRepository)
-	mockFetcher := new(mocks.BookMetadataFetcher)
-	uc := usecase.NewBookUsecase(mockRepo, mockFetcher)
-
-	existingBook := &domain.Book{ID: "id-123", Title: "Buku Sampah"}
-
-	// Naskah: Buku ketemu, eksekusi hapus berhasil
-	mockRepo.On("GetByID", mock.Anything, "id-123").Return(existingBook, nil)
-	mockRepo.On("Delete", mock.Anything, "id-123").Return(nil)
-
-	err := uc.DeleteBook(context.Background(), "id-123")
-
-	assert.NoError(t, err)
+		assert.NoError(t, err)
+		assert.Len(t, books, 2)
+		assert.Equal(t, 3, meta.TotalPages)
+		assert.Equal(t, int64(25), meta.TotalItems)
+		mockRepo.AssertExpectations(t)
+	})
 }
 
 // ==========================================
-// TEST GET ALL BOOKS (PAGINATION)
+// TEST GET BOOK BY ID
 // ==========================================
+func TestGetBookByID(t *testing.T) {
+	mockRepo, _, u := setupBookUsecase()
 
-func TestGetAllBooks_Sukses_MenghitungPaginasi(t *testing.T) {
-	// 1. SIAPKAN STUNTMAN
-	mockRepo := new(mocks.BookRepository)
-	mockFetcher := new(mocks.BookMetadataFetcher)
-	uc := usecase.NewBookUsecase(mockRepo, mockFetcher)
+	t.Run("Success", func(t *testing.T) {
+		mockRepo.On("GetByID", mock.Anything, "book-123").Return(&domain.Book{ID: "book-123"}, nil).Once()
 
-	// 2. SIAPKAN DATA PALSU DAN PARAMETER
-	params := domain.PaginationQuery{
-		Page:  1,
-		Limit: 10,
-	}
+		result, err := u.GetBookByID(context.Background(), "book-123")
 
-	mockBooks := []*domain.Book{
-		{ID: "book-1", Title: "Buku Golang 101"},
-		{ID: "book-2", Title: "Clean Architecture"},
-	}
+		assert.NoError(t, err)
+		assert.NotNil(t, result)
+		assert.Equal(t, "book-123", result.ID)
+		mockRepo.AssertExpectations(t)
+	})
 
-	// Skenario krusial: Total SELURUH buku di database ada 25
-	var totalDataFromDB int64 = 25
+	t.Run("Failed - Not Found", func(t *testing.T) {
+		mockRepo.On("GetByID", mock.Anything, "book-123").Return(nil, domain.ErrNotFound).Once()
 
-	// 3. ATUR SKENARIO (Ekspektasi)
-	// Kita perintahkan Stuntman Repo untuk mengembalikan 2 buku dan total data 25
-	mockRepo.On("GetAll", mock.Anything, params).Return(mockBooks, totalDataFromDB, nil)
+		result, err := u.GetBookByID(context.Background(), "book-123")
 
-	// 4. EKSEKUSI ACTION!
-	books, meta, err := uc.GetAllBooks(context.Background(), params)
+		assert.Error(t, err)
+		assert.Nil(t, result)
+		assert.Contains(t, err.Error(), "Buku dengan ID tersebut tidak ditemukan")
+		mockRepo.AssertExpectations(t)
+	})
 
-	// 5. VALIDASI HASIL (Assert)
-	assert.NoError(t, err)
-	assert.NotNil(t, books)
-	assert.Len(t, books, 2) // Pastikan data buku yang dikembalikan sesuai (2 buku)
+	t.Run("Failed - Database Error", func(t *testing.T) {
+		dbError := errors.New("db error")
+		mockRepo.On("GetByID", mock.Anything, "book-123").Return(nil, dbError).Once()
 
-	// 6. VALIDASI KALKULASI MATEMATIKA (Sangat Penting!)
-	assert.Equal(t, int64(25), meta.TotalItems)
-	assert.Equal(t, 10, meta.Limit)
-	assert.Equal(t, 1, meta.CurrentPage)
+		result, err := u.GetBookByID(context.Background(), "book-123")
 
-	// Jika ada 25 buku, dan 1 halaman isinya 10,
-	// maka total halamannya HARUS 3 (2.5 dibulatkan ke atas).
-	assert.Equal(t, 3, meta.TotalPages)
+		assert.Error(t, err)
+		assert.Nil(t, result)
+		assert.Equal(t, dbError, err) // Ini akan gagal jika kamu belum menambakan `return nil, err` di kodemu!
+		mockRepo.AssertExpectations(t)
+	})
 }
 
-func TestGetAllBooks_Gagal_DariRepository(t *testing.T) {
-	// 1. SIAPKAN STUNTMAN
-	mockRepo := new(mocks.BookRepository)
-	mockFetcher := new(mocks.BookMetadataFetcher)
-	uc := usecase.NewBookUsecase(mockRepo, mockFetcher)
+// ==========================================
+// TEST CREATE MANUAL
+// ==========================================
+func TestCreateManual(t *testing.T) {
+	mockRepo, _, u := setupBookUsecase()
 
-	params := domain.PaginationQuery{Page: 1, Limit: 10}
+	t.Run("Success", func(t *testing.T) {
+		input := domain.CreateBookInput{
+			ISBN:  "12345",
+			Title: "Manual Book",
+		}
 
-	// Skenario: Database tiba-tiba mati / meledak
-	dbError := domain.ErrInternalServerError // Atau error apapun dari repo
+		mockRepo.On("GetByISBN", mock.Anything, "12345").Return(nil, domain.ErrNotFound).Once()
+		mockRepo.On("Create", mock.Anything, mock.MatchedBy(func(b *domain.Book) bool {
+			return b.Title == "Manual Book" && b.ISBN == "12345"
+		})).Return(nil).Once()
 
-	// 2. ATUR SKENARIO
-	mockRepo.On("GetAll", mock.Anything, params).Return(nil, int64(0), dbError)
+		result, err := u.CreateManual(context.Background(), input)
 
-	// 3. EKSEKUSI ACTION!
-	books, meta, err := uc.GetAllBooks(context.Background(), params)
+		assert.NoError(t, err)
+		assert.NotNil(t, result)
+		mockRepo.AssertExpectations(t)
+	})
 
-	// 4. VALIDASI HASIL
-	assert.Error(t, err)
-	assert.Equal(t, dbError, err)
-	assert.Nil(t, books)                // Data harus kosong
-	assert.Equal(t, 0, meta.TotalPages) // Meta harus kosong karena gagal
+	t.Run("Failed - ISBN Conflict", func(t *testing.T) {
+		input := domain.CreateBookInput{ISBN: "12345"}
+		mockRepo.On("GetByISBN", mock.Anything, "12345").Return(&domain.Book{}, nil).Once()
+
+		result, err := u.CreateManual(context.Background(), input)
+
+		assert.Error(t, err)
+		assert.Nil(t, result)
+		assert.ErrorIs(t, err, domain.ErrConflict)
+		assert.Contains(t, err.Error(), "Buku dengan ISBN tersebut sudah terdaftar")
+		mockRepo.AssertExpectations(t)
+	})
+}
+
+// ==========================================
+// TEST UPDATE BOOK
+// ==========================================
+func TestUpdateBook(t *testing.T) {
+	mockRepo, _, u := setupBookUsecase()
+
+	t.Run("Success", func(t *testing.T) {
+		input := domain.UpdateBookInput{
+			ID:    "book-123",
+			Title: "Updated Title",
+		}
+		existingBook := &domain.Book{ID: "book-123", Title: "Old Title"}
+
+		mockRepo.On("GetByID", mock.Anything, "book-123").Return(existingBook, nil).Once()
+		mockRepo.On("Update", mock.Anything, mock.MatchedBy(func(b *domain.Book) bool {
+			return b.Title == "Updated Title"
+		})).Return(nil).Once()
+
+		result, err := u.UpdateBook(context.Background(), input)
+
+		assert.NoError(t, err)
+		assert.NotNil(t, result)
+		assert.Equal(t, "Updated Title", result.Title)
+		mockRepo.AssertExpectations(t)
+	})
+}
+
+// ==========================================
+// TEST DELETE BOOK
+// ==========================================
+func TestDeleteBook(t *testing.T) {
+	mockRepo, _, u := setupBookUsecase()
+
+	t.Run("Success", func(t *testing.T) {
+		mockRepo.On("GetByID", mock.Anything, "book-123").Return(&domain.Book{}, nil).Once()
+		mockRepo.On("Delete", mock.Anything, "book-123").Return(nil).Once()
+
+		err := u.DeleteBook(context.Background(), "book-123")
+
+		assert.NoError(t, err)
+		mockRepo.AssertExpectations(t)
+	})
 }

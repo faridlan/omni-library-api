@@ -2,6 +2,7 @@ package usecase_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/faridlan/omni-library-api/internal/domain"
@@ -11,126 +12,192 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-// SKENARIO 1: Gagal karena Buku tidak ada di Rak User
-func TestAddNote_BukuTidakAdaDiRak(t *testing.T) {
+// Helper setup
+func setupBookNoteUsecase() (*mocks.BookNoteRepository, *mocks.UserBookRepository, domain.BookNoteUsecase) {
 	mockNoteRepo := new(mocks.BookNoteRepository)
-	mockUserBookRepo := new(mocks.UserBookRepository)
-	uc := usecase.NewBookNoteUsecase(mockNoteRepo, mockUserBookRepo)
-
-	dummyNote := &domain.BookNote{
-		UserBookID: "rak-001",
-		Quote:      "Clean Code is a reader-focused development.",
-	}
-
-	// NASKAH: Saat Otak mengecek ke rak, ternyata kosong (nil)
-	mockUserBookRepo.On("GetByID", mock.Anything, dummyNote.UserBookID).Return(nil, nil)
-
-	// ACTION!
-	err := uc.AddNote(context.Background(), dummyNote)
-
-	// VALIDASI: Harus gagal dengan pesan ErrNotFound
-	assert.ErrorIs(t, err, domain.ErrNotFound)
-
-	// VALIDASI DISIPLIN: Jangan pernah simpan note kalau bukunya nggak ada!
-	mockNoteRepo.AssertNotCalled(t, "Create", mock.Anything, mock.Anything)
-}
-
-// SKENARIO 2: Sukses Menambahkan Catatan
-func TestAddNote_Sukses(t *testing.T) {
-	mockNoteRepo := new(mocks.BookNoteRepository)
-	mockUserBookRepo := new(mocks.UserBookRepository)
-	uc := usecase.NewBookNoteUsecase(mockNoteRepo, mockUserBookRepo)
-
-	dummyNote := &domain.BookNote{
-		UserBookID: "rak-001",
-		Quote:      "Testing is not a phase, it's a lifestyle.",
-	}
-
-	dummyUserBook := &domain.UserBook{ID: "rak-001"}
-
-	// NASKAH A: Bukunya ada di rak
-	mockUserBookRepo.On("GetByID", mock.Anything, dummyNote.UserBookID).Return(dummyUserBook, nil)
-
-	// NASKAH B: Proses save/create berjalan lancar
-	mockNoteRepo.On("Create", mock.Anything, dummyNote).Return(nil)
-
-	// ACTION!
-	err := uc.AddNote(context.Background(), dummyNote)
-
-	// VALIDASI: Tidak boleh ada error
-	assert.NoError(t, err)
-
-	mockUserBookRepo.AssertExpectations(t)
-	mockNoteRepo.AssertExpectations(t)
+	mockUBRepo := new(mocks.UserBookRepository)
+	u := usecase.NewBookNoteUsecase(mockNoteRepo, mockUBRepo)
+	return mockNoteRepo, mockUBRepo, u
 }
 
 // ==========================================
-// TEST GET NOTES BY USER BOOK (PAGINATION)
+// TEST ADD NOTE
 // ==========================================
-
-// SKENARIO 3: Sukses Mengambil Daftar Catatan dengan Paginasi
-func TestGetNotesByUserBookID_Sukses_HitungPaginasi(t *testing.T) {
-	// 1. SIAPKAN STUNTMAN
-	mockNoteRepo := new(mocks.BookNoteRepository)
-	mockUserBookRepo := new(mocks.UserBookRepository)
-	uc := usecase.NewBookNoteUsecase(mockNoteRepo, mockUserBookRepo)
-
-	// 2. SIAPKAN DATA PALSU & PARAMETER
-	userBookID := "rak-123"
-	params := domain.PaginationQuery{Page: 1, Limit: 3} // Limit 3 per halaman
-
-	dummyNotes := []*domain.BookNote{
-		{ID: "note-1", Quote: "Quote 1"},
-		{ID: "note-2", Quote: "Quote 2"},
-		{ID: "note-3", Quote: "Quote 3"},
+func TestAddNote(t *testing.T) {
+	mockNoteRepo, mockUBRepo, u := setupBookNoteUsecase()
+	input := domain.CreateBookNoteInput{
+		UserBookID:    "ub-123",
+		Quote:         "Bekerjalah seperti programmer pemalas",
+		PageReference: 42,
+		Tags:          []string{"Inspiratif"},
 	}
 
-	// Skenario: Total ada 7 catatan di database untuk buku ini
-	var totalData int64 = 7
+	t.Run("Success", func(t *testing.T) {
+		mockUBRepo.On("FindByID", mock.Anything, input.UserBookID).Return(&domain.UserBook{}, nil).Once()
+		mockNoteRepo.On("Create", mock.Anything, mock.MatchedBy(func(n *domain.BookNote) bool {
+			return n.Quote == input.Quote && n.UserBookID == input.UserBookID
+		})).Return(nil).Once()
 
-	// 3. ATUR NASKAH (Ekspektasi)
-	// Naskah A: Pastikan buku memang ada di rak user
-	mockUserBookRepo.On("GetByID", mock.Anything, userBookID).Return(&domain.UserBook{ID: userBookID}, nil)
+		result, err := u.AddNote(context.Background(), input)
 
-	// Naskah B: Repo mengembalikan 3 data dan total items 7
-	mockNoteRepo.On("GetByUserBookID", mock.Anything, userBookID, params).Return(dummyNotes, totalData, nil)
+		assert.NoError(t, err)
+		assert.NotNil(t, result)
+		assert.Equal(t, input.Quote, result.Quote)
+		mockUBRepo.AssertExpectations(t)
+		mockNoteRepo.AssertExpectations(t)
+	})
 
-	// 4. ACTION!
-	result, meta, err := uc.GetNotesForBook(context.Background(), userBookID, params)
+	t.Run("Failed - UserBook Not Found", func(t *testing.T) {
+		mockUBRepo.On("FindByID", mock.Anything, input.UserBookID).Return(nil, domain.ErrNotFound).Once()
 
-	// 5. VALIDASI HASIL
-	assert.NoError(t, err)
-	assert.Len(t, result, 3)
+		result, err := u.AddNote(context.Background(), input)
 
-	// 6. VALIDASI MATEMATIKA PAGINASI (The Magic of math.Ceil)
-	assert.Equal(t, int64(7), meta.TotalItems)
-	assert.Equal(t, 3, meta.Limit)
+		assert.Error(t, err)
+		assert.Nil(t, result)
+		assert.Contains(t, err.Error(), "Rak buku tidak ditemukan")
+		mockUBRepo.AssertExpectations(t)
+	})
 
-	// 7 data / 3 per halaman = 2.33 -> Harus jadi 3 Halaman
-	assert.Equal(t, 3, meta.TotalPages)
+	t.Run("Failed - UserBook DB Error", func(t *testing.T) {
+		dbErr := errors.New("db error")
+		mockUBRepo.On("FindByID", mock.Anything, input.UserBookID).Return(nil, dbErr).Once()
+
+		result, err := u.AddNote(context.Background(), input)
+
+		assert.Error(t, err)
+		assert.Nil(t, result)
+		assert.Equal(t, dbErr, err) // Bukti bug fix berhasil
+		mockUBRepo.AssertExpectations(t)
+	})
+
+	t.Run("Failed - Create DB Error", func(t *testing.T) {
+		mockUBRepo.On("FindByID", mock.Anything, input.UserBookID).Return(&domain.UserBook{}, nil).Once()
+		mockNoteRepo.On("Create", mock.Anything, mock.AnythingOfType("*domain.BookNote")).Return(errors.New("insert failed")).Once()
+
+		result, err := u.AddNote(context.Background(), input)
+
+		assert.Error(t, err)
+		assert.Nil(t, result)
+		assert.Equal(t, domain.ErrInternalServerError, err) // Diubah oleh usecase menjadi InternalServerError
+		mockUBRepo.AssertExpectations(t)
+		mockNoteRepo.AssertExpectations(t)
+	})
 }
 
-// SKENARIO 4: Gagal mengambil catatan karena Bukunya tidak ditemukan
-func TestGetNotesByUserBookID_BukuTidakDitemukan(t *testing.T) {
-	// 1. SIAPKAN STUNTMAN
-	mockNoteRepo := new(mocks.BookNoteRepository)
-	mockUserBookRepo := new(mocks.UserBookRepository)
-	uc := usecase.NewBookNoteUsecase(mockNoteRepo, mockUserBookRepo)
-
-	userBookID := "rak-ngawur"
+// ==========================================
+// TEST GET NOTES FOR BOOK
+// ==========================================
+func TestGetNotesForBook(t *testing.T) {
+	mockNoteRepo, mockUBRepo, u := setupBookNoteUsecase()
+	ubID := "ub-123"
 	params := domain.PaginationQuery{Page: 1, Limit: 10}
 
-	// 2. NASKAH: Rak user kosong
-	mockUserBookRepo.On("GetByID", mock.Anything, userBookID).Return(nil, nil)
+	t.Run("Success", func(t *testing.T) {
+		mockUBRepo.On("FindByID", mock.Anything, ubID).Return(&domain.UserBook{}, nil).Once()
 
-	// 3. ACTION!
-	result, meta, err := uc.GetNotesForBook(context.Background(), userBookID, params)
+		mockData := []*domain.BookNote{{}, {}, {}}
+		var totalItems int64 = 25 // Limit 10 -> Total Pages: 3
+		mockNoteRepo.On("FindAllByUserBookID", mock.Anything, ubID, params).Return(mockData, totalItems, nil).Once()
 
-	// 4. VALIDASI
-	assert.ErrorIs(t, err, domain.ErrNotFound)
-	assert.Nil(t, result)
-	assert.Equal(t, 0, meta.TotalPages)
+		notes, meta, err := u.GetNotesForBook(context.Background(), ubID, params)
 
-	// Pastikan Repo Note tidak dipanggil kalau bukunya saja tidak ketemu
-	mockNoteRepo.AssertNotCalled(t, "GetByUserBookID", mock.Anything, mock.Anything, mock.Anything)
+		assert.NoError(t, err)
+		assert.Len(t, notes, 3)
+		assert.Equal(t, 3, meta.TotalPages)
+		assert.Equal(t, int64(25), meta.TotalItems)
+		mockUBRepo.AssertExpectations(t)
+		mockNoteRepo.AssertExpectations(t)
+	})
+
+	t.Run("Failed - UserBook Not Found", func(t *testing.T) {
+		mockUBRepo.On("FindByID", mock.Anything, ubID).Return(nil, domain.ErrNotFound).Once()
+
+		notes, _, err := u.GetNotesForBook(context.Background(), ubID, params)
+
+		assert.Error(t, err)
+		assert.Nil(t, notes)
+		assert.Contains(t, err.Error(), "Rak buku tidak ditemukan")
+		mockUBRepo.AssertExpectations(t)
+	})
+}
+
+// ==========================================
+// TEST DELETE NOTE
+// ==========================================
+func TestDeleteNote(t *testing.T) {
+	mockNoteRepo, _, u := setupBookNoteUsecase()
+	noteID := "note-123"
+
+	t.Run("Success", func(t *testing.T) {
+		mockNoteRepo.On("FindByID", mock.Anything, noteID).Return(&domain.BookNote{}, nil).Once()
+		mockNoteRepo.On("Delete", mock.Anything, noteID).Return(nil).Once()
+
+		err := u.DeleteNote(context.Background(), noteID)
+
+		assert.NoError(t, err)
+		mockNoteRepo.AssertExpectations(t)
+	})
+
+	t.Run("Failed - Note Not Found", func(t *testing.T) {
+		mockNoteRepo.On("FindByID", mock.Anything, noteID).Return(nil, domain.ErrNotFound).Once()
+
+		err := u.DeleteNote(context.Background(), noteID)
+
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "Catatan tidak ditemukan")
+		mockNoteRepo.AssertExpectations(t)
+	})
+}
+
+// ==========================================
+// TEST UPDATE NOTE
+// ==========================================
+func TestUpdateNote(t *testing.T) {
+	mockNoteRepo, _, u := setupBookNoteUsecase()
+	input := domain.UpdateBookNoteInput{
+		ID:            "note-123",
+		Quote:         "Updated Quote",
+		PageReference: 100,
+		Tags:          []string{"Updated"},
+	}
+
+	t.Run("Success", func(t *testing.T) {
+		existingNote := &domain.BookNote{ID: "note-123", Quote: "Old Quote"}
+		mockNoteRepo.On("FindByID", mock.Anything, input.ID).Return(existingNote, nil).Once()
+
+		mockNoteRepo.On("Update", mock.Anything, mock.MatchedBy(func(n *domain.BookNote) bool {
+			return n.Quote == "Updated Quote" && n.PageReference == 100
+		})).Return(nil).Once()
+
+		result, err := u.UpdateNote(context.Background(), input)
+
+		assert.NoError(t, err)
+		assert.NotNil(t, result)
+		assert.Equal(t, "Updated Quote", result.Quote)
+		mockNoteRepo.AssertExpectations(t)
+	})
+
+	t.Run("Failed - Note Not Found", func(t *testing.T) {
+		mockNoteRepo.On("FindByID", mock.Anything, input.ID).Return(nil, domain.ErrNotFound).Once()
+
+		result, err := u.UpdateNote(context.Background(), input)
+
+		assert.Error(t, err)
+		assert.Nil(t, result)
+		assert.Contains(t, err.Error(), "Catatan tidak ditemukan")
+		mockNoteRepo.AssertExpectations(t)
+	})
+
+	t.Run("Failed - Update DB Error", func(t *testing.T) {
+		existingNote := &domain.BookNote{ID: "note-123"}
+		mockNoteRepo.On("FindByID", mock.Anything, input.ID).Return(existingNote, nil).Once()
+		mockNoteRepo.On("Update", mock.Anything, mock.AnythingOfType("*domain.BookNote")).Return(errors.New("update failed")).Once()
+
+		result, err := u.UpdateNote(context.Background(), input)
+
+		assert.Error(t, err)
+		assert.Nil(t, result)
+		assert.Equal(t, domain.ErrInternalServerError, err) // Bukti error mapping jalan
+		mockNoteRepo.AssertExpectations(t)
+	})
 }

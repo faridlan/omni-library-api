@@ -7,22 +7,20 @@ import (
 	"github.com/google/uuid"
 )
 
-// UserModel merepresentasikan tabel users yang sudah di-update
 type UserModel struct {
-	ID           string `gorm:"type:uuid;primary_key"`
-	Name         string `gorm:"type:varchar(255);not null"`
-	Email        string `gorm:"type:varchar(255);uniqueIndex;not null"`
-	PasswordHash string `gorm:"column:password_hash;type:varchar(255);not null"` // <-- PENYESUAIAN NAMA KOLOM SQL
-	Role         string `gorm:"type:varchar(50);not null;default:'user'"`
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
+	ID           string    `gorm:"type:uuid;primary_key"`
+	Name         string    `gorm:"type:varchar(255);not null"`
+	Email        string    `gorm:"type:varchar(255);uniqueIndex;not null"`
+	PasswordHash string    `gorm:"column:password_hash;type:varchar(255);not null"`
+	Role         string    `gorm:"type:varchar(50);not null;default:'user'"`
+	CreatedAt    time.Time `gorm:"autoCreateTime"`
+	UpdatedAt    time.Time `gorm:"autoUpdateTime"`
 }
 
 func (UserModel) TableName() string {
 	return "users"
 }
 
-// 1. Model GORM untuk pemetaan ke tabel 'refresh_tokens'
 type RefreshTokenModel struct {
 	ID        string    `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	UserID    string    `gorm:"type:uuid;not null"`
@@ -31,7 +29,6 @@ type RefreshTokenModel struct {
 	CreatedAt time.Time `gorm:"autoCreateTime"`
 }
 
-// Beri tahu GORM nama tabel pastinya
 func (RefreshTokenModel) TableName() string {
 	return "refresh_tokens"
 }
@@ -41,7 +38,7 @@ func (m *UserModel) ToDomain() *domain.User {
 		ID:        m.ID,
 		Name:      m.Name,
 		Email:     m.Email,
-		Password:  m.PasswordHash, // Petakan PasswordHash dari DB ke Password di Domain
+		Password:  m.PasswordHash,
 		Role:      m.Role,
 		CreatedAt: m.CreatedAt,
 		UpdatedAt: m.UpdatedAt,
@@ -58,7 +55,7 @@ func FromUserDomain(u *domain.User) *UserModel {
 		ID:           id,
 		Name:         u.Name,
 		Email:        u.Email,
-		PasswordHash: u.Password, // Petakan Password dari Domain ke PasswordHash di DB
+		PasswordHash: u.Password,
 		Role:         u.Role,
 		CreatedAt:    u.CreatedAt,
 		UpdatedAt:    u.UpdatedAt,
