@@ -11,7 +11,7 @@ type UserHandler struct {
 	userUsecase domain.UserUsecase
 }
 
-func NewUserHandler(router fiber.Router, userUsecase domain.UserUsecase) *UserHandler {
+func NewUserHandler(userUsecase domain.UserUsecase) *UserHandler {
 	return &UserHandler{
 		userUsecase: userUsecase,
 	}

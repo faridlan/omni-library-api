@@ -11,7 +11,7 @@ type BookNoteHandler struct {
 	usecase domain.BookNoteUsecase
 }
 
-func NewBookNoteHandler(router fiber.Router, u domain.BookNoteUsecase) *BookNoteHandler {
+func NewBookNoteHandler(u domain.BookNoteUsecase) *BookNoteHandler {
 	return &BookNoteHandler{usecase: u}
 }
 

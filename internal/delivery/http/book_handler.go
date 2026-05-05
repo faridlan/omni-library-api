@@ -13,7 +13,7 @@ type BookHandler struct {
 	bookUsecase domain.BookUsecase
 }
 
-func NewBookHandler(router fiber.Router, bu domain.BookUsecase) *BookHandler {
+func NewBookHandler(bu domain.BookUsecase) *BookHandler {
 	return &BookHandler{
 		bookUsecase: bu,
 	}

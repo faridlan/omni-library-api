@@ -47,29 +47,46 @@ func main() {
 
 	db := config.InitDB(dbUser, dbPassword, dbHost, dbPort, dbName)
 
-	//Fitur Authentication & Authorization
+	// ==========================================
+	// 1. INISIASI REPOSITORY & USECASE
+	// ==========================================
 	userRepo := postgres.NewUserRepository(db)
 	authRepo := postgres.NewAuthRepository(db)
 	authUsecase := usecase.NewAuthUsecase(userRepo, authRepo)
 
-	// Fitur Book Metadata
 	bookRepo := postgres.NewBookRepository(db)
 	bookFetcher := external.NewGoogleBooksFetcher(apiKey)
 	bookUsecase := usecase.NewBookUsecase(bookRepo, bookFetcher)
 
-	// Fitur Reading Tracker
 	userBookRepo := postgres.NewUserBookRepository(db)
 	userBookUsecase := usecase.NewUserBookUsecase(userBookRepo, bookRepo)
 
-	// Fitur Book Notes (Quotes & Tags)
 	bookNoteRepo := postgres.NewBookNoteRepository(db)
 	bookNoteUsecase := usecase.NewBookNoteUsecase(bookNoteRepo, userBookRepo)
 
-	// Fitur User Profile
 	userUsecase := usecase.NewUserUsecase(userRepo)
 
-	dbURL := os.Getenv("DB_URL")
+	// ==========================================
+	// 2. INISIASI HANDLER
+	// ==========================================
+	authHandler := myHttp.NewAuthHandler(authUsecase)
+	bookHandler := myHttp.NewBookHandler(bookUsecase)
+	userBookHandler := myHttp.NewUserBookHandler(userBookUsecase)
+	bookNoteHandler := myHttp.NewBookNoteHandler(bookNoteUsecase)
+	userHandler := myHttp.NewUserHandler(userUsecase)
 
+	// ==========================================
+	// 3. BUNGKUS KE DALAM STRUCT REGISTRY
+	// ==========================================
+	handlers := myHttp.AppHandlers{
+		Auth:     authHandler,
+		Book:     bookHandler,
+		UserBook: userBookHandler,
+		BookNote: bookNoteHandler,
+		User:     userHandler,
+	}
+
+	dbURL := os.Getenv("DB_URL")
 	config.RunDBMigration(dbURL)
 
 	swaggerHost := os.Getenv("SWAGGER_HOST")
@@ -99,8 +116,10 @@ func main() {
 
 	app.Get("/swagger/*", swagger.HandlerDefault)
 
-	// Daftarkan Handler
-	myHttp.SetupRoutes(app, authUsecase, bookUsecase, userBookUsecase, bookNoteUsecase, userUsecase)
+	// ==========================================
+	// 4. DAFTARKAN SEMUA ROUTE KE FIBER
+	// ==========================================
+	myHttp.SetupRoutes(app, handlers)
 
 	port := os.Getenv("APP_PORT")
 	if port == "" {

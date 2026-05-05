@@ -11,7 +11,7 @@ type UserBookHandler struct {
 	usecase domain.UserBookUsecase
 }
 
-func NewUserBookHandler(router fiber.Router, u domain.UserBookUsecase) *UserBookHandler {
+func NewUserBookHandler(u domain.UserBookUsecase) *UserBookHandler {
 	return &UserBookHandler{usecase: u}
 }
 

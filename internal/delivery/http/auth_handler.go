@@ -12,7 +12,7 @@ type AuthHandler struct {
 	authUsecase domain.AuthUsecase
 }
 
-func NewAuthHandler(router fiber.Router, uc domain.AuthUsecase) *AuthHandler {
+func NewAuthHandler(uc domain.AuthUsecase) *AuthHandler {
 	return &AuthHandler{
 		authUsecase: uc,
 	}
