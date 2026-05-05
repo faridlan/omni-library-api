@@ -31,10 +31,10 @@ func (r *userBookRepository) AddBookToShelf(ctx context.Context, ub *domain.User
 	return nil
 }
 
-func (r *userBookRepository) GetByUserAndBookID(ctx context.Context, userID, bookID string) (*domain.UserBookWithMetadata, error) {
+func (r *userBookRepository) GetDetailByID(ctx context.Context, userID, userBookID string) (*domain.UserBookWithMetadata, error) {
 	var model UserBookModel
 	baseQuery := r.db.WithContext(ctx).Table("user_books").
-		Where("user_id = ? AND id = ?", userID, bookID)
+		Where("user_id = ? AND id = ?", userID, userBookID)
 
 	err := baseQuery.
 		Preload("Book").
@@ -42,7 +42,7 @@ func (r *userBookRepository) GetByUserAndBookID(ctx context.Context, userID, boo
 		First(&model).Error
 
 	if err != nil {
-		return nil, err
+		return nil, TranslateError(err)
 	}
 
 	bookResult := &domain.UserBookWithMetadata{
@@ -53,26 +53,7 @@ func (r *userBookRepository) GetByUserAndBookID(ctx context.Context, userID, boo
 	return bookResult, nil
 }
 
-func (r *userBookRepository) UpdateProgress(ctx context.Context, ub *domain.UserBook) error {
-
-	updateData := map[string]any{
-		"status":       ub.Status,
-		"current_page": ub.CurrentPage,
-		"updated_at":   time.Now(),
-	}
-
-	if ub.Rating >= 1 && ub.Rating <= 5 {
-		updateData["rating"] = ub.Rating
-	}
-
-	result := r.db.WithContext(ctx).Table("user_books").
-		Where("id = ?", ub.ID).
-		Updates(updateData)
-
-	return result.Error
-}
-
-func (r *userBookRepository) GetByUserID(ctx context.Context, userID string, status string, params domain.PaginationQuery) ([]*domain.UserBookWithMetadata, int64, error) {
+func (r *userBookRepository) FindAllByUserID(ctx context.Context, userID string, status string, params domain.PaginationQuery) ([]*domain.UserBookWithMetadata, int64, error) {
 	var dbModels []UserBookModel
 	var totalItems int64
 
@@ -108,35 +89,26 @@ func (r *userBookRepository) GetByUserID(ctx context.Context, userID string, sta
 	return results, totalItems, nil
 }
 
-func (r *userBookRepository) GetByID(ctx context.Context, id string) (*domain.UserBook, error) {
+func (r *userBookRepository) FindByID(ctx context.Context, id string) (*domain.UserBook, error) {
 	var model UserBookModel
-	result := r.db.WithContext(ctx).Table("user_books").Where("id = ?", id).First(&model)
-	if result.Error != nil {
-		if result.Error == gorm.ErrRecordNotFound {
-			return nil, nil
-		}
-		return nil, result.Error
+	err := r.db.WithContext(ctx).Table("user_books").Where("id = ?", id).First(&model).Error
+
+	if err != nil {
+		return nil, TranslateError(err)
 	}
+
 	return model.ToDomain(), nil
 }
 
-func (r *userBookRepository) Delete(ctx context.Context, userID, bookID string) error {
-	result := r.db.WithContext(ctx).Table("user_books").Where("user_id = ? AND id = ?", userID, bookID).Delete(&UserBookModel{})
-	return result.Error
-}
-
-func (r *userBookRepository) GetByBookID(ctx context.Context, userID, bookID string) (*domain.UserBookWithMetadata, error) {
+func (r *userBookRepository) FindByUserIDAndBookID(ctx context.Context, userID, bookID string) (*domain.UserBookWithMetadata, error) {
 	var model UserBookModel
-	result := r.db.WithContext(ctx).Table("user_books").
+	err := r.db.WithContext(ctx).Table("user_books").
 		Where("user_id = ? AND book_id = ?", userID, bookID).
 		Preload("Book").
-		First(&model)
+		First(&model).Error
 
-	if result.Error != nil {
-		if result.Error == gorm.ErrRecordNotFound {
-			return nil, nil
-		}
-		return nil, result.Error
+	if err != nil {
+		return nil, TranslateError(err)
 	}
 
 	bookResult := &domain.UserBookWithMetadata{
@@ -144,4 +116,28 @@ func (r *userBookRepository) GetByBookID(ctx context.Context, userID, bookID str
 		Book:     *model.Book.ToDomain(),
 	}
 	return bookResult, nil
+}
+
+func (r *userBookRepository) UpdateProgress(ctx context.Context, ub *domain.UserBook) error {
+
+	updateData := map[string]any{
+		"status":       ub.Status,
+		"current_page": ub.CurrentPage,
+		"updated_at":   time.Now(),
+	}
+
+	if ub.Rating >= 1 && ub.Rating <= 5 {
+		updateData["rating"] = ub.Rating
+	}
+
+	result := r.db.WithContext(ctx).Table("user_books").
+		Where("id = ?", ub.ID).
+		Updates(updateData)
+
+	return result.Error
+}
+
+func (r *userBookRepository) Delete(ctx context.Context, userID, bookID string) error {
+	result := r.db.WithContext(ctx).Table("user_books").Where("user_id = ? AND id = ?", userID, bookID).Delete(&UserBookModel{})
+	return result.Error
 }

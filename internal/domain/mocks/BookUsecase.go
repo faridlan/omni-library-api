@@ -14,9 +14,9 @@ type BookUsecase struct {
 	mock.Mock
 }
 
-// CreateManual provides a mock function with given fields: ctx, book
-func (_m *BookUsecase) CreateManual(ctx context.Context, book *domain.Book) (*domain.Book, error) {
-	ret := _m.Called(ctx, book)
+// CreateManual provides a mock function with given fields: ctx, input
+func (_m *BookUsecase) CreateManual(ctx context.Context, input domain.CreateBookInput) (*domain.Book, error) {
+	ret := _m.Called(ctx, input)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CreateManual")
@@ -24,19 +24,19 @@ func (_m *BookUsecase) CreateManual(ctx context.Context, book *domain.Book) (*do
 
 	var r0 *domain.Book
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *domain.Book) (*domain.Book, error)); ok {
-		return rf(ctx, book)
+	if rf, ok := ret.Get(0).(func(context.Context, domain.CreateBookInput) (*domain.Book, error)); ok {
+		return rf(ctx, input)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *domain.Book) *domain.Book); ok {
-		r0 = rf(ctx, book)
+	if rf, ok := ret.Get(0).(func(context.Context, domain.CreateBookInput) *domain.Book); ok {
+		r0 = rf(ctx, input)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*domain.Book)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *domain.Book) error); ok {
-		r1 = rf(ctx, book)
+	if rf, ok := ret.Get(1).(func(context.Context, domain.CreateBookInput) error); ok {
+		r1 = rf(ctx, input)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -159,9 +159,9 @@ func (_m *BookUsecase) GetBookByID(ctx context.Context, id string) (*domain.Book
 	return r0, r1
 }
 
-// UpdateBook provides a mock function with given fields: ctx, id, req
-func (_m *BookUsecase) UpdateBook(ctx context.Context, id string, req *domain.Book) (*domain.Book, error) {
-	ret := _m.Called(ctx, id, req)
+// UpdateBook provides a mock function with given fields: ctx, input
+func (_m *BookUsecase) UpdateBook(ctx context.Context, input domain.UpdateBookInput) (*domain.Book, error) {
+	ret := _m.Called(ctx, input)
 
 	if len(ret) == 0 {
 		panic("no return value specified for UpdateBook")
@@ -169,19 +169,19 @@ func (_m *BookUsecase) UpdateBook(ctx context.Context, id string, req *domain.Bo
 
 	var r0 *domain.Book
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *domain.Book) (*domain.Book, error)); ok {
-		return rf(ctx, id, req)
+	if rf, ok := ret.Get(0).(func(context.Context, domain.UpdateBookInput) (*domain.Book, error)); ok {
+		return rf(ctx, input)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, *domain.Book) *domain.Book); ok {
-		r0 = rf(ctx, id, req)
+	if rf, ok := ret.Get(0).(func(context.Context, domain.UpdateBookInput) *domain.Book); ok {
+		r0 = rf(ctx, input)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*domain.Book)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, *domain.Book) error); ok {
-		r1 = rf(ctx, id, req)
+	if rf, ok := ret.Get(1).(func(context.Context, domain.UpdateBookInput) error); ok {
+		r1 = rf(ctx, input)
 	} else {
 		r1 = ret.Error(1)
 	}

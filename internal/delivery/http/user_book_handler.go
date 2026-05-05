@@ -11,9 +11,49 @@ type UserBookHandler struct {
 	usecase domain.UserBookUsecase
 }
 
-func NewUserBookHandler(router fiber.Router, u domain.UserBookUsecase) *UserBookHandler {
+func NewUserBookHandler(u domain.UserBookUsecase) *UserBookHandler {
 	return &UserBookHandler{usecase: u}
+}
 
+// ==========================================
+// HELPER: MAPPING ENTITY KE RESPONSE DTO
+// ==========================================
+func toUserBookResponse(ub *domain.UserBook) dto.UserBookResponse {
+	if ub == nil {
+		return dto.UserBookResponse{}
+	}
+	return dto.UserBookResponse{
+		ID:          ub.ID,
+		UserID:      ub.UserID,
+		BookID:      ub.BookID,
+		Status:      ub.Status,
+		CurrentPage: ub.CurrentPage,
+		Rating:      ub.Rating,
+		CreatedAt:   ub.CreatedAt,
+		UpdatedAt:   ub.UpdatedAt,
+	}
+}
+
+func toUserBookWithMetadataResponse(ub *domain.UserBookWithMetadata) dto.UserBookWithMetaDataResponse {
+	if ub == nil {
+		return dto.UserBookWithMetaDataResponse{}
+	}
+
+	return dto.UserBookWithMetaDataResponse{
+		UserBookResponse: toUserBookResponse(&ub.UserBook),
+		Book: dto.BookResponse{
+			ID:            ub.Book.ID,
+			ISBN:          ub.Book.ISBN,
+			Title:         ub.Book.Title,
+			Authors:       ub.Book.Authors,
+			PublishedDate: ub.Book.PublishedDate,
+			Description:   ub.Book.Description,
+			PageCount:     ub.Book.PageCount,
+			CoverURL:      ub.Book.CoverURL,
+			CreatedAt:     ub.Book.CreatedAt,
+			UpdatedAt:     ub.Book.UpdatedAt,
+		},
+	}
 }
 
 // AddBook godoc
@@ -23,7 +63,7 @@ func NewUserBookHandler(router fiber.Router, u domain.UserBookUsecase) *UserBook
 // @Accept json
 // @Produce json
 // @Param request body dto.AddBookRequest true "Payload berisi ID Buku"
-// @Success 201 {object} utils.SuccessResponse[domain.UserBook] "Buku berhasil ditambahkan ke rak"
+// @Success 201 {object} utils.SuccessResponse[dto.UserBookResponse] "Buku berhasil ditambahkan ke rak"
 // @Failure 400 {object} utils.ErrorResponse "Format JSON salah"
 // @Failure 401 {object} utils.ErrorResponse "Unauthorized (Token tidak ada/salah)"
 // @Failure 409 {object} utils.ErrorResponse "Buku sudah ada di rak (Conflict)"
@@ -47,7 +87,10 @@ func (h *UserBookHandler) AddBook(c *fiber.Ctx) error {
 		return utils.HandleDomainError(c, err)
 	}
 
-	return utils.SendSuccess(c, fiber.StatusCreated, "Buku berhasil ditambahkan ke rak", result)
+	// Gunakan Mapper!
+	res := toUserBookResponse(result)
+
+	return utils.SendSuccess(c, fiber.StatusCreated, "Buku berhasil ditambahkan ke rak", res)
 }
 
 // UpdateProgress godoc
@@ -58,7 +101,7 @@ func (h *UserBookHandler) AddBook(c *fiber.Ctx) error {
 // @Produce json
 // @Param book_id path string true "ID Buku di database master"
 // @Param request body dto.UpdateProgressRequest true "Payload update progres"
-// @Success 200 {object} utils.SuccessResponse[domain.UserBook] "Progres bacaan berhasil diperbarui"
+// @Success 200 {object} utils.SuccessResponse[dto.UserBookResponse] "Progres bacaan berhasil diperbarui"
 // @Failure 400 {object} utils.ErrorResponse "Format JSON salah"
 // @Failure 401 {object} utils.ErrorResponse "Unauthorized (Token tidak ada/salah)"
 // @Failure 404 {object} utils.ErrorResponse "Buku tidak ditemukan di rak"
@@ -82,13 +125,25 @@ func (h *UserBookHandler) UpdateProgress(c *fiber.Ctx) error {
 	}
 	userID := c.Locals("user_id").(string)
 
-	result, err := h.usecase.UpdateReadingStatus(c.Context(), userID, bookID, req.Status, req.CurrentPage, req.Rating)
-	if err != nil {
+	// Note: Di kodingan sebelumnya kamu mengisi input.ID dengan userID.
+	// Seharusnya input.ID dibiarkan kosong karena kita mencari berdasarkan userID dan bookID
+	input := domain.UpdateUserBookInput{
+		UserID: userID,
+		BookID: bookID,
+		Status: req.Status,
+		Page:   req.CurrentPage,
+		Rating: req.Rating,
+	}
 
+	result, err := h.usecase.UpdateReadingStatus(c.Context(), input)
+	if err != nil {
 		return utils.HandleDomainError(c, err)
 	}
 
-	return utils.SendSuccess(c, fiber.StatusOK, "Progres bacaan berhasil diperbarui", result)
+	// Gunakan Mapper!
+	res := toUserBookResponse(result)
+
+	return utils.SendSuccess(c, fiber.StatusOK, "Progres bacaan berhasil diperbarui", res)
 }
 
 // GetMyLibrary godoc
@@ -99,7 +154,7 @@ func (h *UserBookHandler) UpdateProgress(c *fiber.Ctx) error {
 // @Param page query int false "Nomor Halaman (Default: 1)"
 // @Param limit query int false "Jumlah Data per Halaman (Default: 10)"
 // @Param status query string false "Filter status: TO_READ, READING, FINISHED"
-// @Success 200 {object} utils.PaginatedResponse[domain.UserBookWithMetadata] "Berhasil mengambil buku dari rak"
+// @Success 200 {object} utils.PaginatedResponse[dto.UserBookWithMetaDataResponse] "Berhasil mengambil buku dari rak"
 // @Failure 401 {object} utils.ErrorResponse "Unauthorized (Token tidak ada/salah)"
 // @Failure 404 {object} utils.ErrorResponse "Rak buku tidak ditemukan"
 // @Failure 500 {object} utils.ErrorResponse "Internal Server Error"
@@ -122,20 +177,26 @@ func (h *UserBookHandler) GetMyLibrary(c *fiber.Ctx) error {
 		return utils.HandleDomainError(c, err)
 	}
 
-	if books == nil {
-		books = make([]*domain.UserBookWithMetadata, 0)
+	// MAPPING ARRAY
+	var res []dto.UserBookWithMetaDataResponse
+	for _, b := range books {
+		res = append(res, toUserBookWithMetadataResponse(b))
 	}
 
-	return utils.SendSuccessPaginated(c, "Berhasil mengambil buku dari rak", books, meta)
+	if res == nil {
+		res = make([]dto.UserBookWithMetaDataResponse, 0)
+	}
+
+	return utils.SendSuccessPaginated(c, "Berhasil mengambil buku dari rak", res, meta)
 }
 
 // GetUserBookDetail godoc
-// @Summary Lihat Isi Rak Buku
-// @Description Menampilkan seluruh buku yang ada di rak personal user, lengkap dengan metadata bukunya. Bisa difilter berdasarkan status.
+// @Summary Detail Buku di Rak
+// @Description Menampilkan detail spesifik dari satu buku yang ada di rak pengguna.
 // @Tags Library
 // @Produce json
 // @Param book_id path string true "ID Buku"
-// @Success 200 {object} utils.SuccessResponse[domain.UserBookWithMetadata] "Berhasil mengambil detail buku"
+// @Success 200 {object} utils.SuccessResponse[dto.UserBookWithMetaDataResponse] "Berhasil mengambil detail buku"
 // @Failure 401 {object} utils.ErrorResponse "Unauthorized (Token tidak ada/salah)"
 // @Failure 404 {object} utils.ErrorResponse "Buku tidak ditemukan di rak"
 // @Failure 500 {object} utils.ErrorResponse "Internal Server Error"
@@ -155,7 +216,11 @@ func (h *UserBookHandler) GetUserBookDetail(c *fiber.Ctx) error {
 	if result == nil {
 		return utils.SendError(c, fiber.StatusNotFound, "Buku tidak ditemukan di rak")
 	}
-	return utils.SendSuccess(c, fiber.StatusOK, "Berhasil mengambil detail buku dari rak", result)
+
+	// Gunakan Mapper!
+	res := toUserBookWithMetadataResponse(result)
+
+	return utils.SendSuccess(c, fiber.StatusOK, "Berhasil mengambil detail buku dari rak", res)
 }
 
 // DeleteBookFromShelf godoc
