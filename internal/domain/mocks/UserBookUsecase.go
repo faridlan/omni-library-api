@@ -129,9 +129,9 @@ func (_m *UserBookUsecase) TrackNewBook(ctx context.Context, userID string, book
 	return r0, r1
 }
 
-// UpdateReadingStatus provides a mock function with given fields: ctx, userID, bookID, status, page, rating
-func (_m *UserBookUsecase) UpdateReadingStatus(ctx context.Context, userID string, bookID string, status string, page int, rating int) (*domain.UserBook, error) {
-	ret := _m.Called(ctx, userID, bookID, status, page, rating)
+// UpdateReadingStatus provides a mock function with given fields: ctx, input
+func (_m *UserBookUsecase) UpdateReadingStatus(ctx context.Context, input domain.UpdateUserBookInput) (*domain.UserBook, error) {
+	ret := _m.Called(ctx, input)
 
 	if len(ret) == 0 {
 		panic("no return value specified for UpdateReadingStatus")
@@ -139,19 +139,19 @@ func (_m *UserBookUsecase) UpdateReadingStatus(ctx context.Context, userID strin
 
 	var r0 *domain.UserBook
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, int, int) (*domain.UserBook, error)); ok {
-		return rf(ctx, userID, bookID, status, page, rating)
+	if rf, ok := ret.Get(0).(func(context.Context, domain.UpdateUserBookInput) (*domain.UserBook, error)); ok {
+		return rf(ctx, input)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, int, int) *domain.UserBook); ok {
-		r0 = rf(ctx, userID, bookID, status, page, rating)
+	if rf, ok := ret.Get(0).(func(context.Context, domain.UpdateUserBookInput) *domain.UserBook); ok {
+		r0 = rf(ctx, input)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*domain.UserBook)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, int, int) error); ok {
-		r1 = rf(ctx, userID, bookID, status, page, rating)
+	if rf, ok := ret.Get(1).(func(context.Context, domain.UpdateUserBookInput) error); ok {
+		r1 = rf(ctx, input)
 	} else {
 		r1 = ret.Error(1)
 	}

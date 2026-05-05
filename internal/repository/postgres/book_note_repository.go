@@ -24,10 +24,12 @@ func (r *bookNoteRepository) Create(ctx context.Context, note *domain.BookNote) 
 	}
 
 	note.ID = model.ID
+	note.CreatedAt = model.CreatedAt
+	note.UpdatedAt = model.UpdatedAt
 	return nil
 }
 
-func (r *bookNoteRepository) GetByUserBookID(ctx context.Context, userBookID string, params domain.PaginationQuery) ([]*domain.BookNote, int64, error) {
+func (r *bookNoteRepository) FindAllByUserBookID(ctx context.Context, userBookID string, params domain.PaginationQuery) ([]*domain.BookNote, int64, error) {
 	var models []BookNoteModel
 	var totalItems int64
 
@@ -56,22 +58,30 @@ func (r *bookNoteRepository) GetByUserBookID(ctx context.Context, userBookID str
 	return notes, totalItems, nil
 }
 
-func (r *bookNoteRepository) GetByID(ctx context.Context, noteID string) (*domain.BookNote, error) {
+func (r *bookNoteRepository) FindByID(ctx context.Context, noteID string) (*domain.BookNote, error) {
 	var model BookNoteModel
 	err := r.db.WithContext(ctx).First(&model, "id = ?", noteID).Error
-	if err != nil {
-		return nil, err
-	}
-	return model.ToDomain(), nil
-}
 
-func (r *bookNoteRepository) Delete(ctx context.Context, noteID string) error {
-	result := r.db.WithContext(ctx).Delete(&BookNoteModel{}, "id = ?", noteID)
-	return result.Error
+	if err != nil {
+		return nil, TranslateError(err)
+	}
+
+	return model.ToDomain(), nil
 }
 
 func (r *bookNoteRepository) Update(ctx context.Context, note *domain.BookNote) error {
 	model := NoteFromDomain(note)
-	result := r.db.WithContext(ctx).Model(&BookNoteModel{}).Where("id = ?", note.ID).Updates(model)
+
+	err := r.db.WithContext(ctx).Save(model).Error
+	if err != nil {
+		return err
+	}
+
+	note.UpdatedAt = model.UpdatedAt
+	return nil
+}
+
+func (r *bookNoteRepository) Delete(ctx context.Context, noteID string) error {
+	result := r.db.WithContext(ctx).Delete(&BookNoteModel{}, "id = ?", noteID)
 	return result.Error
 }

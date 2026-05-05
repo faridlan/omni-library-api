@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"errors"
 	"math"
 
 	"github.com/faridlan/omni-library-api/internal/domain"
@@ -21,13 +22,10 @@ func NewBookUsecase(repo domain.BookRepository, fetcher domain.BookMetadataFetch
 
 func (u *bookUsecase) FetchAndSaveMetadata(ctx context.Context, isbn string) (*domain.Book, error) {
 
-	existingBook, err := u.bookRepo.GetByISBN(ctx, isbn)
-	if err != nil {
+	if existingBook, err := u.bookRepo.GetByISBN(ctx, isbn); err != nil && !errors.Is(err, domain.ErrNotFound) {
 		return nil, err
-	}
-
-	if existingBook != nil {
-		return nil, domain.NewError(domain.ErrConflict, "Buku dengan ISBN tersebut sudah ada")
+	} else if existingBook != nil {
+		return nil, domain.NewError(domain.ErrConflict, "Buku dengan ISBN tersebut sudah ada di sistem")
 	}
 
 	newBook, err := u.fetcher.FetchByISBN(ctx, isbn)
@@ -69,48 +67,59 @@ func (u *bookUsecase) GetAllBooks(ctx context.Context, params domain.PaginationQ
 func (u *bookUsecase) GetBookByID(ctx context.Context, id string) (*domain.Book, error) {
 	book, err := u.bookRepo.GetByID(ctx, id)
 	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			return nil, domain.NewError(domain.ErrNotFound, "Buku dengan ID tersebut tidak ditemukan")
+		}
 		return nil, err
-	}
-	if book == nil {
-		return nil, domain.NewError(domain.ErrNotFound, "Book dengan ID tersebut tidak ditemukan")
 	}
 	return book, nil
 }
 
-func (u *bookUsecase) CreateManual(ctx context.Context, book *domain.Book) (*domain.Book, error) {
+func (u *bookUsecase) CreateManual(ctx context.Context, input domain.CreateBookInput) (*domain.Book, error) {
 
-	if book.ISBN != "" {
-		existing, _ := u.bookRepo.GetByISBN(ctx, book.ISBN)
-		if existing != nil {
-			return nil, domain.NewError(domain.ErrConflict, "Buku dengan ISBN tersebut sudah ada")
+	if input.ISBN != "" {
+		if existing, err := u.bookRepo.GetByISBN(ctx, input.ISBN); err != nil && !errors.Is(err, domain.ErrNotFound) {
+			return nil, err
+		} else if existing != nil {
+			return nil, domain.NewError(domain.ErrConflict, "Buku dengan ISBN tersebut sudah terdaftar")
 		}
 	}
 
-	err := u.bookRepo.Create(ctx, book)
+	bookInput := &domain.Book{
+		ISBN:          input.ISBN,
+		Title:         input.Title,
+		Authors:       input.Authors,
+		PublishedDate: input.PublishedDate,
+		Description:   input.Description,
+		PageCount:     input.PageCount,
+		CoverURL:      input.CoverURL,
+	}
+
+	err := u.bookRepo.Create(ctx, bookInput)
 	if err != nil {
 		return nil, err
 	}
 
-	return book, nil
+	return bookInput, nil
 }
 
-func (u *bookUsecase) UpdateBook(ctx context.Context, id string, req *domain.Book) (*domain.Book, error) {
+func (u *bookUsecase) UpdateBook(ctx context.Context, input domain.UpdateBookInput) (*domain.Book, error) {
 
-	existing, err := u.bookRepo.GetByID(ctx, id)
+	existing, err := u.bookRepo.GetByID(ctx, input.ID)
 	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			return nil, domain.NewError(domain.ErrNotFound, "Buku dengan ID tersebut tidak ditemukan")
+		}
 		return nil, err
 	}
-	if existing == nil {
-		return nil, domain.NewError(domain.ErrNotFound, "Book dengan ID tersebut tidak ditemukan")
-	}
 
-	existing.Title = req.Title
-	existing.Authors = req.Authors
-	existing.Description = req.Description
-	existing.PageCount = req.PageCount
-	existing.CoverURL = req.CoverURL
-	if req.ISBN != "" {
-		existing.ISBN = req.ISBN
+	existing.Title = input.Title
+	existing.Authors = input.Authors
+	existing.Description = input.Description
+	existing.PageCount = input.PageCount
+	existing.CoverURL = input.CoverURL
+	if input.ISBN != "" {
+		existing.ISBN = input.ISBN
 	}
 
 	err = u.bookRepo.Update(ctx, existing)
@@ -122,12 +131,12 @@ func (u *bookUsecase) UpdateBook(ctx context.Context, id string, req *domain.Boo
 }
 
 func (u *bookUsecase) DeleteBook(ctx context.Context, id string) error {
-	existing, err := u.bookRepo.GetByID(ctx, id)
+	_, err := u.bookRepo.GetByID(ctx, id)
 	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			return domain.NewError(domain.ErrNotFound, "Buku dengan ID tersebut tidak ditemukan")
+		}
 		return err
-	}
-	if existing == nil {
-		return domain.NewError(domain.ErrNotFound, "Book dengan ID tersebut tidak ditemukan")
 	}
 
 	return u.bookRepo.Delete(ctx, id)

@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"errors"
 	"math"
 
 	"github.com/faridlan/omni-library-api/internal/domain"
@@ -21,20 +22,18 @@ func NewUserBookUsecase(repo domain.UserBookRepository, bRepo domain.BookReposit
 
 func (u *userBookUsecase) TrackNewBook(ctx context.Context, userID, bookID string) (*domain.UserBook, error) {
 
-	masterBook, err := u.bookRepo.GetByID(ctx, bookID)
+	_, err := u.bookRepo.GetByID(ctx, bookID)
 	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			return nil, domain.NewError(domain.ErrNotFound, "Buku dengan ID tersebut tidak ditemukan")
+		}
 		return nil, err
 	}
 
-	if masterBook == nil {
-		return nil, domain.NewError(domain.ErrNotFound, "Book dengan ID tersebut tidak ditemukan")
-	}
-
-	existing, err := u.userBookRepo.GetByBookID(ctx, userID, bookID)
-	if err != nil {
-		return nil, err
-	}
-	if existing != nil {
+	// Gunakan inline assignment & abaikan ErrNotFound
+	if existing, err := u.userBookRepo.FindByUserIDAndBookID(ctx, userID, bookID); err != nil && !errors.Is(err, domain.ErrNotFound) {
+		return nil, err // Error internal DB
+	} else if existing != nil {
 		return nil, domain.NewError(domain.ErrConflict, "Buku sudah ada di rak pengguna")
 	}
 
@@ -52,24 +51,24 @@ func (u *userBookUsecase) TrackNewBook(ctx context.Context, userID, bookID strin
 	return newTrack, nil
 }
 
-func (u *userBookUsecase) UpdateReadingStatus(ctx context.Context, userID, bookID, status string, page, rating int) (*domain.UserBook, error) {
+func (u *userBookUsecase) UpdateReadingStatus(ctx context.Context, input domain.UpdateUserBookInput) (*domain.UserBook, error) {
 
-	track, err := u.userBookRepo.GetByUserAndBookID(ctx, userID, bookID)
+	track, err := u.userBookRepo.FindByUserIDAndBookID(ctx, input.UserID, input.BookID)
 	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			return nil, domain.NewError(domain.ErrNotFound, "Buku dengan ID tersebut tidak ditemukan")
+		}
 		return nil, err
 	}
-	if track == nil {
-		return nil, domain.NewError(domain.ErrNotFound, "Book dengan ID tersebut tidak ditemukan")
-	}
 
-	if status != "" {
-		track.Status = status
+	if input.Status != "" {
+		track.Status = input.Status
 	}
-	if page > 0 {
-		track.CurrentPage = page
+	if input.Page > 0 {
+		track.CurrentPage = input.Page
 	}
-	if rating >= 1 && rating <= 5 {
-		track.Rating = rating
+	if input.Rating >= 1 && input.Rating <= 5 {
+		track.Rating = input.Rating
 	}
 
 	err = u.userBookRepo.UpdateProgress(ctx, &track.UserBook)
@@ -81,7 +80,7 @@ func (u *userBookUsecase) UpdateReadingStatus(ctx context.Context, userID, bookI
 }
 
 func (u *userBookUsecase) GetUserLibrary(ctx context.Context, userID string, status string, params domain.PaginationQuery) ([]*domain.UserBookWithMetadata, domain.PaginationMeta, error) {
-	books, totalItems, err := u.userBookRepo.GetByUserID(ctx, userID, status, params)
+	books, totalItems, err := u.userBookRepo.FindAllByUserID(ctx, userID, status, params)
 	if err != nil {
 		return nil, domain.PaginationMeta{}, err
 	}
@@ -99,24 +98,24 @@ func (u *userBookUsecase) GetUserLibrary(ctx context.Context, userID string, sta
 }
 
 func (u *userBookUsecase) GetUserBookDetail(ctx context.Context, userID, bookID string) (*domain.UserBookWithMetadata, error) {
-	book, err := u.userBookRepo.GetByUserAndBookID(ctx, userID, bookID)
+	book, err := u.userBookRepo.GetDetailByID(ctx, userID, bookID)
 	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			return nil, domain.NewError(domain.ErrNotFound, "Buku dengan ID tersebut tidak ditemukan")
+		}
 		return nil, err
-	}
-	if book == nil {
-		return nil, domain.NewError(domain.ErrNotFound, "Book dengan ID tersebut tidak ditemukan")
 	}
 
 	return book, nil
 }
 
 func (u *userBookUsecase) DeleteBookFromShelf(ctx context.Context, userID, bookID string) error {
-	existing, err := u.userBookRepo.GetByUserAndBookID(ctx, userID, bookID)
+	_, err := u.userBookRepo.FindByUserIDAndBookID(ctx, userID, bookID)
 	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			return domain.NewError(domain.ErrNotFound, "Buku dengan ID tersebut tidak ditemukan")
+		}
 		return err
-	}
-	if existing == nil {
-		return domain.NewError(domain.ErrNotFound, "Book dengan ID tersebut tidak ditemukan")
 	}
 
 	return u.userBookRepo.Delete(ctx, userID, bookID)

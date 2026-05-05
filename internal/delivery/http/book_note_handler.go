@@ -13,7 +13,24 @@ type BookNoteHandler struct {
 
 func NewBookNoteHandler(router fiber.Router, u domain.BookNoteUsecase) *BookNoteHandler {
 	return &BookNoteHandler{usecase: u}
+}
 
+// ==========================================
+// HELPER: MAPPING ENTITY KE RESPONSE DTO
+// ==========================================
+func toBookNoteResponse(note *domain.BookNote) dto.BookNoteResponse {
+	if note == nil {
+		return dto.BookNoteResponse{}
+	}
+	return dto.BookNoteResponse{
+		ID:            note.ID,
+		UserBookID:    note.UserBookID,
+		Quote:         note.Quote,
+		PageReference: note.PageReference,
+		Tags:          note.Tags,
+		CreatedAt:     note.CreatedAt,
+		UpdatedAt:     note.UpdatedAt,
+	}
 }
 
 // AddNote godoc
@@ -24,7 +41,7 @@ func NewBookNoteHandler(router fiber.Router, u domain.BookNoteUsecase) *BookNote
 // @Produce json
 // @Param user_book_id path string true "ID progres buku di rak (Bukan master Book ID)"
 // @Param request body dto.AddNoteRequest true "Payload isi kutipan dan tag"
-// @Success 200 {object} utils.SuccessResponse[domain.BookNote] "Note buku berhasil ditambahkan"
+// @Success 201 {object} utils.SuccessResponse[dto.BookNoteResponse] "Note buku berhasil ditambahkan"
 // @Failure 400 {object} utils.ErrorResponse "Format JSON salah atau Quote kosong"
 // @Failure 401 {object} utils.ErrorResponse "Unauthorized (Token tidak ada/salah)"
 // @Failure 404 {object} utils.ErrorResponse "Buku tidak ditemukan di rak"
@@ -47,19 +64,24 @@ func (h *BookNoteHandler) AddNote(c *fiber.Ctx) error {
 		return utils.SendError(c, fiber.StatusBadRequest, err.Error())
 	}
 
-	note := &domain.BookNote{
+	// MAPPING: DTO -> Domain Input
+	input := domain.CreateBookNoteInput{
 		UserBookID:    userBookID,
 		Quote:         req.Quote,
 		PageReference: req.PageReference,
 		Tags:          req.Tags,
 	}
 
-	err := h.usecase.AddNote(c.Context(), note)
+	note, err := h.usecase.AddNote(c.Context(), input)
 	if err != nil {
 		return utils.HandleDomainError(c, err)
 	}
 
-	return utils.SendSuccess(c, fiber.StatusOK, "Note buku berhasil ditambahkan", note)
+	// MAPPING: Entity -> Response DTO
+	res := toBookNoteResponse(note)
+
+	// Ubah menjadi StatusCreated (201) karena ini pembuatan data baru
+	return utils.SendSuccess(c, fiber.StatusCreated, "Note buku berhasil ditambahkan", res)
 }
 
 // GetNotes godoc
@@ -70,7 +92,7 @@ func (h *BookNoteHandler) AddNote(c *fiber.Ctx) error {
 // @Param page query int false "Nomor Halaman (Default: 1)"
 // @Param limit query int false "Jumlah Data per Halaman (Default: 10)"
 // @Param user_book_id path string true "ID progres buku di rak"
-// @Success 200 {object} utils.PaginatedResponse[domain.BookNote] "Berhasil mengambil note buku"
+// @Success 200 {object} utils.PaginatedResponse[dto.BookNoteResponse] "Berhasil mengambil note buku"
 // @Failure 401 {object} utils.ErrorResponse "Unauthorized (Token tidak ada/salah)"
 // @Failure 404 {object} utils.ErrorResponse "Buku tidak ditemukan di rak"
 // @Failure 500 {object} utils.ErrorResponse "Internal Server Error"
@@ -95,11 +117,17 @@ func (h *BookNoteHandler) GetNotes(c *fiber.Ctx) error {
 		return utils.HandleDomainError(c, err)
 	}
 
-	if notes == nil {
-		notes = make([]*domain.BookNote, 0)
+	// MAPPING ARRAY: Entity -> Response DTO
+	var res []dto.BookNoteResponse
+	for _, n := range notes {
+		res = append(res, toBookNoteResponse(n))
 	}
 
-	return utils.SendSuccessPaginated(c, "Berhasil mengambil note buku", notes, meta)
+	if res == nil {
+		res = make([]dto.BookNoteResponse, 0)
+	}
+
+	return utils.SendSuccessPaginated(c, "Berhasil mengambil note buku", res, meta)
 }
 
 // DeleteNote godoc
@@ -109,7 +137,7 @@ func (h *BookNoteHandler) GetNotes(c *fiber.Ctx) error {
 // @Produce json
 // @Param user_book_id path string true "ID progres buku di rak"
 // @Param note_id path string true "ID catatan buku"
-// @Success 200 {object} utils.SuccessResponse[utils.EmptyObj] "Note buku berhasil dihapus"
+// @Success 200 {object} utils.SuccessResponse[interface{}] "Note buku berhasil dihapus"
 // @Failure 401 {object} utils.ErrorResponse "Unauthorized (Token tidak ada/salah)"
 // @Failure 404 {object} utils.ErrorResponse "Note buku tidak ditemukan"
 // @Failure 500 {object} utils.ErrorResponse "Internal Server Error"
@@ -137,7 +165,7 @@ func (h *BookNoteHandler) DeleteNote(c *fiber.Ctx) error {
 // @Produce json
 // @Param user_book_id path string true "ID progres buku di rak"
 // @Param note_id path string true "ID catatan buku"
-// @Success 200 {object} utils.SuccessResponse[domain.BookNote] "Note buku berhasil diperbarui"
+// @Success 200 {object} utils.SuccessResponse[dto.BookNoteResponse] "Note buku berhasil diperbarui"
 // @Failure 401 {object} utils.ErrorResponse "Unauthorized (Token tidak ada/salah)"
 // @Failure 404 {object} utils.ErrorResponse "Note buku tidak ditemukan"
 // @Failure 500 {object} utils.ErrorResponse "Internal Server Error"
@@ -160,19 +188,21 @@ func (h *BookNoteHandler) UpdateNote(c *fiber.Ctx) error {
 		return utils.SendError(c, fiber.StatusBadRequest, err.Error())
 	}
 
-	req.ID = noteID
-
-	note := &domain.BookNote{
-		ID:            req.ID,
+	// MAPPING: DTO -> Domain Input
+	input := domain.UpdateBookNoteInput{
+		ID:            noteID, // ID diambil dari URL params, bukan body
 		Quote:         req.Quote,
 		PageReference: req.PageReference,
 		Tags:          req.Tags,
 	}
 
-	updatedNote, err := h.usecase.UpdateNote(c.Context(), note)
+	updatedNote, err := h.usecase.UpdateNote(c.Context(), input)
 	if err != nil {
 		return utils.HandleDomainError(c, err)
 	}
 
-	return utils.SendSuccess(c, fiber.StatusOK, "Note buku berhasil diperbarui", updatedNote)
+	// MAPPING: Entity -> Response DTO
+	res := toBookNoteResponse(updatedNote)
+
+	return utils.SendSuccess(c, fiber.StatusOK, "Note buku berhasil diperbarui", res)
 }

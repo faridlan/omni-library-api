@@ -17,6 +17,23 @@ func NewUserHandler(router fiber.Router, userUsecase domain.UserUsecase) *UserHa
 	}
 }
 
+// ==========================================
+// HELPER: MAPPING ENTITY KE RESPONSE DTO
+// ==========================================
+func toUserProfileResponse(user *domain.User) dto.UserProfileResponse {
+	if user == nil {
+		return dto.UserProfileResponse{}
+	}
+	return dto.UserProfileResponse{
+		ID:        user.ID,
+		Name:      user.Name,
+		Email:     user.Email,
+		Role:      user.Role,
+		CreatedAt: user.CreatedAt,
+		UpdatedAt: user.UpdatedAt,
+	}
+}
+
 // GetProfile godoc
 // @Summary      Get current user profile
 // @Description  Mengambil data profil pengguna yang sedang login berdasarkan token JWT
@@ -24,10 +41,10 @@ func NewUserHandler(router fiber.Router, userUsecase domain.UserUsecase) *UserHa
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Success 200 {object} utils.SuccessResponse[dto.UserProfileResponse] "Berhasil mengambil profil"
-// @Failure 401 {object} utils.ErrorResponse "Unauthorized (Token tidak ada/salah)"
-// @Failure 404 {object} utils.ErrorResponse "User tidak ditemukan"
-// @Failure 500 {object} utils.ErrorResponse "Internal Server Error"
+// @Success      200 {object} utils.SuccessResponse[dto.UserProfileResponse] "Berhasil mengambil profil"
+// @Failure      401 {object} utils.ErrorResponse "Unauthorized (Token tidak ada/salah)"
+// @Failure      404 {object} utils.ErrorResponse "User tidak ditemukan"
+// @Failure      500 {object} utils.ErrorResponse "Internal Server Error"
 // @Router       /api/users/me [get]
 func (h *UserHandler) GetProfile(c *fiber.Ctx) error {
 	// Ambil userID dari JWT Middleware
@@ -38,14 +55,8 @@ func (h *UserHandler) GetProfile(c *fiber.Ctx) error {
 		return utils.HandleDomainError(c, err)
 	}
 
-	res := dto.UserProfileResponse{
-		ID:        user.ID,
-		Name:      user.Name,
-		Email:     user.Email,
-		Role:      user.Role,
-		CreatedAt: user.CreatedAt,
-		UpdatedAt: user.UpdatedAt,
-	}
+	// Gunakan Mapper!
+	res := toUserProfileResponse(user)
 
 	return utils.SendSuccess(c, fiber.StatusOK, "Berhasil mengambil profil", res)
 }
@@ -58,11 +69,11 @@ func (h *UserHandler) GetProfile(c *fiber.Ctx) error {
 // @Produce      json
 // @Security     BearerAuth
 // @Param        request body dto.UpdateProfileRequest true "Data profil yang ingin diupdate"
-// @Success      200  {object}  utils.SuccessResponse[dto.UserProfileResponse] "Profil berhasil diperbarui"
-// @Failure      400  {object}  utils.ErrorResponse "Bad Request (Validasi gagal)"
-// @Failure      401  {object}  utils.ErrorResponse "Unauthorized"
-// @Failure      404  {object}  utils.ErrorResponse "User tidak ditemukan"
-// @Failure      500  {object}  utils.ErrorResponse "Internal Server Error"
+// @Success      200 {object} utils.SuccessResponse[dto.UserProfileResponse] "Profil berhasil diperbarui"
+// @Failure      400 {object} utils.ErrorResponse "Bad Request (Validasi gagal)"
+// @Failure      401 {object} utils.ErrorResponse "Unauthorized"
+// @Failure      404 {object} utils.ErrorResponse "User tidak ditemukan"
+// @Failure      500 {object} utils.ErrorResponse "Internal Server Error"
 // @Router       /api/users/me [put]
 func (h *UserHandler) UpdateProfile(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(string)
@@ -86,14 +97,8 @@ func (h *UserHandler) UpdateProfile(c *fiber.Ctx) error {
 		return utils.HandleDomainError(c, err)
 	}
 
-	res := dto.UserProfileResponse{
-		ID:        user.ID,
-		Name:      user.Name,
-		Email:     user.Email,
-		Role:      user.Role,
-		CreatedAt: user.CreatedAt,
-		UpdatedAt: user.UpdatedAt,
-	}
+	// Gunakan Mapper!
+	res := toUserProfileResponse(user)
 
 	return utils.SendSuccess(c, fiber.StatusOK, "Profil berhasil diperbarui", res)
 }
@@ -106,12 +111,11 @@ func (h *UserHandler) UpdateProfile(c *fiber.Ctx) error {
 // @Produce      json
 // @Security     BearerAuth
 // @Param        request body dto.UpdatePasswordRequest true "Data kata sandi lama dan baru"
-// @Success      200  {object}  utils.SuccessResponse[interface{}] "Password berhasil diperbarui"
-// @Failure      400  {object}  utils.ErrorResponse "Bad Request (Validasi gagal / Password lama salah)"
-// @Failure      401  {object}  utils.ErrorResponse "Unauthorized"
-// @Failure      404  {object}  utils.ErrorResponse "User tidak ditemukan"
-// @Failure      500  {object}  utils.ErrorResponse "Internal Server Error"
-// @Security     BearerAuth
+// @Success      200 {object} utils.SuccessResponse[interface{}] "Password berhasil diperbarui"
+// @Failure      400 {object} utils.ErrorResponse "Bad Request (Validasi gagal / Password lama salah)"
+// @Failure      401 {object} utils.ErrorResponse "Unauthorized"
+// @Failure      404 {object} utils.ErrorResponse "User tidak ditemukan"
+// @Failure      500 {object} utils.ErrorResponse "Internal Server Error"
 // @Router       /api/users/me/password [put]
 func (h *UserHandler) UpdatePassword(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(string)

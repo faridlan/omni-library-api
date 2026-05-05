@@ -6,16 +6,37 @@ import (
 )
 
 type Book struct {
-	ID            string    `json:"id"`
-	ISBN          string    `json:"isbn"`
-	Title         string    `json:"title"`
-	Authors       []string  `json:"authors"`
-	PublishedDate time.Time `json:"published_date"`
-	Description   string    `json:"description"`
-	PageCount     int       `json:"page_count"`
-	CoverURL      string    `json:"cover_url"`
-	CreatedAt     time.Time `json:"created_at"`
-	UpdatedAt     time.Time `json:"updated_at"`
+	ID            string
+	ISBN          string
+	Title         string
+	Authors       []string
+	PublishedDate time.Time
+	Description   string
+	PageCount     int
+	CoverURL      string
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
+}
+
+type CreateBookInput struct {
+	ISBN          string
+	Title         string
+	Authors       []string
+	PublishedDate time.Time
+	Description   string
+	PageCount     int
+	CoverURL      string
+}
+
+type UpdateBookInput struct {
+	ID            string
+	ISBN          string
+	Title         string
+	Authors       []string
+	PublishedDate time.Time
+	Description   string
+	PageCount     int
+	CoverURL      string
 }
 
 type BookRepository interface {
@@ -28,12 +49,11 @@ type BookRepository interface {
 }
 
 type BookUsecase interface {
-	// Fitur 3: Mengambil data dari API luar dan menyimpannya
 	FetchAndSaveMetadata(ctx context.Context, isbn string) (*Book, error)
 	GetAllBooks(ctx context.Context, params PaginationQuery) ([]*Book, PaginationMeta, error)
 	GetBookByID(ctx context.Context, id string) (*Book, error)
-	CreateManual(ctx context.Context, book *Book) (*Book, error)
-	UpdateBook(ctx context.Context, id string, req *Book) (*Book, error)
+	CreateManual(ctx context.Context, input CreateBookInput) (*Book, error)
+	UpdateBook(ctx context.Context, input UpdateBookInput) (*Book, error)
 	DeleteBook(ctx context.Context, id string) error
 }
 

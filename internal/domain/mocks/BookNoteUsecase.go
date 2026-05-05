@@ -14,22 +14,34 @@ type BookNoteUsecase struct {
 	mock.Mock
 }
 
-// AddNote provides a mock function with given fields: ctx, note
-func (_m *BookNoteUsecase) AddNote(ctx context.Context, note *domain.BookNote) error {
-	ret := _m.Called(ctx, note)
+// AddNote provides a mock function with given fields: ctx, input
+func (_m *BookNoteUsecase) AddNote(ctx context.Context, input domain.CreateBookNoteInput) (*domain.BookNote, error) {
+	ret := _m.Called(ctx, input)
 
 	if len(ret) == 0 {
 		panic("no return value specified for AddNote")
 	}
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *domain.BookNote) error); ok {
-		r0 = rf(ctx, note)
+	var r0 *domain.BookNote
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, domain.CreateBookNoteInput) (*domain.BookNote, error)); ok {
+		return rf(ctx, input)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, domain.CreateBookNoteInput) *domain.BookNote); ok {
+		r0 = rf(ctx, input)
 	} else {
-		r0 = ret.Error(0)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*domain.BookNote)
+		}
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func(context.Context, domain.CreateBookNoteInput) error); ok {
+		r1 = rf(ctx, input)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // DeleteNote provides a mock function with given fields: ctx, noteID
@@ -87,9 +99,9 @@ func (_m *BookNoteUsecase) GetNotesForBook(ctx context.Context, userBookID strin
 	return r0, r1, r2
 }
 
-// UpdateNote provides a mock function with given fields: ctx, note
-func (_m *BookNoteUsecase) UpdateNote(ctx context.Context, note *domain.BookNote) (*domain.BookNote, error) {
-	ret := _m.Called(ctx, note)
+// UpdateNote provides a mock function with given fields: ctx, input
+func (_m *BookNoteUsecase) UpdateNote(ctx context.Context, input domain.UpdateBookNoteInput) (*domain.BookNote, error) {
+	ret := _m.Called(ctx, input)
 
 	if len(ret) == 0 {
 		panic("no return value specified for UpdateNote")
@@ -97,19 +109,19 @@ func (_m *BookNoteUsecase) UpdateNote(ctx context.Context, note *domain.BookNote
 
 	var r0 *domain.BookNote
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *domain.BookNote) (*domain.BookNote, error)); ok {
-		return rf(ctx, note)
+	if rf, ok := ret.Get(0).(func(context.Context, domain.UpdateBookNoteInput) (*domain.BookNote, error)); ok {
+		return rf(ctx, input)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *domain.BookNote) *domain.BookNote); ok {
-		r0 = rf(ctx, note)
+	if rf, ok := ret.Get(0).(func(context.Context, domain.UpdateBookNoteInput) *domain.BookNote); ok {
+		r0 = rf(ctx, input)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*domain.BookNote)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *domain.BookNote) error); ok {
-		r1 = rf(ctx, note)
+	if rf, ok := ret.Get(1).(func(context.Context, domain.UpdateBookNoteInput) error); ok {
+		r1 = rf(ctx, input)
 	} else {
 		r1 = ret.Error(1)
 	}
