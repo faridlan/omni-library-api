@@ -2,6 +2,8 @@ package usecase
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
 	"os"
 	"strconv"
@@ -15,12 +17,14 @@ import (
 type authUsecase struct {
 	userRepo        domain.UserRepository
 	authRepo        domain.AuthRepository
+	emailSender     domain.EmailSender // <-- TAMBAHAN: Inject EmailSender
 	jwtSecret       string
 	accessExpMinute int
 	refreshExpDay   int
 }
 
-func NewAuthUsecase(ur domain.UserRepository, ar domain.AuthRepository) domain.AuthUsecase {
+// Update constructor untuk menerima domain.EmailSender
+func NewAuthUsecase(ur domain.UserRepository, ar domain.AuthRepository, es domain.EmailSender) domain.AuthUsecase {
 	secret := os.Getenv("JWT_SECRET")
 	if secret == "" {
 		secret = "omnilibrary-super-secret-key"
@@ -39,10 +43,18 @@ func NewAuthUsecase(ur domain.UserRepository, ar domain.AuthRepository) domain.A
 	return &authUsecase{
 		userRepo:        ur,
 		authRepo:        ar,
+		emailSender:     es, // <-- Inisialisasi EmailSender
 		jwtSecret:       secret,
 		accessExpMinute: accessMin,
 		refreshExpDay:   refreshDay,
 	}
+}
+
+// Helper function untuk generate token acak yang aman
+func generateVerificationToken() string {
+	bytes := make([]byte, 16)
+	rand.Read(bytes)
+	return hex.EncodeToString(bytes)
 }
 
 func (u *authUsecase) Register(ctx context.Context, input domain.RegisterInput) (*domain.User, error) {
@@ -56,17 +68,37 @@ func (u *authUsecase) Register(ctx context.Context, input domain.RegisterInput) 
 		return nil, domain.ErrInternalServerError
 	}
 
+	// 1. Generate Token & Expiry
+	token := generateVerificationToken()
+	expTime := time.Now().Add(24 * time.Hour) // Berlaku 24 jam
+
 	newUser := &domain.User{
-		Name:     input.Name,
-		Email:    input.Email,
-		Password: string(hashedPassword),
-		Role:     "user",
+		Name:                  input.Name,
+		Email:                 input.Email,
+		Password:              string(hashedPassword),
+		Role:                  "user",
+		IsEmailVerified:       false,    // <-- Set default false
+		VerificationToken:     &token,   // <-- Simpan token
+		VerificationExpiresAt: &expTime, // <-- Simpan expiry time
 	}
 
+	// 2. Simpan ke Database
 	err = u.userRepo.Create(ctx, newUser)
 	if err != nil {
 		return nil, err
 	}
+
+	// 3. Kirim Email secara Asynchronous (Goroutine)
+	// Kita pakai goroutine agar response API tidak perlu menunggu email terkirim
+	go func() {
+		// Gunakan context.Background() karena context bawaan API (ctx) akan dibatalkan (canceled)
+		// saat request selesai, sedangkan goroutine ini mungkin berjalan lebih lama.
+		err := u.emailSender.SendVerificationEmail(newUser.Email, token)
+		if err != nil {
+			// Di produksi, log error ini menggunakan logger (misal: logrus/zap)
+			// log.Printf("Gagal mengirim email verifikasi ke %s: %v", newUser.Email, err)
+		}
+	}()
 
 	return newUser, nil
 }
@@ -79,6 +111,15 @@ func (u *authUsecase) Login(ctx context.Context, input domain.LoginInput) (strin
 	if user == nil {
 		return "", "", domain.NewError(domain.ErrNotFound, "User dengan ID tersebut tidak ditemukan")
 	}
+
+	// OPSIONAL TAPI SANGAT DISARANKAN:
+	// Cek apakah email sudah diverifikasi sebelum mengizinkan login
+	// Jika kamu ingin memaksa user verifikasi email dulu, hilangkan comment di bawah ini:
+	/*
+		if !user.IsEmailVerified {
+			return "", "", domain.NewError(domain.ErrUnauthorized, "Silakan verifikasi email Anda terlebih dahulu")
+		}
+	*/
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(input.Password))
 	if err != nil {
@@ -121,6 +162,7 @@ func (u *authUsecase) Login(ctx context.Context, input domain.LoginInput) (strin
 }
 
 func (u *authUsecase) Refresh(ctx context.Context, tokenString string) (string, error) {
+	// ... (Kode fungsi Refresh tidak ada perubahan) ...
 	rt, err := u.authRepo.GetRefreshToken(ctx, tokenString)
 	if err != nil {
 		return "", err
@@ -163,16 +205,41 @@ func (u *authUsecase) Refresh(ctx context.Context, tokenString string) (string, 
 		return "", errors.New("gagal menerbitkan access token baru")
 	}
 
-	// ==========================================
-	// 💡 RUANG KOSONG UNTUK MASA DEPAN (ROTATION)
-	// ==========================================
-	// Nanti, saat kamu ingin upgrade ke strategi Rotation, buka komen ini:
-	/*
-		_ = u.authRepo.DeleteRefreshToken(ctx, tokenString)
-		newRefreshToken := ... (cetak & simpan ke DB)
-		return signedAccessToken, newRefreshToken, nil
-	*/
-
-	// Untuk MVP ini (Fixed Strategy), kita cukup kembalikan Access Token baru
 	return signedAccessToken, nil
+}
+
+// --- IMPLEMENTASI METHOD BARU ---
+func (u *authUsecase) VerifyEmail(ctx context.Context, token string) error {
+	// 1. Cari user berdasarkan token
+	user, err := u.userRepo.FindByVerificationToken(ctx, token)
+	if err != nil {
+		// Jika error dari DB, kita kembalikan error bad param agar pesan aman untuk user
+		return domain.NewError(domain.ErrBadParamInput, "Token verifikasi tidak valid")
+	}
+	if user == nil {
+		return domain.NewError(domain.ErrBadParamInput, "Token verifikasi tidak valid")
+	}
+
+	// 2. Cek apakah sudah diverifikasi
+	if user.IsEmailVerified {
+		return domain.NewError(domain.ErrBadParamInput, "Email sudah diverifikasi sebelumnya")
+	}
+
+	// 3. Cek apakah token expired
+	if user.VerificationExpiresAt != nil && time.Now().After(*user.VerificationExpiresAt) {
+		return domain.NewError(domain.ErrBadParamInput, "Token verifikasi sudah kadaluarsa")
+	}
+
+	// 4. Update data user
+	user.IsEmailVerified = true
+	user.VerificationToken = nil // Hapus (set null) token agar tidak bisa dipakai 2x
+	user.VerificationExpiresAt = nil
+
+	// 5. Simpan perubahan ke database
+	err = u.userRepo.Update(ctx, user)
+	if err != nil {
+		return domain.ErrInternalServerError
+	}
+
+	return nil
 }
