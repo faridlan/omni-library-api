@@ -8,13 +8,16 @@ import (
 )
 
 type UserModel struct {
-	ID           string    `gorm:"type:uuid;primary_key"`
-	Name         string    `gorm:"type:varchar(255);not null"`
-	Email        string    `gorm:"type:varchar(255);uniqueIndex;not null"`
-	PasswordHash string    `gorm:"column:password_hash;type:varchar(255);not null"`
-	Role         string    `gorm:"type:varchar(50);not null;default:'user'"`
-	CreatedAt    time.Time `gorm:"autoCreateTime"`
-	UpdatedAt    time.Time `gorm:"autoUpdateTime"`
+	ID                    string     `gorm:"type:uuid;primary_key"`
+	Name                  string     `gorm:"type:varchar(255);not null"`
+	Email                 string     `gorm:"type:varchar(255);uniqueIndex;not null"`
+	PasswordHash          string     `gorm:"column:password_hash;type:varchar(255);not null"`
+	Role                  string     `gorm:"type:varchar(50);not null;default:'user'"`
+	IsEmailVerified       bool       `gorm:"column:is_email_verified;type:boolean;not null;default:false"`
+	VerificationToken     *string    `gorm:"column:verification_token;type:varchar(255)"`
+	VerificationExpiresAt *time.Time `gorm:"column:verification_expires_at"`
+	CreatedAt             time.Time  `gorm:"autoCreateTime"`
+	UpdatedAt             time.Time  `gorm:"autoUpdateTime"`
 }
 
 func (UserModel) TableName() string {
@@ -35,13 +38,16 @@ func (RefreshTokenModel) TableName() string {
 
 func (m *UserModel) ToDomain() *domain.User {
 	return &domain.User{
-		ID:        m.ID,
-		Name:      m.Name,
-		Email:     m.Email,
-		Password:  m.PasswordHash,
-		Role:      m.Role,
-		CreatedAt: m.CreatedAt,
-		UpdatedAt: m.UpdatedAt,
+		ID:                    m.ID,
+		Name:                  m.Name,
+		Email:                 m.Email,
+		Password:              m.PasswordHash,
+		Role:                  m.Role,
+		IsEmailVerified:       m.IsEmailVerified,
+		VerificationToken:     m.VerificationToken,
+		VerificationExpiresAt: m.VerificationExpiresAt,
+		CreatedAt:             m.CreatedAt,
+		UpdatedAt:             m.UpdatedAt,
 	}
 }
 
@@ -52,12 +58,15 @@ func FromUserDomain(u *domain.User) *UserModel {
 	}
 
 	return &UserModel{
-		ID:           id,
-		Name:         u.Name,
-		Email:        u.Email,
-		PasswordHash: u.Password,
-		Role:         u.Role,
-		CreatedAt:    u.CreatedAt,
-		UpdatedAt:    u.UpdatedAt,
+		ID:                    id,
+		Name:                  u.Name,
+		Email:                 u.Email,
+		PasswordHash:          u.Password,
+		Role:                  u.Role,
+		IsEmailVerified:       u.IsEmailVerified,
+		VerificationToken:     u.VerificationToken,
+		VerificationExpiresAt: u.VerificationExpiresAt,
+		CreatedAt:             u.CreatedAt,
+		UpdatedAt:             u.UpdatedAt,
 	}
 }

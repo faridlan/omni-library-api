@@ -26,10 +26,11 @@ func toUserResponse(user *domain.User) dto.UserResponse {
 		return dto.UserResponse{}
 	}
 	return dto.UserResponse{
-		ID:    user.ID,
-		Name:  user.Name,
-		Email: user.Email,
-		Role:  user.Role,
+		ID:              user.ID,
+		Name:            user.Name,
+		Email:           user.Email,
+		Role:            user.Role,
+		IsEmailVerified: user.IsEmailVerified,
 		// Format tanggal bisa dibiarkan sebagai string sesuai dengan DTO yang kamu buat.
 		CreatedAt: user.CreatedAt.Format("2006-01-02 15:04:05"),
 	}
@@ -149,4 +150,29 @@ func (h *AuthHandler) Refresh(c *fiber.Ctx) error {
 	}
 
 	return utils.SendSuccess(c, fiber.StatusOK, "Access Token berhasil diperbarui", resdata)
+}
+
+// VerifyEmail godoc
+// @Summary      Verifikasi Email User
+// @Description  Memverifikasi email pengguna menggunakan token yang dikirimkan via email.
+// @Tags         Auth
+// @Produce      json
+// @Param        token query string true "Verification Token"
+// @Success      200 {object} utils.SuccessResponse[any] "Email berhasil diverifikasi"
+// @Failure      400 {object} utils.ErrorResponse "Token tidak valid atau kadaluarsa"
+// @Failure      500 {object} utils.ErrorResponse "Internal Server Error"
+// @Router       /api/auth/verify-email [get]
+func (h *AuthHandler) VerifyEmail(c *fiber.Ctx) error {
+	// Ambil token dari query parameter (misal: /api/auth/verify-email?token=abcdef)
+	token := c.Query("token")
+	if token == "" {
+		return utils.SendError(c, fiber.StatusBadRequest, "Token verifikasi tidak boleh kosong")
+	}
+
+	err := h.authUsecase.VerifyEmail(c.Context(), token)
+	if err != nil {
+		return utils.HandleDomainError(c, err)
+	}
+
+	return utils.SendSuccess(c, fiber.StatusOK, "Email berhasil diverifikasi", nil)
 }

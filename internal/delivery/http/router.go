@@ -29,6 +29,7 @@ func SetupRoutes(app *fiber.App, h AppHandlers) {
 	auth.Post("/register", h.Auth.Register)
 	auth.Post("/login", h.Auth.Login)
 	auth.Post("/refresh", h.Auth.Refresh)
+	auth.Get("/verify-email", h.Auth.VerifyEmail)
 
 	api.Get("/books", h.Book.GetAll)
 	api.Get("/books/:id", h.Book.GetBookByID)

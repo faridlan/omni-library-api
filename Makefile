@@ -31,6 +31,9 @@ migrateup:
 migratedown:
 	migrate -path db/migrations -database $(DB_URL) -verbose down
 
+migrateforce:
+	migrate -path db/migrations -database $(DB_URL) force $(V)
+
 # ==============================================================================
 # .PHONY memastikan make tidak bentrok dengan nama folder/file yang kebetulan sama
 # ==============================================================================

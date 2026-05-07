@@ -260,7 +260,7 @@ func (h *BookHandler) UpdateBook(c *fiber.Ctx) error {
 // @Produce      json
 // @Param        id path string true "ID Buku"
 // @Security     BearerAuth
-// @Success      200 {object} utils.SuccessResponse[interface{}] "Buku berhasil dihapus dari sistem"
+// @Success      200 {object} utils.SuccessResponse[any] "Buku berhasil dihapus dari sistem"
 // @Failure      400 {object} utils.ErrorResponse "Format ID salah"
 // @Failure      401 {object} utils.ErrorResponse "Unauthorized"
 // @Failure      403 {object} utils.ErrorResponse "Forbidden"

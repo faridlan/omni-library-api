@@ -6,13 +6,16 @@ import (
 )
 
 type User struct {
-	ID        string
-	Name      string
-	Email     string
-	Password  string
-	Role      string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID                    string
+	Name                  string
+	Email                 string
+	Password              string
+	Role                  string
+	IsEmailVerified       bool
+	VerificationToken     *string
+	VerificationExpiresAt *time.Time
+	CreatedAt             time.Time
+	UpdatedAt             time.Time
 }
 
 type UpdatePasswordInput struct {
@@ -31,6 +34,7 @@ type UserRepository interface {
 	FindByEmail(ctx context.Context, email string) (*User, error)
 	FindByID(ctx context.Context, id string) (*User, error)
 	Update(ctx context.Context, user *User) error
+	FindByVerificationToken(ctx context.Context, token string) (*User, error)
 }
 
 type UserUsecase interface {

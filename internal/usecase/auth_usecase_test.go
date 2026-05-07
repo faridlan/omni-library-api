@@ -19,13 +19,14 @@ import (
 func setupAuthUsecase() (*mocks.UserRepository, *mocks.AuthRepository, domain.AuthUsecase) {
 	mockUserRepo := new(mocks.UserRepository)
 	mockAuthRepo := new(mocks.AuthRepository)
+	mockEmail := new(mocks.EmailSender)
 
 	// Set env variables khusus untuk testing
 	os.Setenv("JWT_SECRET", "test-secret-key")
 	os.Setenv("ACCESS_TOKEN_EXPIRY_MINUTE", "15")
 	os.Setenv("REFRESH_TOKEN_EXPIRY_DAY", "7")
 
-	authUsecase := usecase.NewAuthUsecase(mockUserRepo, mockAuthRepo)
+	authUsecase := usecase.NewAuthUsecase(mockUserRepo, mockAuthRepo, mockEmail)
 	return mockUserRepo, mockAuthRepo, authUsecase
 }
 

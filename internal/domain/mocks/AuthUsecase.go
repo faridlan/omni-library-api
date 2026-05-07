@@ -107,6 +107,24 @@ func (_m *AuthUsecase) Register(ctx context.Context, input domain.RegisterInput)
 	return r0, r1
 }
 
+// VerifyEmail provides a mock function with given fields: ctx, token
+func (_m *AuthUsecase) VerifyEmail(ctx context.Context, token string) error {
+	ret := _m.Called(ctx, token)
+
+	if len(ret) == 0 {
+		panic("no return value specified for VerifyEmail")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, token)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // NewAuthUsecase creates a new instance of AuthUsecase. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewAuthUsecase(t interface {
