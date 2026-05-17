@@ -29,6 +29,7 @@ func SetupRoutes(app *fiber.App, h AppHandlers) {
 	auth.Post("/register", h.Auth.Register)
 	auth.Post("/login", h.Auth.Login)
 	auth.Post("/refresh", h.Auth.Refresh)
+	auth.Get("/verify-email", h.Auth.VerifyEmail)
 
 	api.Get("/books", h.Book.GetAll)
 	api.Get("/books/:id", h.Book.GetBookByID)
@@ -36,7 +37,7 @@ func SetupRoutes(app *fiber.App, h AppHandlers) {
 	api.Get("/health", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{
 			"status":  "success",
-			"message": "Hello dari Staging! CI/CD Otomatis berhasil mendarat dengan mulus. 🚀",
+			"message": "Hello dari Staging! CI/CD With Selft-Hosted Runner. 🚀",
 			"version": "1.0.1-beta",
 		})
 	})

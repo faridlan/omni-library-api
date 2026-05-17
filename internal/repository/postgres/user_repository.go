@@ -55,6 +55,17 @@ func (r *userRepository) FindByID(ctx context.Context, id string) (*domain.User,
 	return model.ToDomain(), nil
 }
 
+func (r *userRepository) FindByVerificationToken(ctx context.Context, token string) (*domain.User, error) {
+	var model UserModel
+	err := r.db.WithContext(ctx).Where("verification_token = ?", token).First(&model).Error
+
+	if err != nil {
+		return nil, TranslateError(err)
+	}
+
+	return model.ToDomain(), nil
+}
+
 func (r *userRepository) Update(ctx context.Context, user *domain.User) error {
 	model := FromUserDomain(user)
 

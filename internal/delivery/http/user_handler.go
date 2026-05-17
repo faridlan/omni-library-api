@@ -25,12 +25,13 @@ func toUserProfileResponse(user *domain.User) dto.UserProfileResponse {
 		return dto.UserProfileResponse{}
 	}
 	return dto.UserProfileResponse{
-		ID:        user.ID,
-		Name:      user.Name,
-		Email:     user.Email,
-		Role:      user.Role,
-		CreatedAt: user.CreatedAt,
-		UpdatedAt: user.UpdatedAt,
+		ID:              user.ID,
+		Name:            user.Name,
+		Email:           user.Email,
+		Role:            user.Role,
+		IsEmailVerified: user.IsEmailVerified,
+		CreatedAt:       user.CreatedAt,
+		UpdatedAt:       user.UpdatedAt,
 	}
 }
 
@@ -111,7 +112,7 @@ func (h *UserHandler) UpdateProfile(c *fiber.Ctx) error {
 // @Produce      json
 // @Security     BearerAuth
 // @Param        request body dto.UpdatePasswordRequest true "Data kata sandi lama dan baru"
-// @Success      200 {object} utils.SuccessResponse[interface{}] "Password berhasil diperbarui"
+// @Success      200 {object} utils.SuccessResponse[any] "Password berhasil diperbarui"
 // @Failure      400 {object} utils.ErrorResponse "Bad Request (Validasi gagal / Password lama salah)"
 // @Failure      401 {object} utils.ErrorResponse "Unauthorized"
 // @Failure      404 {object} utils.ErrorResponse "User tidak ditemukan"

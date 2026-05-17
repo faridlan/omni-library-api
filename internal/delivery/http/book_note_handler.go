@@ -137,7 +137,7 @@ func (h *BookNoteHandler) GetNotes(c *fiber.Ctx) error {
 // @Produce json
 // @Param user_book_id path string true "ID progres buku di rak"
 // @Param note_id path string true "ID catatan buku"
-// @Success 200 {object} utils.SuccessResponse[interface{}] "Note buku berhasil dihapus"
+// @Success 200 {object} utils.SuccessResponse[any] "Note buku berhasil dihapus"
 // @Failure 401 {object} utils.ErrorResponse "Unauthorized (Token tidak ada/salah)"
 // @Failure 404 {object} utils.ErrorResponse "Note buku tidak ditemukan"
 // @Failure 500 {object} utils.ErrorResponse "Internal Server Error"

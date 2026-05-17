@@ -15,18 +15,19 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// Helper untuk setup Usecase dan Mocks
-func setupAuthUsecase() (*mocks.UserRepository, *mocks.AuthRepository, domain.AuthUsecase) {
+// Helper untuk setup Usecase dan Mocks (Diperbarui agar mereturn mockEmailSender)
+func setupAuthUsecase() (*mocks.UserRepository, *mocks.AuthRepository, *mocks.EmailSender, domain.AuthUsecase) {
 	mockUserRepo := new(mocks.UserRepository)
 	mockAuthRepo := new(mocks.AuthRepository)
+	mockEmail := new(mocks.EmailSender)
 
 	// Set env variables khusus untuk testing
 	os.Setenv("JWT_SECRET", "test-secret-key")
 	os.Setenv("ACCESS_TOKEN_EXPIRY_MINUTE", "15")
 	os.Setenv("REFRESH_TOKEN_EXPIRY_DAY", "7")
 
-	authUsecase := usecase.NewAuthUsecase(mockUserRepo, mockAuthRepo)
-	return mockUserRepo, mockAuthRepo, authUsecase
+	authUsecase := usecase.NewAuthUsecase(mockUserRepo, mockAuthRepo, mockEmail)
+	return mockUserRepo, mockAuthRepo, mockEmail, authUsecase
 }
 
 // Helper untuk membuat token JWT valid saat testing Refresh
@@ -44,7 +45,7 @@ func generateValidRefreshToken(userID string, secret string) string {
 // TEST REGISTER
 // ==========================================
 func TestRegister(t *testing.T) {
-	mockUserRepo, _, authUsecase := setupAuthUsecase()
+	mockUserRepo, _, mockEmailSender, authUsecase := setupAuthUsecase()
 
 	t.Run("Success", func(t *testing.T) {
 		input := domain.RegisterInput{
@@ -61,12 +62,20 @@ func TestRegister(t *testing.T) {
 			return u.Email == input.Email && u.Name == input.Name && u.Role == "user"
 		})).Return(nil).Once()
 
+		// Mocking: Kirim Email Verifikasi
+		mockEmailSender.On("SendVerificationEmail", input.Email, mock.AnythingOfType("string")).Return(nil).Once()
+
 		user, err := authUsecase.Register(context.Background(), input)
+
+		// Jeda agar goroutine SendVerificationEmail sempat dieksekusi
+		time.Sleep(50 * time.Millisecond)
 
 		assert.NoError(t, err)
 		assert.NotNil(t, user)
 		assert.Equal(t, "faridlan@example.com", user.Email)
+
 		mockUserRepo.AssertExpectations(t)
+		mockEmailSender.AssertExpectations(t)
 	})
 
 	t.Run("Failed - Email Already Exists (Conflict)", func(t *testing.T) {
@@ -94,7 +103,7 @@ func TestRegister(t *testing.T) {
 // TEST LOGIN
 // ==========================================
 func TestLogin(t *testing.T) {
-	mockUserRepo, mockAuthRepo, authUsecase := setupAuthUsecase()
+	mockUserRepo, mockAuthRepo, _, authUsecase := setupAuthUsecase()
 
 	// Setup Hash Password Asli
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
@@ -162,7 +171,7 @@ func TestLogin(t *testing.T) {
 // TEST REFRESH
 // ==========================================
 func TestRefresh(t *testing.T) {
-	mockUserRepo, mockAuthRepo, authUsecase := setupAuthUsecase()
+	mockUserRepo, mockAuthRepo, _, authUsecase := setupAuthUsecase()
 
 	validToken := generateValidRefreshToken("user-123", "test-secret-key")
 	mockUser := &domain.User{
@@ -209,5 +218,64 @@ func TestRefresh(t *testing.T) {
 		assert.Error(t, err)
 		assert.Empty(t, newAccessToken)
 		mockAuthRepo.AssertExpectations(t)
+	})
+}
+
+// ==========================================
+// TEST VERIFY EMAIL
+// ==========================================
+func TestVerifyEmail(t *testing.T) {
+	mockUserRepo, _, _, authUsecase := setupAuthUsecase()
+
+	t.Run("Success", func(t *testing.T) {
+		token := "valid-token-123"
+		expTime := time.Now().Add(1 * time.Hour)
+		mockUser := &domain.User{
+			ID:                    "user-123",
+			IsEmailVerified:       false,
+			VerificationToken:     &token,
+			VerificationExpiresAt: &expTime,
+		}
+
+		mockUserRepo.On("FindByVerificationToken", mock.Anything, token).Return(mockUser, nil).Once()
+		mockUserRepo.On("Update", mock.Anything, mock.MatchedBy(func(u *domain.User) bool {
+			return u.IsEmailVerified == true && u.VerificationToken == nil && u.VerificationExpiresAt == nil
+		})).Return(nil).Once()
+
+		err := authUsecase.VerifyEmail(context.Background(), token)
+
+		assert.NoError(t, err)
+		mockUserRepo.AssertExpectations(t)
+	})
+
+	t.Run("Failed - Invalid Token", func(t *testing.T) {
+		token := "invalid-token"
+		mockUserRepo.On("FindByVerificationToken", mock.Anything, token).Return(nil, nil).Once()
+
+		err := authUsecase.VerifyEmail(context.Background(), token)
+
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "Token verifikasi tidak valid")
+		mockUserRepo.AssertExpectations(t)
+	})
+
+	t.Run("Failed - Token Expired", func(t *testing.T) {
+		token := "expired-token"
+		// Set waktu kadaluarsa ke 1 jam yang lalu
+		expTime := time.Now().Add(-1 * time.Hour)
+		mockUser := &domain.User{
+			ID:                    "user-123",
+			IsEmailVerified:       false,
+			VerificationToken:     &token,
+			VerificationExpiresAt: &expTime,
+		}
+
+		mockUserRepo.On("FindByVerificationToken", mock.Anything, token).Return(mockUser, nil).Once()
+
+		err := authUsecase.VerifyEmail(context.Background(), token)
+
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "Token verifikasi sudah kadaluarsa")
+		mockUserRepo.AssertExpectations(t)
 	})
 }

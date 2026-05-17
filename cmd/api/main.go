@@ -45,14 +45,31 @@ func main() {
 	dbName := os.Getenv("DB_NAME")
 	apiKey := os.Getenv("GOOGLE_BOOKS_API_KEY")
 
+	mailtrapHost := os.Getenv("MAILTRAP_HOST")
+	if mailtrapHost == "" {
+		mailtrapHost = "sandbox.smtp.mailtrap.io" // Default fallback
+	}
+	mailtrapPort := os.Getenv("MAILTRAP_PORT")
+	if mailtrapPort == "" {
+		mailtrapPort = "2525"
+	}
+	mailtrapUser := os.Getenv("MAILTRAP_USER")
+	mailtrapPass := os.Getenv("MAILTRAP_PASSWORD")
+	mailtrapFrom := os.Getenv("MAILTRAP_FROM")
+	if mailtrapFrom == "" {
+		mailtrapFrom = "no-reply@omnilibrary.com"
+	}
+
 	db := config.InitDB(dbUser, dbPassword, dbHost, dbPort, dbName)
 
 	// ==========================================
 	// 1. INISIASI REPOSITORY & USECASE
 	// ==========================================
+	emailSender := external.NewMailtrapSender(mailtrapHost, mailtrapPort, mailtrapUser, mailtrapPass, mailtrapFrom)
+
 	userRepo := postgres.NewUserRepository(db)
 	authRepo := postgres.NewAuthRepository(db)
-	authUsecase := usecase.NewAuthUsecase(userRepo, authRepo)
+	authUsecase := usecase.NewAuthUsecase(userRepo, authRepo, emailSender)
 
 	bookRepo := postgres.NewBookRepository(db)
 	bookFetcher := external.NewGoogleBooksFetcher(apiKey)
