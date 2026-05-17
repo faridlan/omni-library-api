@@ -37,7 +37,7 @@ func SetupRoutes(app *fiber.App, h AppHandlers) {
 	api.Get("/health", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{
 			"status":  "success",
-			"message": "Hello dari Staging! CI/CD Otomatis berhasil mendarat dengan mulus. 🚀",
+			"message": "Hello dari Staging! CI/CD With Selft-Hosted Runner. 🚀",
 			"version": "1.0.1-beta",
 		})
 	})
