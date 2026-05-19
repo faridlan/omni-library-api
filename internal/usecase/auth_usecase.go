@@ -284,3 +284,70 @@ func (u *authUsecase) ResendVerification(ctx context.Context, input domain.Resen
 
 	return nil
 }
+
+func (u *authUsecase) ForgotPassword(ctx context.Context, input domain.ForgotPasswordInput) error {
+	user, err := u.userRepo.FindByEmail(ctx, input.Email)
+
+	// BEST PRACTICE SECURITY:
+	// Jangan beritahu user apakah email terdaftar atau tidak (mencegah enumerasi email oleh hacker).
+	// Jika user tidak ditemukan, kita tetap return nil (sukses semu).
+	if err != nil || user == nil {
+		return nil
+	}
+
+	// Generate Token & Expiry (15 Menit)
+	token := generateVerificationToken() // Kita bisa pakai ulang fungsi helper ini
+	expTime := time.Now().Add(15 * time.Minute)
+
+	user.PasswordResetToken = &token
+	user.PasswordResetExpiresAt = &expTime
+
+	err = u.userRepo.Update(ctx, user)
+	if err != nil {
+		return domain.ErrInternalServerError
+	}
+
+	// Kirim Email Asynchronous
+	go func() {
+		_ = u.emailSender.SendPasswordResetEmail(user.Email, token)
+	}()
+
+	return nil
+}
+
+func (u *authUsecase) ResetPassword(ctx context.Context, input domain.ResetPasswordInput) error {
+	// 1. Validasi konfirmasi password
+	if input.NewPassword != input.ConfirmPassword {
+		return domain.NewError(domain.ErrBadParamInput, "Konfirmasi password tidak cocok")
+	}
+
+	// 2. Cari user berdasarkan token reset
+	user, err := u.userRepo.FindByResetToken(ctx, input.Token)
+	if err != nil || user == nil {
+		return domain.NewError(domain.ErrBadParamInput, "Token reset password tidak valid")
+	}
+
+	// 3. Cek apakah token expired
+	if user.PasswordResetExpiresAt != nil && time.Now().After(*user.PasswordResetExpiresAt) {
+		return domain.NewError(domain.ErrBadParamInput, "Token reset password sudah kadaluarsa")
+	}
+
+	// 4. Hash password baru
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.NewPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return domain.ErrInternalServerError
+	}
+
+	// 5. Update data (Mirip seperti di UpdateProfile, kita timpa field-nya)
+	user.Password = string(hashedPassword)
+	user.PasswordResetToken = nil // Bersihkan token agar tidak bisa dipakai lagi
+	user.PasswordResetExpiresAt = nil
+
+	// 6. Simpan ke database menggunakan repository Update yang sama!
+	err = u.userRepo.Update(ctx, user)
+	if err != nil {
+		return domain.ErrInternalServerError
+	}
+
+	return nil
+}

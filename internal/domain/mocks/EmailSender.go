@@ -9,6 +9,24 @@ type EmailSender struct {
 	mock.Mock
 }
 
+// SendPasswordResetEmail provides a mock function with given fields: toEmail, token
+func (_m *EmailSender) SendPasswordResetEmail(toEmail string, token string) error {
+	ret := _m.Called(toEmail, token)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SendPasswordResetEmail")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string, string) error); ok {
+		r0 = rf(toEmail, token)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // SendVerificationEmail provides a mock function with given fields: toEmail, token
 func (_m *EmailSender) SendVerificationEmail(toEmail string, token string) error {
 	ret := _m.Called(toEmail, token)

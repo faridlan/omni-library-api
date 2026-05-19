@@ -211,3 +211,60 @@ func (h *AuthHandler) ResendVerification(c *fiber.Ctx) error {
 
 	return utils.SendSuccess(c, fiber.StatusOK, "Email verifikasi baru berhasil dikirim, silakan cek inbox Anda", nil)
 }
+
+// ForgotPassword godoc
+// @Summary      Minta Link Reset Password
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        request body dto.ForgotPasswordRequest true "Payload email"
+// @Success      200 {object} utils.SuccessResponse[any] "Jika email valid, link akan dikirim"
+// @Router       /api/auth/forgot-password [post]
+func (h *AuthHandler) ForgotPassword(c *fiber.Ctx) error {
+	var req dto.ForgotPasswordRequest
+	if err := c.BodyParser(&req); err != nil {
+		return utils.SendError(c, fiber.StatusBadRequest, "Format JSON tidak valid")
+	}
+	if err := utils.ValidateStruct(&req); err != nil {
+		return utils.SendError(c, fiber.StatusBadRequest, err.Error())
+	}
+
+	input := domain.ForgotPasswordInput{Email: req.Email}
+	err := h.authUsecase.ForgotPassword(c.Context(), input)
+	if err != nil {
+		return utils.HandleDomainError(c, err)
+	}
+
+	// Response selalu sama terlepas emailnya ada atau tidak demi keamanan
+	return utils.SendSuccess(c, fiber.StatusOK, "Jika email terdaftar, instruksi reset password telah dikirim ke inbox Anda", nil)
+}
+
+// ResetPassword godoc
+// @Summary      Ganti Password via Token
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        request body dto.ResetPasswordRequest true "Payload token dan password baru"
+// @Success      200 {object} utils.SuccessResponse[any] "Password berhasil diubah"
+// @Router       /api/auth/reset-password [post]
+func (h *AuthHandler) ResetPassword(c *fiber.Ctx) error {
+	var req dto.ResetPasswordRequest
+	if err := c.BodyParser(&req); err != nil {
+		return utils.SendError(c, fiber.StatusBadRequest, "Format JSON tidak valid")
+	}
+	if err := utils.ValidateStruct(&req); err != nil {
+		return utils.SendError(c, fiber.StatusBadRequest, err.Error())
+	}
+
+	input := domain.ResetPasswordInput{
+		Token:           req.Token,
+		NewPassword:     req.NewPassword,
+		ConfirmPassword: req.ConfirmPassword,
+	}
+	err := h.authUsecase.ResetPassword(c.Context(), input)
+	if err != nil {
+		return utils.HandleDomainError(c, err)
+	}
+
+	return utils.SendSuccess(c, fiber.StatusOK, "Password berhasil diubah. Silakan login dengan password baru Anda.", nil)
+}

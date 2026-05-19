@@ -14,6 +14,24 @@ type AuthUsecase struct {
 	mock.Mock
 }
 
+// ForgotPassword provides a mock function with given fields: ctx, input
+func (_m *AuthUsecase) ForgotPassword(ctx context.Context, input domain.ForgotPasswordInput) error {
+	ret := _m.Called(ctx, input)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ForgotPassword")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, domain.ForgotPasswordInput) error); ok {
+		r0 = rf(ctx, input)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // Login provides a mock function with given fields: ctx, input
 func (_m *AuthUsecase) Login(ctx context.Context, input domain.LoginInput) (string, string, error) {
 	ret := _m.Called(ctx, input)
@@ -117,6 +135,24 @@ func (_m *AuthUsecase) ResendVerification(ctx context.Context, input domain.Rese
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, domain.ResendVerificationInput) error); ok {
+		r0 = rf(ctx, input)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// ResetPassword provides a mock function with given fields: ctx, input
+func (_m *AuthUsecase) ResetPassword(ctx context.Context, input domain.ResetPasswordInput) error {
+	ret := _m.Called(ctx, input)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ResetPassword")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, domain.ResetPasswordInput) error); ok {
 		r0 = rf(ctx, input)
 	} else {
 		r0 = ret.Error(0)
