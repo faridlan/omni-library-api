@@ -279,3 +279,60 @@ func TestVerifyEmail(t *testing.T) {
 		mockUserRepo.AssertExpectations(t)
 	})
 }
+
+// ==========================================
+// TEST RESEND VERIFICATION
+// ==========================================
+func TestResendVerification(t *testing.T) {
+	mockUserRepo, _, mockEmailSender, authUsecase := setupAuthUsecase()
+
+	t.Run("Success", func(t *testing.T) {
+		input := domain.ResendVerificationInput{Email: "faridlan@example.com"}
+		mockUser := &domain.User{
+			ID:              "user-123",
+			Email:           "faridlan@example.com",
+			IsEmailVerified: false,
+		}
+
+		mockUserRepo.On("FindByEmail", mock.Anything, input.Email).Return(mockUser, nil).Once()
+		mockUserRepo.On("Update", mock.Anything, mock.AnythingOfType("*domain.User")).Return(nil).Once()
+		mockEmailSender.On("SendVerificationEmail", input.Email, mock.AnythingOfType("string")).Return(nil).Once()
+
+		err := authUsecase.ResendVerification(context.Background(), input)
+
+		time.Sleep(50 * time.Millisecond) // jeda goroutine
+
+		assert.NoError(t, err)
+		mockUserRepo.AssertExpectations(t)
+		mockEmailSender.AssertExpectations(t)
+	})
+
+	t.Run("Failed - User Not Found", func(t *testing.T) {
+		input := domain.ResendVerificationInput{Email: "notfound@example.com"}
+
+		mockUserRepo.On("FindByEmail", mock.Anything, input.Email).Return(nil, nil).Once()
+
+		err := authUsecase.ResendVerification(context.Background(), input)
+
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "User dengan email tersebut tidak ditemukan")
+		mockUserRepo.AssertExpectations(t)
+	})
+
+	t.Run("Failed - Already Verified", func(t *testing.T) {
+		input := domain.ResendVerificationInput{Email: "verified@example.com"}
+		mockUser := &domain.User{
+			ID:              "user-123",
+			Email:           "verified@example.com",
+			IsEmailVerified: true, // Sudah diverifikasi
+		}
+
+		mockUserRepo.On("FindByEmail", mock.Anything, input.Email).Return(mockUser, nil).Once()
+
+		err := authUsecase.ResendVerification(context.Background(), input)
+
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "Email sudah diverifikasi sebelumnya")
+		mockUserRepo.AssertExpectations(t)
+	})
+}

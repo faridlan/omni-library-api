@@ -70,7 +70,7 @@ func (u *authUsecase) Register(ctx context.Context, input domain.RegisterInput) 
 
 	// 1. Generate Token & Expiry
 	token := generateVerificationToken()
-	expTime := time.Now().Add(24 * time.Hour) // Berlaku 24 jam
+	expTime := time.Now().Add(1 * time.Minute) // Berlaku 24 jam
 
 	newUser := &domain.User{
 		Name:                  input.Name,
@@ -242,6 +242,45 @@ func (u *authUsecase) VerifyEmail(ctx context.Context, token string) error {
 	if err != nil {
 		return domain.ErrInternalServerError
 	}
+
+	return nil
+}
+
+func (u *authUsecase) ResendVerification(ctx context.Context, input domain.ResendVerificationInput) error {
+	// 1. Cari user berdasarkan email
+	user, err := u.userRepo.FindByEmail(ctx, input.Email)
+	if err != nil {
+		return domain.NewError(domain.ErrNotFound, "User dengan email tersebut tidak ditemukan")
+	}
+	if user == nil {
+		return domain.NewError(domain.ErrNotFound, "User dengan email tersebut tidak ditemukan")
+	}
+
+	// 2. Jika email sudah diverifikasi, tidak perlu kirim ulang
+	if user.IsEmailVerified {
+		return domain.NewError(domain.ErrBadParamInput, "Email sudah diverifikasi sebelumnya")
+	}
+
+	// 3. Generate Token baru dan Expiry baru (misal berlaku 24 jam lagi)
+	newToken := generateVerificationToken()
+	newExpTime := time.Now().Add(24 * time.Hour)
+
+	user.VerificationToken = &newToken
+	user.VerificationExpiresAt = &newExpTime
+
+	// 4. Update data user di database
+	err = u.userRepo.Update(ctx, user)
+	if err != nil {
+		return domain.ErrInternalServerError
+	}
+
+	// 5. Kirim email secara asynchronous
+	go func() {
+		err := u.emailSender.SendVerificationEmail(user.Email, newToken)
+		if err != nil {
+			// Log error jika diperlukan
+		}
+	}()
 
 	return nil
 }

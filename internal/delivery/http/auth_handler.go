@@ -176,3 +176,38 @@ func (h *AuthHandler) VerifyEmail(c *fiber.Ctx) error {
 
 	return utils.SendSuccess(c, fiber.StatusOK, "Email berhasil diverifikasi", nil)
 }
+
+// ResendVerification godoc
+// @Summary      Kirim Ulang Email Verifikasi
+// @Description  Menggenerasi ulang token verifikasi baru dan mengirimkannya kembali ke email user yang belum terverifikasi.
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        request body dto.ResendVerificationRequest true "Payload email user"
+// @Success      200 {object} utils.SuccessResponse[any] "Email verifikasi baru berhasil dikirim"
+// @Failure      400 {object} utils.ErrorResponse "Email sudah diverifikasi atau format salah"
+// @Failure      404 {object} utils.ErrorResponse "Email tidak ditemukan"
+// @Failure      500 {object} utils.ErrorResponse "Internal Server Error"
+// @Router       /api/auth/resend-verification [post]
+func (h *AuthHandler) ResendVerification(c *fiber.Ctx) error {
+	var req dto.ResendVerificationRequest
+
+	if err := c.BodyParser(&req); err != nil {
+		return utils.SendError(c, fiber.StatusBadRequest, "Format JSON tidak valid")
+	}
+
+	if err := utils.ValidateStruct(&req); err != nil {
+		return utils.SendError(c, fiber.StatusBadRequest, err.Error())
+	}
+
+	input := domain.ResendVerificationInput{
+		Email: req.Email,
+	}
+
+	err := h.authUsecase.ResendVerification(c.Context(), input)
+	if err != nil {
+		return utils.HandleDomainError(c, err)
+	}
+
+	return utils.SendSuccess(c, fiber.StatusOK, "Email verifikasi baru berhasil dikirim, silakan cek inbox Anda", nil)
+}

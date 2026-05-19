@@ -171,6 +171,58 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/auth/resend-verification": {
+            "post": {
+                "description": "Menggenerasi ulang token verifikasi baru dan mengirimkannya kembali ke email user yang belum terverifikasi.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Kirim Ulang Email Verifikasi",
+                "parameters": [
+                    {
+                        "description": "Payload email user",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_delivery_http_dto.ResendVerificationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Email verifikasi baru berhasil dikirim",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-any"
+                        }
+                    },
+                    "400": {
+                        "description": "Email sudah diverifikasi atau format salah",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Email tidak ditemukan",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/auth/verify-email": {
             "get": {
                 "description": "Memverifikasi email pengguna menggunakan token yang dikirimkan via email.",
@@ -1450,6 +1502,17 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_faridlan_omni-library-api_internal_delivery_http_dto.ResendVerificationRequest": {
+            "type": "object",
+            "required": [
+                "email"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                }
+            }
+        },
         "github_com_faridlan_omni-library-api_internal_delivery_http_dto.TokenResponse": {
             "type": "object",
             "properties": {
@@ -1608,6 +1671,9 @@ const docTemplate = `{
                 },
                 "id": {
                     "type": "string"
+                },
+                "is_email_verified": {
+                    "type": "boolean"
                 },
                 "name": {
                     "type": "string"

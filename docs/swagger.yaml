@@ -131,6 +131,13 @@ definitions:
     - name
     - password
     type: object
+  github_com_faridlan_omni-library-api_internal_delivery_http_dto.ResendVerificationRequest:
+    properties:
+      email:
+        type: string
+    required:
+    - email
+    type: object
   github_com_faridlan_omni-library-api_internal_delivery_http_dto.TokenResponse:
     properties:
       access_token:
@@ -238,6 +245,8 @@ definitions:
         type: string
       id:
         type: string
+      is_email_verified:
+        type: boolean
       name:
         type: string
       role:
@@ -485,6 +494,41 @@ paths:
           schema:
             $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
       summary: Registrasi User Baru
+      tags:
+      - Auth
+  /api/auth/resend-verification:
+    post:
+      consumes:
+      - application/json
+      description: Menggenerasi ulang token verifikasi baru dan mengirimkannya kembali
+        ke email user yang belum terverifikasi.
+      parameters:
+      - description: Payload email user
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_delivery_http_dto.ResendVerificationRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Email verifikasi baru berhasil dikirim
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-any'
+        "400":
+          description: Email sudah diverifikasi atau format salah
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+        "404":
+          description: Email tidak ditemukan
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+      summary: Kirim Ulang Email Verifikasi
       tags:
       - Auth
   /api/auth/verify-email:
