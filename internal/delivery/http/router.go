@@ -49,7 +49,7 @@ func SetupRoutes(app *fiber.App, h AppHandlers) {
 
 	protected.Post("/books/fetch", h.Book.FetchAndSave)
 
-	lib := protected.Group("/library")
+	lib := protected.Group("/library", middleware.VerifiedOnly())
 	lib.Post("/", h.UserBook.AddBook)
 	lib.Get("/", h.UserBook.GetMyLibrary)
 	lib.Put("/:book_id", h.UserBook.UpdateProgress)

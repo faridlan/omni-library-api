@@ -127,9 +127,10 @@ func (u *authUsecase) Login(ctx context.Context, input domain.LoginInput) (strin
 	}
 
 	accessClaims := jwt.MapClaims{
-		"user_id": user.ID,
-		"role":    user.Role,
-		"exp":     time.Now().Add(time.Minute * time.Duration(u.accessExpMinute)).Unix(),
+		"user_id":           user.ID,
+		"role":              user.Role,
+		"is_email_verified": user.IsEmailVerified,
+		"exp":               time.Now().Add(time.Minute * time.Duration(u.accessExpMinute)).Unix(),
 	}
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims)
 	signedAccessToken, err := accessToken.SignedString([]byte(u.jwtSecret))
@@ -195,9 +196,10 @@ func (u *authUsecase) Refresh(ctx context.Context, tokenString string) (string, 
 	}
 
 	accessClaims := jwt.MapClaims{
-		"user_id": user.ID,
-		"role":    user.Role,
-		"exp":     time.Now().Add(time.Minute * time.Duration(u.accessExpMinute)).Unix(),
+		"user_id":           user.ID,
+		"role":              user.Role,
+		"is_email_verified": user.IsEmailVerified, // <-- Tambahkan informasi verifikasi email di token
+		"exp":               time.Now().Add(time.Minute * time.Duration(u.accessExpMinute)).Unix(),
 	}
 	newAccessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims)
 	signedAccessToken, err := newAccessToken.SignedString([]byte(u.jwtSecret))
