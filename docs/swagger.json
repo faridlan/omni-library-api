@@ -9,6 +9,39 @@
     "host": "localhost:8080",
     "basePath": "/",
     "paths": {
+        "/api/auth/forgot-password": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Minta Link Reset Password",
+                "parameters": [
+                    {
+                        "description": "Payload email",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_delivery_http_dto.ForgotPasswordRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Jika email valid, link akan dikirim",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-any"
+                        }
+                    }
+                }
+            }
+        },
         "/api/auth/login": {
             "post": {
                 "description": "Autentikasi email dan password pengguna untuk mendapatkan Token JWT.",
@@ -160,6 +193,91 @@
                         "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/auth/resend-verification": {
+            "post": {
+                "description": "Menggenerasi ulang token verifikasi baru dan mengirimkannya kembali ke email user yang belum terverifikasi.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Kirim Ulang Email Verifikasi",
+                "parameters": [
+                    {
+                        "description": "Payload email user",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_delivery_http_dto.ResendVerificationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Email verifikasi baru berhasil dikirim",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-any"
+                        }
+                    },
+                    "400": {
+                        "description": "Email sudah diverifikasi atau format salah",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Email tidak ditemukan",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/auth/reset-password": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Ganti Password via Token",
+                "parameters": [
+                    {
+                        "description": "Payload token dan password baru",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_delivery_http_dto.ResetPasswordRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Password berhasil diubah",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-any"
                         }
                     }
                 }
@@ -1398,6 +1516,17 @@
                 }
             }
         },
+        "github_com_faridlan_omni-library-api_internal_delivery_http_dto.ForgotPasswordRequest": {
+            "type": "object",
+            "required": [
+                "email"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                }
+            }
+        },
         "github_com_faridlan_omni-library-api_internal_delivery_http_dto.LoginRequest": {
             "type": "object",
             "required": [
@@ -1441,6 +1570,37 @@
                 "password": {
                     "type": "string",
                     "minLength": 6
+                }
+            }
+        },
+        "github_com_faridlan_omni-library-api_internal_delivery_http_dto.ResendVerificationRequest": {
+            "type": "object",
+            "required": [
+                "email"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_faridlan_omni-library-api_internal_delivery_http_dto.ResetPasswordRequest": {
+            "type": "object",
+            "required": [
+                "confirm_password",
+                "new_password",
+                "token"
+            ],
+            "properties": {
+                "confirm_password": {
+                    "type": "string"
+                },
+                "new_password": {
+                    "type": "string",
+                    "minLength": 6
+                },
+                "token": {
+                    "type": "string"
                 }
             }
         },
@@ -1602,6 +1762,9 @@
                 },
                 "id": {
                     "type": "string"
+                },
+                "is_email_verified": {
+                    "type": "boolean"
                 },
                 "name": {
                     "type": "string"

@@ -52,6 +52,13 @@ func Protected() fiber.Handler {
 		c.Locals("user_id", claims["user_id"].(string))
 		c.Locals("role", claims["role"].(string))
 
+		if verified, exists := claims["is_email_verified"]; exists {
+			c.Locals("is_email_verified", verified)
+		} else {
+			// Jika user pakai token lama yang belum ada field is_email_verified-nya
+			c.Locals("is_email_verified", false)
+		}
+
 		return c.Next()
 	}
 }
@@ -64,6 +71,21 @@ func AdminOnly() fiber.Handler {
 			return utils.SendError(c, fiber.StatusForbidden, "Akses ditolak: Hanya Admin yang diizinkan melakukan aksi ini")
 		}
 
+		return c.Next()
+	}
+}
+
+func VerifiedOnly() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		// Langsung ambil status dari Locals yang sudah disiapkan middleware Protected
+		isVerified, ok := c.Locals("is_email_verified").(bool)
+
+		// Jika tidak ada, atau nilainya false, tolak akses
+		if !ok || !isVerified {
+			return utils.SendError(c, fiber.StatusForbidden, "Akses ditolak: Silakan verifikasi email Anda terlebih dahulu")
+		}
+
+		// Jika true, lanjutkan ke handler berikutnya
 		return c.Next()
 	}
 }

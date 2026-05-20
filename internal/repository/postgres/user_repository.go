@@ -77,3 +77,14 @@ func (r *userRepository) Update(ctx context.Context, user *domain.User) error {
 	user.UpdatedAt = model.UpdatedAt
 	return nil
 }
+
+func (r *userRepository) FindByResetToken(ctx context.Context, token string) (*domain.User, error) {
+	var model UserModel
+	err := r.db.WithContext(ctx).Where("password_reset_token = ?", token).First(&model).Error
+
+	if err != nil {
+		return nil, TranslateError(err)
+	}
+
+	return model.ToDomain(), nil
+}

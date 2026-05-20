@@ -34,6 +34,22 @@ migratedown:
 migrateforce:
 	migrate -path db/migrations -database $(DB_URL) force $(V)
 
+
+# ==============================================================================
+# Swaggo Commands
+# ==============================================================================
+
+swagup:
+	swag init -g cmd/api/main.go --parseDependency --parseInternal
+
+
+# ==============================================================================
+# Mockery Commands
+# ==============================================================================
+
+mockup:
+	mockery --dir=internal/domain --all --output=internal/domain/mocks --outpkg=mocks 
+
 # ==============================================================================
 # .PHONY memastikan make tidak bentrok dengan nama folder/file yang kebetulan sama
 # ==============================================================================

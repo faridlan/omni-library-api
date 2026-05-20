@@ -70,7 +70,7 @@ func (u *authUsecase) Register(ctx context.Context, input domain.RegisterInput) 
 
 	// 1. Generate Token & Expiry
 	token := generateVerificationToken()
-	expTime := time.Now().Add(24 * time.Hour) // Berlaku 24 jam
+	expTime := time.Now().Add(1 * time.Minute) // Berlaku 24 jam
 
 	newUser := &domain.User{
 		Name:                  input.Name,
@@ -127,9 +127,10 @@ func (u *authUsecase) Login(ctx context.Context, input domain.LoginInput) (strin
 	}
 
 	accessClaims := jwt.MapClaims{
-		"user_id": user.ID,
-		"role":    user.Role,
-		"exp":     time.Now().Add(time.Minute * time.Duration(u.accessExpMinute)).Unix(),
+		"user_id":           user.ID,
+		"role":              user.Role,
+		"is_email_verified": user.IsEmailVerified,
+		"exp":               time.Now().Add(time.Minute * time.Duration(u.accessExpMinute)).Unix(),
 	}
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims)
 	signedAccessToken, err := accessToken.SignedString([]byte(u.jwtSecret))
@@ -195,9 +196,10 @@ func (u *authUsecase) Refresh(ctx context.Context, tokenString string) (string, 
 	}
 
 	accessClaims := jwt.MapClaims{
-		"user_id": user.ID,
-		"role":    user.Role,
-		"exp":     time.Now().Add(time.Minute * time.Duration(u.accessExpMinute)).Unix(),
+		"user_id":           user.ID,
+		"role":              user.Role,
+		"is_email_verified": user.IsEmailVerified, // <-- Tambahkan informasi verifikasi email di token
+		"exp":               time.Now().Add(time.Minute * time.Duration(u.accessExpMinute)).Unix(),
 	}
 	newAccessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims)
 	signedAccessToken, err := newAccessToken.SignedString([]byte(u.jwtSecret))
@@ -236,6 +238,112 @@ func (u *authUsecase) VerifyEmail(ctx context.Context, token string) error {
 	user.VerificationExpiresAt = nil
 
 	// 5. Simpan perubahan ke database
+	err = u.userRepo.Update(ctx, user)
+	if err != nil {
+		return domain.ErrInternalServerError
+	}
+
+	return nil
+}
+
+func (u *authUsecase) ResendVerification(ctx context.Context, input domain.ResendVerificationInput) error {
+	// 1. Cari user berdasarkan email
+	user, err := u.userRepo.FindByEmail(ctx, input.Email)
+	if err != nil {
+		return domain.NewError(domain.ErrNotFound, "User dengan email tersebut tidak ditemukan")
+	}
+	if user == nil {
+		return domain.NewError(domain.ErrNotFound, "User dengan email tersebut tidak ditemukan")
+	}
+
+	// 2. Jika email sudah diverifikasi, tidak perlu kirim ulang
+	if user.IsEmailVerified {
+		return domain.NewError(domain.ErrBadParamInput, "Email sudah diverifikasi sebelumnya")
+	}
+
+	// 3. Generate Token baru dan Expiry baru (misal berlaku 24 jam lagi)
+	newToken := generateVerificationToken()
+	newExpTime := time.Now().Add(24 * time.Hour)
+
+	user.VerificationToken = &newToken
+	user.VerificationExpiresAt = &newExpTime
+
+	// 4. Update data user di database
+	err = u.userRepo.Update(ctx, user)
+	if err != nil {
+		return domain.ErrInternalServerError
+	}
+
+	// 5. Kirim email secara asynchronous
+	go func() {
+		err := u.emailSender.SendVerificationEmail(user.Email, newToken)
+		if err != nil {
+			// Log error jika diperlukan
+		}
+	}()
+
+	return nil
+}
+
+func (u *authUsecase) ForgotPassword(ctx context.Context, input domain.ForgotPasswordInput) error {
+	user, err := u.userRepo.FindByEmail(ctx, input.Email)
+
+	// BEST PRACTICE SECURITY:
+	// Jangan beritahu user apakah email terdaftar atau tidak (mencegah enumerasi email oleh hacker).
+	// Jika user tidak ditemukan, kita tetap return nil (sukses semu).
+	if err != nil || user == nil {
+		return nil
+	}
+
+	// Generate Token & Expiry (15 Menit)
+	token := generateVerificationToken() // Kita bisa pakai ulang fungsi helper ini
+	expTime := time.Now().Add(15 * time.Minute)
+
+	user.PasswordResetToken = &token
+	user.PasswordResetExpiresAt = &expTime
+
+	err = u.userRepo.Update(ctx, user)
+	if err != nil {
+		return domain.ErrInternalServerError
+	}
+
+	// Kirim Email Asynchronous
+	go func() {
+		_ = u.emailSender.SendPasswordResetEmail(user.Email, token)
+	}()
+
+	return nil
+}
+
+func (u *authUsecase) ResetPassword(ctx context.Context, input domain.ResetPasswordInput) error {
+	// 1. Validasi konfirmasi password
+	if input.NewPassword != input.ConfirmPassword {
+		return domain.NewError(domain.ErrBadParamInput, "Konfirmasi password tidak cocok")
+	}
+
+	// 2. Cari user berdasarkan token reset
+	user, err := u.userRepo.FindByResetToken(ctx, input.Token)
+	if err != nil || user == nil {
+		return domain.NewError(domain.ErrBadParamInput, "Token reset password tidak valid")
+	}
+
+	// 3. Cek apakah token expired
+	if user.PasswordResetExpiresAt != nil && time.Now().After(*user.PasswordResetExpiresAt) {
+		return domain.NewError(domain.ErrBadParamInput, "Token reset password sudah kadaluarsa")
+	}
+
+	// 4. Hash password baru
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.NewPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return domain.ErrInternalServerError
+	}
+
+	// 5. Update data (Mirip seperti di UpdateProfile, kita timpa field-nya)
+	user.Password = string(hashedPassword)
+	user.PasswordResetToken = nil // Bersihkan token agar tidak bisa dipakai lagi
+	user.PasswordResetExpiresAt = nil
+
+	// 6. Simpan ke database menggunakan repository Update yang sama!
 	err = u.userRepo.Update(ctx, user)
 	if err != nil {
 		return domain.ErrInternalServerError
