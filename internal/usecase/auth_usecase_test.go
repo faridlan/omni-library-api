@@ -279,3 +279,164 @@ func TestVerifyEmail(t *testing.T) {
 		mockUserRepo.AssertExpectations(t)
 	})
 }
+
+// ==========================================
+// TEST RESEND VERIFICATION
+// ==========================================
+func TestResendVerification(t *testing.T) {
+	mockUserRepo, _, mockEmailSender, authUsecase := setupAuthUsecase()
+
+	t.Run("Success", func(t *testing.T) {
+		input := domain.ResendVerificationInput{Email: "faridlan@example.com"}
+		mockUser := &domain.User{
+			ID:              "user-123",
+			Email:           "faridlan@example.com",
+			IsEmailVerified: false,
+		}
+
+		mockUserRepo.On("FindByEmail", mock.Anything, input.Email).Return(mockUser, nil).Once()
+		mockUserRepo.On("Update", mock.Anything, mock.AnythingOfType("*domain.User")).Return(nil).Once()
+		mockEmailSender.On("SendVerificationEmail", input.Email, mock.AnythingOfType("string")).Return(nil).Once()
+
+		err := authUsecase.ResendVerification(context.Background(), input)
+
+		time.Sleep(50 * time.Millisecond) // jeda goroutine
+
+		assert.NoError(t, err)
+		mockUserRepo.AssertExpectations(t)
+		mockEmailSender.AssertExpectations(t)
+	})
+
+	t.Run("Failed - User Not Found", func(t *testing.T) {
+		input := domain.ResendVerificationInput{Email: "notfound@example.com"}
+
+		mockUserRepo.On("FindByEmail", mock.Anything, input.Email).Return(nil, nil).Once()
+
+		err := authUsecase.ResendVerification(context.Background(), input)
+
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "User dengan email tersebut tidak ditemukan")
+		mockUserRepo.AssertExpectations(t)
+	})
+
+	t.Run("Failed - Already Verified", func(t *testing.T) {
+		input := domain.ResendVerificationInput{Email: "verified@example.com"}
+		mockUser := &domain.User{
+			ID:              "user-123",
+			Email:           "verified@example.com",
+			IsEmailVerified: true, // Sudah diverifikasi
+		}
+
+		mockUserRepo.On("FindByEmail", mock.Anything, input.Email).Return(mockUser, nil).Once()
+
+		err := authUsecase.ResendVerification(context.Background(), input)
+
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "Email sudah diverifikasi sebelumnya")
+		mockUserRepo.AssertExpectations(t)
+	})
+}
+
+// ==========================================
+// TEST FORGOT PASSWORD
+// ==========================================
+func TestForgotPassword(t *testing.T) {
+	mockUserRepo, _, mockEmailSender, authUsecase := setupAuthUsecase()
+
+	t.Run("Success - User Exists", func(t *testing.T) {
+		input := domain.ForgotPasswordInput{Email: "faridlan@example.com"}
+		mockUser := &domain.User{ID: "user-123", Email: "faridlan@example.com"}
+
+		mockUserRepo.On("FindByEmail", mock.Anything, input.Email).Return(mockUser, nil).Once()
+		mockUserRepo.On("Update", mock.Anything, mock.AnythingOfType("*domain.User")).Return(nil).Once()
+		mockEmailSender.On("SendPasswordResetEmail", input.Email, mock.AnythingOfType("string")).Return(nil).Once()
+
+		err := authUsecase.ForgotPassword(context.Background(), input)
+
+		time.Sleep(50 * time.Millisecond) // jeda goroutine
+		assert.NoError(t, err)
+		mockUserRepo.AssertExpectations(t)
+		mockEmailSender.AssertExpectations(t)
+	})
+
+	t.Run("Success - User Not Found (Silent Success)", func(t *testing.T) {
+		input := domain.ForgotPasswordInput{Email: "unknown@example.com"}
+
+		// Simulasi email tidak ditemukan (return nil, nil)
+		mockUserRepo.On("FindByEmail", mock.Anything, input.Email).Return(nil, nil).Once()
+
+		err := authUsecase.ForgotPassword(context.Background(), input)
+
+		// Seharusnya tidak ada error (sesuai security best practice)
+		assert.NoError(t, err)
+		mockUserRepo.AssertExpectations(t)
+	})
+}
+
+// ==========================================
+// TEST RESET PASSWORD
+// ==========================================
+func TestResetPassword(t *testing.T) {
+	mockUserRepo, _, _, authUsecase := setupAuthUsecase()
+
+	t.Run("Success", func(t *testing.T) {
+		token := "reset-token-123"
+		expTime := time.Now().Add(15 * time.Minute)
+		mockUser := &domain.User{
+			ID:                     "user-123",
+			PasswordResetToken:     &token,
+			PasswordResetExpiresAt: &expTime,
+		}
+
+		input := domain.ResetPasswordInput{
+			Token:           token,
+			NewPassword:     "newpassword123",
+			ConfirmPassword: "newpassword123",
+		}
+
+		mockUserRepo.On("FindByResetToken", mock.Anything, token).Return(mockUser, nil).Once()
+		mockUserRepo.On("Update", mock.Anything, mock.AnythingOfType("*domain.User")).Return(nil).Once()
+
+		err := authUsecase.ResetPassword(context.Background(), input)
+
+		assert.NoError(t, err)
+		assert.Nil(t, mockUser.PasswordResetToken) // Token harus jadi nil setelah reset
+		mockUserRepo.AssertExpectations(t)
+	})
+
+	t.Run("Failed - Password Mismatch", func(t *testing.T) {
+		input := domain.ResetPasswordInput{
+			Token:           "token",
+			NewPassword:     "pass1",
+			ConfirmPassword: "pass2",
+		}
+
+		err := authUsecase.ResetPassword(context.Background(), input)
+
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "Konfirmasi password tidak cocok")
+	})
+
+	t.Run("Failed - Token Expired", func(t *testing.T) {
+		token := "expired-token"
+		expTime := time.Now().Add(-1 * time.Minute)
+		mockUser := &domain.User{
+			PasswordResetToken:     &token,
+			PasswordResetExpiresAt: &expTime,
+		}
+
+		input := domain.ResetPasswordInput{
+			Token:           token,
+			NewPassword:     "newpass123",
+			ConfirmPassword: "newpass123",
+		}
+
+		mockUserRepo.On("FindByResetToken", mock.Anything, token).Return(mockUser, nil).Once()
+
+		err := authUsecase.ResetPassword(context.Background(), input)
+
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "Token reset password sudah kadaluarsa")
+		mockUserRepo.AssertExpectations(t)
+	})
+}

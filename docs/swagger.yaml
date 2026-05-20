@@ -100,6 +100,13 @@ definitions:
     required:
     - isbn
     type: object
+  github_com_faridlan_omni-library-api_internal_delivery_http_dto.ForgotPasswordRequest:
+    properties:
+      email:
+        type: string
+    required:
+    - email
+    type: object
   github_com_faridlan_omni-library-api_internal_delivery_http_dto.LoginRequest:
     properties:
       email:
@@ -130,6 +137,27 @@ definitions:
     - email
     - name
     - password
+    type: object
+  github_com_faridlan_omni-library-api_internal_delivery_http_dto.ResendVerificationRequest:
+    properties:
+      email:
+        type: string
+    required:
+    - email
+    type: object
+  github_com_faridlan_omni-library-api_internal_delivery_http_dto.ResetPasswordRequest:
+    properties:
+      confirm_password:
+        type: string
+      new_password:
+        minLength: 6
+        type: string
+      token:
+        type: string
+    required:
+    - confirm_password
+    - new_password
+    - token
     type: object
   github_com_faridlan_omni-library-api_internal_delivery_http_dto.TokenResponse:
     properties:
@@ -238,6 +266,8 @@ definitions:
         type: string
       id:
         type: string
+      is_email_verified:
+        type: boolean
       name:
         type: string
       role:
@@ -381,6 +411,27 @@ info:
   title: OmniLibrary API
   version: "1.0"
 paths:
+  /api/auth/forgot-password:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Payload email
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_delivery_http_dto.ForgotPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Jika email valid, link akan dikirim
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-any'
+      summary: Minta Link Reset Password
+      tags:
+      - Auth
   /api/auth/login:
     post:
       consumes:
@@ -485,6 +536,62 @@ paths:
           schema:
             $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
       summary: Registrasi User Baru
+      tags:
+      - Auth
+  /api/auth/resend-verification:
+    post:
+      consumes:
+      - application/json
+      description: Menggenerasi ulang token verifikasi baru dan mengirimkannya kembali
+        ke email user yang belum terverifikasi.
+      parameters:
+      - description: Payload email user
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_delivery_http_dto.ResendVerificationRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Email verifikasi baru berhasil dikirim
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-any'
+        "400":
+          description: Email sudah diverifikasi atau format salah
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+        "404":
+          description: Email tidak ditemukan
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.ErrorResponse'
+      summary: Kirim Ulang Email Verifikasi
+      tags:
+      - Auth
+  /api/auth/reset-password:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Payload token dan password baru
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_delivery_http_dto.ResetPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Password berhasil diubah
+          schema:
+            $ref: '#/definitions/github_com_faridlan_omni-library-api_internal_utils.SuccessResponse-any'
+      summary: Ganti Password via Token
       tags:
       - Auth
   /api/auth/verify-email:

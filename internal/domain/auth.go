@@ -25,6 +25,20 @@ type RegisterInput struct {
 	Password string
 }
 
+type ResendVerificationInput struct {
+	Email string
+}
+
+type ForgotPasswordInput struct {
+	Email string
+}
+
+type ResetPasswordInput struct {
+	Token           string
+	NewPassword     string
+	ConfirmPassword string
+}
+
 type AuthRepository interface {
 	SaveRefreshToken(ctx context.Context, rt *RefreshToken) error
 	GetRefreshToken(ctx context.Context, token string) (*RefreshToken, error)
@@ -34,5 +48,8 @@ type AuthUsecase interface {
 	Register(ctx context.Context, input RegisterInput) (*User, error)
 	Login(ctx context.Context, input LoginInput) (string, string, error)
 	Refresh(ctx context.Context, tokenString string) (string, error)
-	VerifyEmail(ctx context.Context, token string) error // <-- Baru
+	VerifyEmail(ctx context.Context, token string) error
+	ResendVerification(ctx context.Context, input ResendVerificationInput) error
+	ForgotPassword(ctx context.Context, input ForgotPasswordInput) error
+	ResetPassword(ctx context.Context, input ResetPasswordInput) error
 }
