@@ -60,7 +60,7 @@ func SetupRoutes(app *fiber.App, h AppHandlers) {
 	lib.Delete("/:book_id", h.UserBook.DeleteBookFromShelf)
 	lib.Get("/:book_id", h.UserBook.GetUserBookDetail)
 
-	notes := protected.Group("/library/:user_book_id/notes")
+	notes := protected.Group("/library/:user_book_id/notes", middleware.VerifiedOnly())
 	notes.Post("/", h.BookNote.AddNote)
 	notes.Get("/", h.BookNote.GetNotes)
 	notes.Delete("/:note_id", h.BookNote.DeleteNote)

@@ -3,6 +3,7 @@ package external
 import (
 	"fmt"
 	"net/smtp"
+	"os"
 
 	"github.com/faridlan/omni-library-api/internal/domain"
 )
@@ -28,8 +29,13 @@ func NewMailtrapSender(host, port, username, password, from string) domain.Email
 func (m *mailtrapSender) SendVerificationEmail(toEmail string, token string) error {
 	auth := smtp.PlainAuth("", m.Username, m.Password, m.Host)
 
+	baseURL := os.Getenv("FRONTEND_URL")
+	if baseURL == "" {
+		baseURL = "http://localhost:3000" // Fallback jika .env tidak terbaca
+	}
+
 	// URL endpoint verifikasi kita
-	verifyLink := fmt.Sprintf("http://localhost:8080/api/auth/verify-email?token=%s", token)
+	verifyLink := fmt.Sprintf("%s/api/auth/verify-email?token=%s", baseURL, token)
 
 	subject := "Subject: Verifikasi Email Omni Library Anda\n"
 	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
@@ -55,9 +61,12 @@ func (m *mailtrapSender) SendVerificationEmail(toEmail string, token string) err
 func (m *mailtrapSender) SendPasswordResetEmail(toEmail string, token string) error {
 	auth := smtp.PlainAuth("", m.Username, m.Password, m.Host)
 
-	// URL ini idealnya mengarah ke halaman Frontend kamu (misal: React/NextJS)
-	// yang memiliki form untuk memasukkan password baru.
-	resetLink := fmt.Sprintf("http://localhost:8080/api/auth/reset-password?token=%s", token)
+	baseURL := os.Getenv("FRONTEND_URL")
+	if baseURL == "" {
+		baseURL = "http://localhost:3000"
+	}
+
+	resetLink := fmt.Sprintf("%s/reset-password?token=%s", baseURL, token)
 
 	subject := "Subject: Reset Password Omni Library Anda\n"
 	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
