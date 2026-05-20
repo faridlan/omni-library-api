@@ -53,7 +53,7 @@ func (u *userBookUsecase) TrackNewBook(ctx context.Context, userID, bookID strin
 
 func (u *userBookUsecase) UpdateReadingStatus(ctx context.Context, input domain.UpdateUserBookInput) (*domain.UserBook, error) {
 
-	track, err := u.userBookRepo.FindByUserIDAndBookID(ctx, input.UserID, input.BookID)
+	track, err := u.userBookRepo.GetDetailByID(ctx, input.UserID, input.BookID)
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
 			return nil, domain.NewError(domain.ErrNotFound, "Buku dengan ID tersebut tidak ditemukan")
@@ -110,7 +110,7 @@ func (u *userBookUsecase) GetUserBookDetail(ctx context.Context, userID, bookID 
 }
 
 func (u *userBookUsecase) DeleteBookFromShelf(ctx context.Context, userID, bookID string) error {
-	_, err := u.userBookRepo.FindByUserIDAndBookID(ctx, userID, bookID)
+	_, err := u.userBookRepo.GetDetailByID(ctx, userID, bookID)
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
 			return domain.NewError(domain.ErrNotFound, "Buku dengan ID tersebut tidak ditemukan")
