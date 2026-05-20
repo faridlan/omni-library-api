@@ -104,7 +104,7 @@ func TestUpdateReadingStatus(t *testing.T) {
 			UserBook: domain.UserBook{ID: "ub-789", Status: "TO_READ", CurrentPage: 0, Rating: 0},
 		}
 
-		mockUBRepo.On("FindByUserIDAndBookID", mock.Anything, input.UserID, input.BookID).Return(existingData, nil).Once()
+		mockUBRepo.On("GetDetailByID", mock.Anything, input.UserID, input.BookID).Return(existingData, nil).Once()
 
 		mockUBRepo.On("UpdateProgress", mock.Anything, mock.MatchedBy(func(ub *domain.UserBook) bool {
 			return ub.Status == "READING" && ub.CurrentPage == 50 && ub.Rating == 5
@@ -121,7 +121,7 @@ func TestUpdateReadingStatus(t *testing.T) {
 	t.Run("Failed - Shelf Not Found", func(t *testing.T) {
 		input := domain.UpdateUserBookInput{UserID: "user-123", BookID: "book-456"}
 
-		mockUBRepo.On("FindByUserIDAndBookID", mock.Anything, input.UserID, input.BookID).Return(nil, domain.ErrNotFound).Once()
+		mockUBRepo.On("GetDetailByID", mock.Anything, input.UserID, input.BookID).Return(nil, domain.ErrNotFound).Once()
 
 		result, err := u.UpdateReadingStatus(context.Background(), input)
 
@@ -135,7 +135,7 @@ func TestUpdateReadingStatus(t *testing.T) {
 		input := domain.UpdateUserBookInput{UserID: "user-123", BookID: "book-456"}
 		dbError := errors.New("db down")
 
-		mockUBRepo.On("FindByUserIDAndBookID", mock.Anything, input.UserID, input.BookID).Return(nil, dbError).Once()
+		mockUBRepo.On("GetDetailByID", mock.Anything, input.UserID, input.BookID).Return(nil, dbError).Once()
 
 		result, err := u.UpdateReadingStatus(context.Background(), input)
 
@@ -205,7 +205,7 @@ func TestDeleteBookFromShelf(t *testing.T) {
 	mockUBRepo, _, u := setupUserBookUsecase()
 
 	t.Run("Success", func(t *testing.T) {
-		mockUBRepo.On("FindByUserIDAndBookID", mock.Anything, "user-123", "book-456").Return(&domain.UserBookWithMetadata{}, nil).Once()
+		mockUBRepo.On("GetDetailByID", mock.Anything, "user-123", "book-456").Return(&domain.UserBookWithMetadata{}, nil).Once()
 		mockUBRepo.On("Delete", mock.Anything, "user-123", "book-456").Return(nil).Once()
 
 		err := u.DeleteBookFromShelf(context.Background(), "user-123", "book-456")
@@ -215,7 +215,7 @@ func TestDeleteBookFromShelf(t *testing.T) {
 	})
 
 	t.Run("Failed - Not Found", func(t *testing.T) {
-		mockUBRepo.On("FindByUserIDAndBookID", mock.Anything, "user-123", "book-456").Return(nil, domain.ErrNotFound).Once()
+		mockUBRepo.On("GetDetailByID", mock.Anything, "user-123", "book-456").Return(nil, domain.ErrNotFound).Once()
 
 		err := u.DeleteBookFromShelf(context.Background(), "user-123", "book-456")
 
@@ -226,7 +226,7 @@ func TestDeleteBookFromShelf(t *testing.T) {
 
 	t.Run("Failed - Database Error on Find", func(t *testing.T) {
 		dbError := errors.New("timeout")
-		mockUBRepo.On("FindByUserIDAndBookID", mock.Anything, "user-123", "book-456").Return(nil, dbError).Once()
+		mockUBRepo.On("GetDetailByID", mock.Anything, "user-123", "book-456").Return(nil, dbError).Once()
 
 		err := u.DeleteBookFromShelf(context.Background(), "user-123", "book-456")
 
