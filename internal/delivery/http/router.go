@@ -21,14 +21,14 @@ func SetupRoutes(app *fiber.App, h AppHandlers) {
 	prometheus.RegisterAt(app, "/metrics")
 	app.Use(prometheus.Middleware)
 
-	api := app.Group("/api")
+	api := app.Group("/api", middleware.GlobalLimiter())
 
 	// ==========================================
 	// PUBLIC ROUTES
 	// ==========================================
 	auth := api.Group("/auth")
-	auth.Post("/register", h.Auth.Register)
-	auth.Post("/login", h.Auth.Login)
+	auth.Post("/register", middleware.StrictLimiter(), h.Auth.Register)
+	auth.Post("/login", middleware.StrictLimiter(), h.Auth.Login)
 	auth.Post("/refresh", h.Auth.Refresh)
 	auth.Get("/verify-email", h.Auth.VerifyEmail)
 	auth.Post("/resend-verification", h.Auth.ResendVerification)
@@ -51,7 +51,7 @@ func SetupRoutes(app *fiber.App, h AppHandlers) {
 	// ==========================================
 	protected := api.Group("/", middleware.Protected())
 
-	protected.Post("/books/fetch", h.Book.FetchAndSave)
+	protected.Post("/books/fetch", middleware.StrictLimiter(), h.Book.FetchAndSave)
 
 	lib := protected.Group("/library", middleware.VerifiedOnly())
 	lib.Post("/", h.UserBook.AddBook)
